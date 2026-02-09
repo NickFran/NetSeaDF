@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <!-- changed class -> id -->
+    <div id="main"></div>
+    <div id="main2"></div>
+    
+</body>
+<style>
+    .main, #main {
+        width: 800px;
+        height: 600px;
+    }
+    #main2 {
+        width: 800px;
+        height: 600px;
+      }
+    </style>
+<script type="module">
+  const integrations = require('../../common/integrations.js');
+  import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
+
+  const el1 = echarts.init(document.getElementById('main'));
+
+  const toNum = v => (v === '-' || v == null ? NaN : (typeof v === 'string' ? parseFloat(v) : v));
+  const pairs = (xArr, yArr) => xArr.map((x, i) => [toNum(x), toNum(yArr[i])]).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  const extent = (xs) => {
+    const vals = xs.map(toNum).filter(Number.isFinite);
+    if (!vals.length) return [0, 1];
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const pad = (max - min) * 0.05 || 1;
+    return [min - pad, max + pad];
+  };
+
+  Promise.all([
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'TEMP_ADJUSTED']),
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PRES_ADJUSTED']),
+  ]).then(([temp, pres]) => {
+
+    // Assume shape [TIME][DEPTH]
+    const pres0 = (pres?.[0] || []).map(toNum);
+    const pres1 = (pres?.[1] || []).map(toNum);
+    const pres2 = (pres?.[2] || []).map(toNum);
+
+    const temp0 = (temp?.[0] || []).map(toNum);
+    const temp1 = (temp?.[1] || []).map(toNum);
+    const temp2 = (temp?.[2] || []).map(toNum);
+
+    const minLen = Math.min(pres0.length, pres1.length, pres2.length, temp0.length, temp1.length, temp2.length);
+
+    const presAvg = Array.from({ length: minLen }, (_, i) => {
+      const vals = [pres0[i], pres1[i], pres2[i]].filter(Number.isFinite);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
+    });
+
+    const tempAvg = Array.from({ length: minLen }, (_, i) => {
+      const vals = [temp0[i], temp1[i], temp2[i]].filter(Number.isFinite);
+      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : NaN;
+    });
+
+    // X = TEMP(avg), Y = PRES(avg)
+    const data = Array.from({ length: minLen }, (_, i) => [tempAvg[i], presAvg[i]])
+      .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+
+    const [minX, maxX] = extent(tempAvg);
+    const [minY, maxY] = extent(presAvg);
+
+    el1.setOption({
+      backgroundColor: '#f5f5f5',
+      title: {
+        text: 'Time-Averaged Temperature & SSP vs Time-Averaged Pressure',
+        left: 'center',
+        top: 10,
+        textStyle: {
+          color: '#2c3e50',
+          fontSize: 18,
+          fontWeight: 'bold'
+        }
+      },
+      tooltip: { 
+        trigger: 'item', 
+        formatter: p => `TEMP(avg): ${p.data[0].toFixed(2)}°C<br/>PRES(avg): ${p.data[1].toFixed(2)} dbar`,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderColor: '#ccc',
+        borderWidth: 1,
+        textStyle: {
+          color: '#333'
+        }
+      },
+      grid: { 
+        top: 80, 
+        bottom: 80, 
+        left: 90, 
+        right: 50,
+        backgroundColor: '#ffffff',
+        borderColor: '#ddd',
+        borderWidth: 1
+      },
+      xAxis: { 
+        type: 'value', 
+        name: 'Temperature (avg °C)', 
+        nameLocation: 'middle',
+        nameGap: 35,
+        nameTextStyle: {
+          color: '#2c3e50',
+          fontSize: 13,
+          fontWeight: 'bold'
+        },
+        min: minX, 
+        max: maxX,
+        axisLine: {
+          lineStyle: { color: '#999' }
+        },
+        axisLabel: {
+          color: '#555',
+          fontSize: 11
+        },
+        splitLine: {
+          lineStyle: { color: '#e0e0e0', type: 'dashed' }
+        }
+      },
+      yAxis: { 
+        type: 'value', 
+        name: 'Pressure (avg dbar)', 
+        nameLocation: 'middle',
+        nameGap: 55,
+        nameTextStyle: {
+          color: '#2c3e50',
+          fontSize: 13,
+          fontWeight: 'bold'
+        },
+        inverse: true, 
+        min: minY, 
+        max: maxY,
+        axisLine: {
+          lineStyle: { color: '#999' }
+        },
+        axisLabel: {
+          color: '#555',
+          fontSize: 11
+        },
+        splitLine: {
+          lineStyle: { color: '#e0e0e0', type: 'dashed' }
+        }
+      },
+      dataZoom: [
+        { type: 'inside', xAxisIndex: 0 }, 
+        { 
+          type: 'slider', 
+          xAxisIndex: 0, 
+          bottom: 10,
+          height: 20,
+          backgroundColor: '#f0f0f0',
+          fillerColor: 'rgba(70, 130, 180, 0.25)',
+          borderColor: '#ccc',
+          handleStyle: {
+            color: '#4682b4'
+          },
+          textStyle: {
+            color: '#555'
+          }
+        },
+        { type: 'inside', yAxisIndex: 0 }, 
+        { 
+          type: 'slider', 
+          yAxisIndex: 0, 
+          orient: 'vertical', 
+          right: 10,
+          width: 20,
+          backgroundColor: '#f0f0f0',
+          fillerColor: 'rgba(70, 130, 180, 0.25)',
+          borderColor: '#ccc',
+          handleStyle: {
+            color: '#4682b4'
+          },
+          textStyle: {
+            color: '#555'
+          }
+        }
+      ],
+      series: [{ 
+        name: 'TEMP (avg) vs PRES (avg)', 
+        type: 'line', 
+        data, 
+        showSymbol: true, 
+        symbolSize: 4,
+        smooth: true,
+        lineStyle: {
+          color: '#e74c3c',
+          width: 2
+        },
+        itemStyle: {
+          color: '#e74c3c'
+        }
+      }]
+    });
+
+    // Get SSP via Python and add as second line (X = SSP, Y = PRES(avg))
+    integrations.callPyFunc('bulkSSP', [tempAvg, presAvg]).then(ssp => {
+      const sspX = (ssp || []).map(v => {
+        const n = toNum(v);
+        return Number.isFinite(n) ? n / 1000 : NaN; // scale if needed
+      });
+
+      const sspData = Array.from({ length: minLen }, (_, i) => [sspX[i], presAvg[i]])
+        .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+
+      // Use combined X extent so both lines are visible
+      const [minXAll, maxXAll] = extent([...tempAvg, ...sspX]);
+
+      el1.setOption({
+        legend: { 
+          data: ['TEMP vs PRES (avg)', 'SSP vs PRES (avg)'], 
+          top: 45, 
+          left: 'center',
+          textStyle: {
+            color: '#2c3e50',
+            fontSize: 12
+          },
+          itemGap: 20,
+          icon: 'roundRect'
+        },
+        xAxis: { 
+          type: 'value', 
+          name: 'Value (TEMP °C / SSP)', 
+          nameLocation: 'middle',
+          nameGap: 35,
+          nameTextStyle: {
+            color: '#2c3e50',
+            fontSize: 13,
+            fontWeight: 'bold'
+          },
+          scale: true, 
+          min: minXAll, 
+          max: maxXAll,
+          axisLine: {
+            lineStyle: { color: '#999' }
+          },
+          axisLabel: {
+            color: '#555',
+            fontSize: 11
+          },
+          splitLine: {
+            lineStyle: { color: '#e0e0e0', type: 'dashed' }
+          }
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { 
+            type: 'cross', 
+            axis: 'y', 
+            snap: true, 
+            label: { 
+              backgroundColor: '#666',
+              color: '#fff'
+            },
+            crossStyle: {
+              color: '#999'
+            }
+          },
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          borderColor: '#ccc',
+          borderWidth: 1,
+          textStyle: {
+            color: '#333'
+          },
+          formatter: (params) => {
+            const y = params[0]?.axisValue ?? params[0]?.data?.[1];
+            if (!Number.isFinite(y)) return '';
+            // nearest index to current Y (PRES)
+            let idx = 0, bd = Infinity;
+            for (let i = 0; i < presAvg.length; i++) {
+              const d = Math.abs(presAvg[i] - y);
+              if (Number.isFinite(d) && d < bd) { bd = d; idx = i; }
+            }
+            return `<strong>PRES(avg):</strong> ${presAvg[idx].toFixed(2)} dbar<br/><strong>TEMP(avg):</strong> ${tempAvg[idx].toFixed(2)}°C<br/><strong>SSP:</strong> ${(sspX[idx] * 1000).toFixed(2)} m/s`;
+          }
+        },
+        series: [
+          { 
+            name: 'TEMP vs PRES (avg)', 
+            type: 'line', 
+            data, 
+            showSymbol: true, 
+            symbolSize: 4,
+            smooth: true,
+            lineStyle: {
+              color: '#e74c3c',
+              width: 2
+            },
+            itemStyle: {
+              color: '#e74c3c'
+            }
+          },
+          { 
+            name: 'SSP vs PRES (avg)',  
+            type: 'line', 
+            data: sspData, 
+            showSymbol: true, 
+            symbolSize: 4,
+            smooth: true,
+            lineStyle: {
+              color: '#16a085',
+              width: 2
+            },
+            itemStyle: {
+              color: '#16a085'
+            }
+          }
+        ]
+      });
+    }).catch(err => console.error('SSP error:', err));
+
+    console.log('PRES time 0:', pres0.length, 'values');
+    console.log('PRES time 1:', pres1.length, 'values');
+    console.log('PRES time 2:', pres2.length, 'values');
+
+    console.log('TEMP time 0:', temp0.length, 'values');
+    console.log('TEMP time 1:', temp1.length, 'values');
+    console.log('TEMP time 2:', temp2.length, 'values');
+
+  }).catch(err => console.error('Data load error:', err));
+
+    
+    integrations.callPyFunc('getDepthValues', ['GL_PR_PF_1902604.nc']).then(result => {
+        let x = result;
+        console.log("Result from Python function:", x);
+    }).catch(error => {
+        console.error("Error:", error);
+    });
+
+
+</script>
+</html>

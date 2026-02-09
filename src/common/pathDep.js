@@ -50,16 +50,18 @@ function fromHereToRoot(dirname) {
 
 function resolveToProperDataPath(dirname, folderName) {
     // Electron Method to check dev/prod status of the app
-    //const isDev = !app.isPackaged; 
+    // Since we're in renderer process, we can't access app directly
+    // For now, assume development mode (savedData in root, not in dist)
+    const isDev = true; 
 
     let isSpecifiedFolderValid = (folderName == "logs" || folderName == "savedData")
 
     if (isSpecifiedFolderValid) { 
-        return true //isDev 
+        return isDev 
         // If Development Mode
-            ? path.join(path.join(fromHereToRoot(__dirname) , `${folderName}`))
+            ? path.join(path.join(fromHereToRoot(dirname) , `${folderName}`))
         // If Production Mode
-            : path.join(path.join(fromHereToRoot(__dirname) , "dist" , `${folderName}`));
+            : path.join(path.join(fromHereToRoot(dirname) , "dist" , `${folderName}`));
     } else {
         DisplayError("InvalidValueError, (folder name not log or savedData)", 3);
         return "InvalidValueError";

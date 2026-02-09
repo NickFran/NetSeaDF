@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <!-- changed class -> id -->
+    <div id="main"></div>
+    <div id="main2"></div>
+    
+</body>
+<style>
+    .main, #main {
+        width: 800px;
+        height: 600px;
+    }
+    #main2 {
+        width: 800px;
+        height: 600px;
+    }
+</style>
+<script type="module">
+  const integrations = require('../../common/integrations.js');
+  import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
+
+  const el1 = echarts.init(document.getElementById('main'));
+
+  Promise.all([
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PSAL']),
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PRES_ADJUSTED']),
+  ]).then(([psal, pres]) => {
+    const ps = (psal?.[0] || []).slice(0, 101);
+    const pr = (pres?.[0] || []).slice(0, 101);
+
+    const toNum = v => (v === '-' || v == null ? NaN : (typeof v === 'string' ? parseFloat(v) : v));
+    const data = ps.map((s, i) => [toNum(s), toNum(pr[i])]).filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y));
+
+    el1.setOption({
+      title: { text: 'PSAL (x) vs PRES (y)'},
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'cross',
+          axis: 'y',      // drive the crosshair by the x axis
+          snap: false,    // free movement, not snapped to data points
+          label: { backgroundColor: '#333' }
+        },
+        formatter: (params) => {
+          const p = Array.isArray(params) ? params[0] : params;
+          const [x, y] = p.data;
+          return `PSAL: ${x}<br/>PRES: ${y}`;
+        }
+      },
+      xAxis: {
+        type: 'value',
+        name: 'PSAL',
+        scale: true,    
+        boundaryGap: false,     
+        axisLine: { onZero: false }, 
+        axisTick: { show: false },
+        splitLine: { show: false },
+        axisLabel: { show: true },               // don’t force axis to include 0
+        min: v => Math.floor(v.min) - 1,     // pad around data min
+        max: v => Math.ceil(v.max) + 1       // pad around data max
+      },
+      yAxis: { type: 'value', name: 'PRES', inverse: true, nameLocation: 'middle', nameGap: 40 },
+      series: [{
+        type: 'line',
+        data,
+        showSymbol: true,
+        symbolSize: 10,
+        connectNulls: true,
+        emphasis: { focus: 'series' }
+      }]
+    });
+  }).catch(err => console.error('Data load error:', err));
+</script>
+</html>

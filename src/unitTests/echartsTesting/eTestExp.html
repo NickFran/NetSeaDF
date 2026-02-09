@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <!-- changed class -> id -->
+    <div id="main" style="position: relative;"></div>
+    <div id="lineCount" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: #fff; padding: 10px 15px; border-radius: 5px; font-family: Arial; font-size: 14px; z-index: 1000;">Visible: 0 / 0</div>
+    <div id="main2"></div>
+    
+</body>
+<style>
+    .main, #main {
+        width: 800px;
+        height: 600px;
+    }
+    #main2 {
+        width: 800px;
+        height: 600px;
+      }
+    </style>
+<script type="module">
+  const integrations = require('../../common/integrations.js');
+  import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
+
+  const el1 = echarts.init(document.getElementById('main'));
+
+  const toNum = v => (v === '-' || v == null ? NaN : (typeof v === 'string' ? parseFloat(v) : v));
+  const pairs = (xArr, yArr) => xArr.map((x, i) => [toNum(x), toNum(yArr[i])]).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]));
+  const extent = (xs) => {
+    const vals = xs.map(toNum).filter(Number.isFinite);
+    if (!vals.length) return [0, 1];
+    const min = Math.min(...vals), max = Math.max(...vals);
+    const pad = (max - min) * 0.05 || 1;
+    return [min - pad, max + pad];
+  };
+
+  Promise.all([
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'TEMP_ADJUSTED']),
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PRES_ADJUSTED']),
+    await assemble()
+  ]).then(([temp, pres, assembledData]) => {
+
+    let timeDims = ['(1st) 2025-11-22T08:24:00', '(2nd) 2025-12-02T02:06:00', '(3rd) 2025-12-12T00:01:00']
+
+    var chartDom = document.getElementById('main');
+var myChart = echarts.init(chartDom);
+var option;
+
+
+// Schema:
+// date,AQIindex,PM2.5,PM10,CO,NO2,SO2
+const dataBJ = assembledData[0];
+var dataGZ = assembledData[1];;
+var dataSH = assembledData[2];;
+var schema = [
+  { name: 'PRES', index: 0, text: 'PRES' },
+  { name: 'PSAL', index: 1, text: 'PSAL' },
+  { name: 'TEMP', index: 2, text: 'TEMP' },
+  { name: 'SSP', index: 3, text: 'SSP' },
+  { name: 'status', index: 4, text: 'QC' }
+];
+var lineStyle = {
+  width: 1,
+  opacity: 0.5
+};
+const seriesColors = ['#2196f3', '#00bcd4', '#2ecc71'].reverse(); // Blue, Cyan, Green
+
+option = {
+  backgroundColor: '#333',
+  legend: {
+    bottom: 30,
+    data: timeDims,
+    itemGap: 20,
+    textStyle: {
+      color: '#fff',
+      fontSize: 14
+    }
+  },
+  tooltip: {
+    padding: 10,
+    backgroundColor: '#222',
+    borderColor: '#777',
+    borderWidth: 1,
+    textStyle: {
+      color: '#fff'
+    },
+    formatter: function(params) {
+      const data = params.data;
+      const formatValue = (val) => {
+        if (val == null || val === '-') return 'N/A';
+        const num = typeof val === 'string' ? parseFloat(val) : val;
+        return Number.isFinite(num) ? num.toFixed(2) : 'N/A';
+      };
+      return `
+        <div style="font-weight: bold; margin-bottom: 5px;">${params.seriesName}</div>
+        <div>PRES: ${formatValue(data[0])}</div>
+        <div>PSAL: ${formatValue(data[1])}</div>
+        <div>TEMP: ${formatValue(data[2])}</div>
+        <div>SSP: ${formatValue(data[3])}</div>
+        <div>Status: ${data[4] ?? 'N/A'}</div>
+      `;
+    }
+  },
+  parallelAxis: [
+    {
+      dim: 0,
+      name: schema[0].text,
+      inverse: true,
+      min: 0,
+      max: 1800,
+      nameLocation: 'start'
+    },
+    { dim: 1, name: schema[1].text, min:0, max: 50 },
+    { dim: 2, name: schema[2].text, min:-30, max: 30 },
+    { dim: 3, name: schema[3].text, min: 3000, max: 3200 },
+    {
+      dim: 5,
+      name: schema[4].text,
+      type: 'category',
+      data: ['1 – Good', '2 – Probably Good', '3 – Probably Bad', '4 – Bad', '5 – Value Changed', '6 – Not Used', '7 – Not Used', '8 – Interpolated', '9 – Missing'].reverse()
+    }
+  ],
+  color: seriesColors, // legend/icon colors
+  visualMap: {
+    show: true,
+    min: 0,
+    max: 150,
+    dimension: 2,
+    inRange: { } // remove gradient so series colors apply
+  },
+  parallel: {
+    left: '5%',
+    right: '18%',
+    bottom: 100,
+    parallelAxisDefault: {
+      type: 'value',
+      name: 'AQI指数',
+      nameLocation: 'end',
+      nameGap: 20,
+      nameTextStyle: {
+        color: '#fff',
+        fontSize: 12
+      },
+      axisLine: {
+        lineStyle: {
+          color: '#aaa'
+        }
+      },
+      axisTick: {
+        lineStyle: {
+          color: '#777'
+        }
+      },
+      splitLine: {
+        show: false
+      },
+      axisLabel: {
+        color: '#fff'
+      }
+    }
+  },
+  series: [
+    {
+      name: timeDims[0],
+      type: 'parallel',
+      lineStyle: { width: 2, opacity: 0.9, color: seriesColors[0] },
+      data: dataBJ
+    },
+    {
+      name: timeDims[1],
+      type: 'parallel',
+      lineStyle: { width: 2, opacity: 0.9, color: seriesColors[1] },
+      data: dataSH
+    },
+    {
+      name: timeDims[2],
+      type: 'parallel',
+      lineStyle: { width: 2, opacity: 0.9, color: seriesColors[2] },
+      data: dataGZ
+    }
+  ]
+};
+
+option && myChart.setOption(option);
+
+// Store data and series names
+const allDataWithSeries = [
+  { name: timeDims[0], data: dataBJ },
+  { name: timeDims[1], data: dataSH },
+  { name: timeDims[2], data: dataGZ }
+];
+
+const totalLines = dataBJ.length + dataSH.length + dataGZ.length;
+
+// Map axis names to indices
+const axisNameToIndex = {
+  'PRES': 0,
+  'PSAL': 1,
+  'TEMP': 2,
+  'SSP': 3,
+  'QC': 4
+};
+
+// Store active intervals for each axis
+const activeIntervals = {};
+
+// Function to filter and log data points
+const updateFilteredData = () => {
+  console.log('Current active intervals:', activeIntervals);
+  
+  // Check if any filters are active
+  const hasFilters = Object.keys(activeIntervals).length > 0;
+  
+  if (!hasFilters) {
+    document.getElementById('lineCount').textContent = `Visible: ${totalLines} / ${totalLines}`;
+    console.log('No filters - showing all data');
+    return;
+  }
+  
+  // Collect filtered data points
+  let filteredPoints = [];
+  
+  allDataWithSeries.forEach(series => {
+    series.data.forEach((line, lineIdx) => {
+      let passes = true;
+      
+      // Check each active axis constraint
+      for (const [axisName, intervals] of Object.entries(activeIntervals)) {
+        const axisIdx = axisNameToIndex[axisName];
+        if (axisIdx !== undefined && intervals && intervals.length > 0) {
+          const val = line[axisIdx];
+          const range = intervals[0]; // Use first interval
+          
+          // Note: range is [max, min] for inverted PRES axis
+          const min = Math.min(range[0], range[1]);
+          const max = Math.max(range[0], range[1]);
+          
+          if (val < min || val > max) {
+            passes = false;
+            break;
+          }
+        }
+      }
+      
+      if (passes) {
+        filteredPoints.push({
+          series: series.name,
+          lineIndex: lineIdx,
+          PRES: line[0],
+          PSAL: line[1],
+          TEMP: line[2],
+          SSP: line[3],
+          Status: line[4]
+        });
+      }
+    });
+  });
+  
+  console.log(`Filtered data points (${filteredPoints.length} total):`, filteredPoints);
+  document.getElementById('lineCount').textContent = `Visible: ${filteredPoints.length} / ${totalLines}`;
+};
+
+// Initial display
+document.getElementById('lineCount').textContent = `Visible: ${totalLines} / ${totalLines}`;
+
+// Listen to axis area selection events
+myChart.on('axisareaselected', (params) => {
+  console.log('axisareaselected event:', params);
+  
+  // Extract axis name from parallelAxisId (e.g., "\u0000PRES\u00000" -> "PRES")
+  const axisId = params.parallelAxisId || '';
+  const axisName = axisId.replace(/[\x00\d]/g, '').trim();
+  
+  console.log('Axis name:', axisName, 'Intervals:', params.intervals);
+  
+  // Store or update the intervals for this axis
+  if (params.intervals && params.intervals.length > 0) {
+    activeIntervals[axisName] = params.intervals;
+  } else {
+    // If no intervals, remove the filter for this axis
+    delete activeIntervals[axisName];
+  }
+  
+  updateFilteredData();
+});
+
+// Also clear filters if user clicks outside
+myChart.getZr().on('click', (e) => {
+  // If click is on background, might want to clear filters
+  // For now just update in case
+  setTimeout(updateFilteredData, 50);
+});
+    
+
+  });
+
+
+async function assemble(){
+  let neededPRES = await integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PRES_ADJUSTED']);
+  let neededTEMP = await integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'TEMP_ADJUSTED']);
+  let bulkSSPArray0 = await integrations.callPyFunc('bulkSSP', [neededTEMP[0], neededPRES[0]]);
+  let bulkSSPArray1 = await integrations.callPyFunc('bulkSSP', [neededTEMP[1], neededPRES[1]]);
+  let bulkSSPArray2 = await integrations.callPyFunc('bulkSSP', [neededTEMP[2], neededPRES[2]]);
+  console.log('Bulk SSP Arrays:', [bulkSSPArray0, bulkSSPArray1, bulkSSPArray2]);
+
+  const timeDimensionIndexToSSP = {
+    0: bulkSSPArray0,
+    1: bulkSSPArray1,
+    2: bulkSSPArray2
+  };
+
+  const qcToStatus = {
+    0: "9 – Missing",
+    1: "1 – Good",
+    2: "2 – Probably Good",
+    3: "3 – Probably Bad",
+    4: "4 – Bad",
+    5: "5 – Value Changed",
+    6: "6 – Not Used",
+    7: "7 – Not Used",
+    8: "8 – Interpolated",
+    9: "9 – Missing"
+  };
+
+
+  const res = await integrations.callPyFunc('getVarsGroupedByDepth', ['GL_PR_PF_1902604.nc']);
+  console.log('Assembled Data from Python function:', res);
+
+  let timeDimEntry = [];
+  let finalList = [];
+  for (let t = 0; t < 3; t++) {
+
+
+    timeDimEntry = [];
+    for (let i = 0; i < res.rows.length; i+=1) {
+
+
+
+
+      let builtArray = 
+      [
+        res.rows[i].PRES_ADJUSTED[t],
+        res.rows[i].PSAL_ADJUSTED[t],
+        res.rows[i].TEMP_ADJUSTED[t],
+        timeDimensionIndexToSSP[t][i],
+        qcToStatus[res.rows[i].PRES_QC[t]]
+      ];
+
+      if (isNaN(res.rows[i].PRES_ADJUSTED[t]) || isNaN(res.rows[i].PSAL_ADJUSTED[t]) || isNaN(res.rows[i].TEMP_ADJUSTED[t])) {
+        //builtArray[4] = 0;
+        continue
+      }
+      
+      
+      timeDimEntry.push(builtArray);
+    }
+    finalList.push(timeDimEntry);
+  }
+
+  console.log('Final List:', finalList);
+  console.log('RES ROWS Length:'+res.rows.length);
+  console.log('RES ROWS:'+res);
+  return finalList;
+}
+
+
+</script>
+</html>

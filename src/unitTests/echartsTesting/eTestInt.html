@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <!-- changed class -> id -->
+    <div id="main"></div>
+    <div id="main2"></div>
+    
+</body>
+<style>
+    .main, #main {
+        width: 800px;
+        height: 600px;
+    }
+    #main2 {
+        width: 800px;
+        height: 600px;
+    }
+</style>
+<script type="module">
+  const integrations = require('../../common/integrations.js');
+  import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
+
+  const el1 = echarts.init(document.getElementById('main'));
+
+  Promise.all([
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PSAL_ADJUSTED']),
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'TEMP_ADJUSTED']),
+    integrations.callPyFunc('getVariable', ['GL_PR_PF_1902604.nc', 'PRES_ADJUSTED']),
+  ]).then(([psal, temp, pres]) => {
+
+    const toNum = v => (v === '-' || v == null ? NaN : (typeof v === 'string' ? parseFloat(v) : v));
+    const ps = (psal?.[0] || []).slice(0, 251);
+    const tp = (temp?.[0] || []).slice(0, 251);
+    const pr = (pres?.[0] || []).slice(0, 251);
+    
+
+    const prv = pr.map(toNum);
+    const nearestIndex = (arrNum, val) => {
+      let j = 0, bd = Infinity;
+      for (let i = 0; i < arrNum.length; i++) {
+        const d = Math.abs(arrNum[i] - val);
+        if (d < bd) { bd = d; j = i; }
+      }
+      return j;
+    };
+
+    const pairsSal  = pr.map((y,i)=>[toNum(ps[i]), toNum(y)]).filter(([x,y])=>Number.isFinite(x)&&Number.isFinite(y));
+    const pairsTemp = pr.map((y,i)=>[toNum(tp[i]), toNum(y)]).filter(([x,y])=>Number.isFinite(x)&&Number.isFinite(y));
+
+    const extent = (pairs) => {
+      const xs = pairs.map(p => p[0]).filter(v => Number.isFinite(v));
+      const min = Math.min(...xs), max = Math.max(...xs);
+      const pad = (max - min) * 0.1 || 1; // 10% pad (or 1 if flat)
+      return [min - pad, max + pad];
+    };
+    const [minPs, maxPs] = extent(pairsSal);
+    const [minTp, maxTp] = extent(pairsTemp);
+    // If you want both axes to share the same range:
+    // const minX = Math.min(minPs, minTp), maxX = Math.max(maxPs, maxTp);
+
+    el1.setOption({
+      title: {},
+      legend: { data: ['PSAL_ADJUSTED', 'TEMP_ADJUSTED'], top: 5, left: 'center' },
+            tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'cross', axis: 'y', snap: true, label: { backgroundColor: '#333' } },
+        formatter: (params) => {
+          const y = params[0]?.axisValue ?? params[0]?.data?.[1];
+          if (y == null || Number.isNaN(y)) return '';
+          const idx = nearestIndex(prv, y);
+          // Show actual array values at that depth index (even if the point isn’t currently visible)
+          return `
+          PRES: ${pr[idx]}<br/>
+          PSAL: ${ps[idx]}<br/>
+          TEMP: ${tp[idx]}<br/>`;
+        }
+      },
+      grid: { top: 130, bottom: 90, left: 70, right: 90 }, // more space on the right
+      xAxis: [
+        { 
+          type: 'value', 
+          name: 'PSAL_ADJUSTED (psu)', 
+          position: 'bottom', 
+          nameLocation: 'middle', 
+          nameGap: 60, 
+          axisLabel: { 
+            margin: 12,
+            formatter: (value) => value.toFixed(2)
+          }, 
+          scale: true, 
+          min: minPs, 
+          max: maxPs 
+        },
+        { 
+          type: 'value', 
+          name: 'TEMP_ADJUSTED (°C)', 
+          position: 'top', 
+          nameLocation: 'middle', 
+          nameGap: 45, 
+          axisLabel: { 
+            margin: 12,
+            formatter: (value) => value.toFixed(2)
+          }, 
+          scale: true, 
+          min: minTp, 
+          max: maxTp 
+        }
+      ],
+      yAxis: { 
+        type: 'value', 
+        name: 'PRES_ADJUSTED (dbar)', 
+        inverse: true, 
+        nameLocation: 'middle', 
+        nameGap: 50,
+        axisLabel: {
+          formatter: (value) => value.toFixed(1)
+        }
+      },
+      dataZoom: [
+        { type: 'inside', xAxisIndex: [0, 1] },
+        { type: 'inside', yAxisIndex: 0 },
+        { type: 'slider', xAxisIndex: 0, bottom: 10 },
+        { type: 'slider', xAxisIndex: 1, top: 60 },
+        { type: 'slider', yAxisIndex: 0, orient: 'vertical', right: 20 } // push slider away from labels
+      ],
+      series: [
+        { name: 'PSAL_ADJUSTED', type: 'line', xAxisIndex: 0, data: pairsSal,  showSymbol: true, symbolSize: 8 },
+        { name: 'TEMP_ADJUSTED', type: 'line', xAxisIndex: 1, data: pairsTemp, showSymbol: true, symbolSize: 8 }
+      ]
+    });
+
+    
+
+
+  }).catch(err => console.error('Data load error:', err));
+</script>
+</html>

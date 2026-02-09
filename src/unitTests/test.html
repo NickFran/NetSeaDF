@@ -22,15 +22,55 @@
     }
 </style>
 <script type="module">
+    const { spawn } = require('node:child_process');
+    const path = require('node:path');
 
-    const integrations = require('../common/integrations.js');
-    
-    integrations.callPyFunc('getDataFile', ['10', 'GL_PR_PF_1902604.nc']).then(result => {
-        let x = result;
-        console.log("Result from Python function:", x);
-    }).catch(error => {
-        console.error("Error:", error);
+    const py = spawn("python", [path.join(__dirname, "../common/pythonProcess.py")]);
+
+    let pendingResolve = null, buffer = "", queue = Promise.resolve();
+
+    py.stdout.on("data", d => {
+        buffer += d.toString();
+        const parts = buffer.split("\n");
+        buffer = parts.pop();
+        for (const line of parts) {
+            if (!line.trim()) continue;
+            try {
+                const msg = JSON.parse(line);
+                if (pendingResolve) { pendingResolve(msg); pendingResolve = null; }
+            } catch (e) { console.error("Parse error:", line, e); }
+        }
     });
+
+    py.stderr.on("data", d => console.error("PY Error:", d.toString()));
+
+    function exec(cmd, args = []) {
+      return (queue = queue.then(() => new Promise(resolve => {
+        pendingResolve = resolve;
+        py.stdin.write(JSON.stringify({ cmd, args }) + "\n");
+      })));
+    }
+
+
+    // Open once (queued), then your existing lines will work
+    await exec("open", [path.join(__dirname, "../../savedData/GL_PR_PF_1902604.nc")]);
+
+    console.log((await exec("getDimensions")).result);
+    console.log((await exec("getVariables")).result);
+    console.log((await exec("getDimensionData", ["DEPTH"])).result);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // use an ESM build via CDN (or a relative ./node_modules path served by your dev server)
     import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';

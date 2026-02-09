@@ -24,7 +24,9 @@ function createWindow() {
         }
     });
     win.loadURL(url.format({
-        pathname: path.join(__dirname, 'unitTests', 'test.html'),
+        pathname: path.join(__dirname, 'map.html'),
+        //pathname: path.join(__dirname, 'unitTests', 'test.html'),
+        //pathname: path.join(__dirname, 'unitTests', 'echartsTesting', 'eTestExp.html'),
         protocol: 'file:',
         slashes: true
     }));

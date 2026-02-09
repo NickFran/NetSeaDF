@@ -188,9 +188,34 @@ body {
     border-radius: 5px;
     margin-bottom: 10px;
 
-    border-bottom: #ffffff67 2px solid;
+    border-bottom: #ffffff67 10px solid;
 
     background-color: inherit;
+}.GliderList{
+    user-select: none;
+    list-style-type: none;
+    padding-top: 3px;
+    padding-left: 20px;
+    padding-bottom: 5px;
+    border-left:rgba(172, 172, 172, 0.514) 2px dotted;
+    margin-top: 10px;
+    border-radius: 0px 5px 5px 0px;
+}.GliderList li{
+    padding: 3px;
+    cursor: pointer;
+    margin: 8px 0;
+    border-bottom: #e7e7e7 1px solid;
+    color: rgb(255, 255, 255);
+    border-radius: 0px 0px 0px 0px;
+    
+    transition: all .2s ease-in;
+}.GliderList li:hover{
+    background-color: #ffffff96;
+    border-radius: 0px 10px 10px 0px;
+    color: #000000;
+    font-weight: bolder;
+    transition: all 0.1s ease-in;
+    padding-left: 10px;
 }
 
 

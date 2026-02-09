@@ -30,7 +30,11 @@
             <h2>Files</h2>
             <details id="GliderDropDown">
                 <summary>Gliders</summary>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta aliquam cupiditate omnis distinctio, atque repellendus molestias fugiat architecto assumenda quasi aliquid perferendis dolorem voluptates optio aspernatur eos nihil asperiores eius.
+                    <ul class="GliderList" id="GliderList">
+                        <li>Glider 1</li>
+                        <li>Glider 2</li>
+                        <li>Glider 3</li>
+                    </ul>
             </details>
             <details id="ViewsDropDown">
                 <summary>Views</summary>
@@ -82,6 +86,23 @@
     const unitTest = require('./common/unitTest.js');
     const pathDep = require('./common/pathDep.js');
     const integrations = require('./common/integrations.js');
+    const fileHandle = require('./common/fileHandle.js');
+
+
+    allFiles = fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc');
+    console.log("All files in savedData folder:", allFiles);
+
+    // Add each file as a list item to GliderList
+    const Element_gliderList = document.getElementById('GliderList');
+    Element_gliderList.innerHTML = ''; // Clear existing items
+    allFiles.forEach(file => {
+        const li = document.createElement('li');
+        li.textContent = file;
+        li.addEventListener('click', () => {
+            console.log("Clicked on file:", file);
+        })
+        Element_gliderList.appendChild(li);
+    });
 
     
     integrations.callPyFunc('my_function', ['10', '20']).then(result => {
@@ -102,6 +123,8 @@
             document.getElementById("bannerButton1").textContent = this.files[0].name;
         }
     });
+
+    
 
     // const d = document.getElementById('tempdet');
     // d.open = true;
