@@ -15,7 +15,7 @@
     const basicFunctions = require('../../common/basicFunctions.js');
     import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
 
-    let pathlinker = '../../../../../Arctic_MidDecember'; 
+    let pathlinker = '../../../../../../../Arctic_MidDecember'; 
     
     async function getNcFileNames(dirPath) {
         const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
@@ -44,8 +44,15 @@
 
     // Then in your for loop:
     const fullData = [];
+    const varName = 'TEMP';
+    const dimName = 'DEPTH';
+    const maxFiles = 10; 
+
     for (const fileName of ncFileNames) {
         let arrayPosition = `${ncFileNames.indexOf(fileName)+1}/${ncFileNames.length}`
+        if (ncFileNames.indexOf(fileName) > maxFiles) {
+            break; // limit to 5 files for testing purposes
+        } 
         console.log(`[${arrayPosition}] + ${fileName} is being processed...`);
         
         const openTimeoutMs = 60000;
@@ -63,8 +70,8 @@
         console.log(`[${arrayPosition}] Size:`, size);
 
         const varTimeoutMs = basicFunctions.clamp(size * 60, 30000, 300000);
-        const varName = 'TEMP';
-        const dimName = 'DEPTH';
+        // const varName = 'TEMP';
+        // const dimName = 'DEPTH';
         const depthSize = dimensions.DEPTH ?? 0;
         const depthChunk = 200;
         let depthAll = [];
@@ -88,10 +95,113 @@
         fullData.push(tempByDepth);
     }
     console.log('Full aggregated data:', fullData);
+    renderChart();
 
-        </script>
+    // Init apacheEcharts graph (make it a line graph)
+
+    // We are going to use fullData in the graph, which is an array of objects like { DEPTH: [...], TEMP: [...] }
+    // follows the structure of an array, where each object is the following
+        // an object with TEMP and DEPTH keys, 
+        // where the value of DEPTH is an array of depth values, and the value of TEMP is an array of arrays, where each inner array contains TEMP values for a specific depth across all time steps in that file.
+
+    // for each dataset in fullData,
+        // Take the DEPTH key of the dataset, and use its values for the Y axis range
+        // Take the TEMP key, and use its values for the first time step for the x axis.
+
+    // Render chart when page loads
+    function renderChart() {
+        let container = document.getElementById('means-chart');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'means-chart';
+            container.style.width = '100%';
+            container.style.height = '600px';
+            document.body.appendChild(container);
+        }
+
+        const chartDom = document.getElementById('means-chart');
+        const myChart = echarts.init(chartDom);
+
+        const series = fullData.map((dataset, idx) => {
+            const depths = dataset.DEPTH || [];
+            const temps = dataset.TEMP || [];
+            const points = depths.map((d, i) => {
+                const tArr = temps[i] || [];
+                const t = (tArr && tArr.length > 0) ? tArr[0] : null;
+                return [t, d];
+            }).filter(p => p[0] !== null && Number.isFinite(p[0]) && Number.isFinite(p[1]));
+
+            return {
+                name: `dataset ${idx+1}`,
+                type: 'line',
+                showSymbol: false,
+                data: points,
+                smooth: true
+            };
+        });
+
+        const allDepths = fullData.flatMap(d => d.DEPTH || []);
+        const minDepth = allDepths.length ? Math.min(...allDepths) : 0;
+        const maxDepth = allDepths.length ? Math.max(...allDepths) : 0;
+
+            const option = {
+                title: {
+                    text: 'TEMP (first timestep) vs DEPTH',
+                    left: 'center',
+                    top: 10,
+                    textStyle: { fontSize: 14 }
+                },
+                tooltip: {
+                    // use axis trigger so axisPointer (crosshair) works across series
+                    trigger: 'axis',
+                    axisPointer: { 
+                        type: 'cross', 
+                        axis: 'y', 
+                        snap: true, 
+                        label: { 
+                        backgroundColor: '#666',
+                        color: '#fff'
+                        },
+                        crossStyle: {
+                        color: '#999'
+                        }
+                    },
+                    formatter: (params) => {
+                        if (Array.isArray(params)) {
+                            return params.map(p => {
+                                const col = p.color || '#000';
+                                const name = p.seriesName || '';
+                                return `<span style="color:${col}">${name}</span>: TEMP ${p.data[0]}<br/><span style="color:${col}">${name}</span> DEPTH ${p.data[1]}`;
+                            }).join('<br/>');
+                        }
+                        const d = params.data || [];
+                        return `TEMP: ${d[0]}<br/>DEPTH: ${d[1]}`;
+                    }
+                },
+                legend: { type: 'scroll', top: 40 },
+                // leave room for title + legend so they don't overlap the chart
+                grid: { top: 80, left: 60, right: 40, bottom: 60 },
+                // enable zooming/panning for both axes (inside and slider controls)
+                dataZoom: [
+                    { type: 'inside', xAxisIndex: 0 },
+                    { type: 'inside', yAxisIndex: 0 },
+                    { type: 'slider', xAxisIndex: 0, bottom: 10 },
+                    { type: 'slider', yAxisIndex: 0, right: 10 }
+                ],
+                xAxis: { type: 'value', name: 'TEMP' },
+                yAxis: { type: 'value', name: 'DEPTH', min: minDepth, max: maxDepth, inverse: true },
+                series
+            };
+
+            myChart.setOption(option);
+            window.addEventListener('resize', () => myChart.resize());
+        }
+
+    </script>
 </head>
 <body>
     <h1>TEST</h1>
+
+    <div class="view" id="means-chart" style="width: 100%; height: 500px;"></div>
 </body>
 </html>
