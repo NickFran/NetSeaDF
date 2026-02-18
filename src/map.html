@@ -3,8 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Document</title>
+    <link rel="stylesheet" href="./style/style.css">
+    <link rel="stylesheet" href="./style/minibanner.css">
+    <link rel="stylesheet" href="./style/sidebar.css">
+    <title>SavV</title>
+
+    <!-- MODULES -->
+    <script>
+        const path = require('path');
+        const fs = require('fs');
+
+        const logging = require('./common/logging.js');
+        const timendate = require('./common/timendate.js');
+        const unitTest = require('./common/unitTest.js');
+        const pathDep = require('./common/pathDep.js');
+        const integrations = require('./common/integrations.js');
+        const fileHandle = require('./common/fileHandle.js');
+    </script>
+
+    <!-- VARIABLES -->
+    <script>
+        let allFiles = fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc');
+        let isMultiSelect = false; // Track multi-select state
+        let selectedFiles = new Set();
+   </script>
+
+    <!-- FUNCTIONS -->
+     <script>
+        
+    // Helper function to populate file list
+    function populateGliderList() {
+        // get the folder that the data is in
+        const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+        
+        // get the gliderList element
+        const Element_gliderList = document.getElementById('GliderList');
+        
+        // get all files
+        allFiles = fileHandle.listSavedDataFiles(savedDataPath, '.nc');
+        
+        // default to nothing
+        Element_gliderList.innerHTML = '';
+        
+        // for each file, add it to the list
+        allFiles.forEach(file => {
+            const li = document.createElement('li'); // create a new element
+            li.textContent = file; // set its name to the file name
+            li.addEventListener('click', () => { 
+                if (event.shiftKey){
+                    console.log("Shift key was held during click - multi-select not implemented yet")
+                    isMultiSelect = true;
+                    selectedFiles.add(file);
+                } else {
+                    console.log("Shift key was not held during click - opening file normally")
+                    isMultiSelect = false;
+                    selectedFiles = new Set([file]);
+                }
+
+                console.log("Selected files:", Array.from(selectedFiles));
+                if (isMultiSelect){
+                    console.log("Multi-select mode is on");
+                    // SHOW POPUP FOR MULTI-VIEWING
+                }else{
+                    // SHOW NORMALLY
+                }
+
+                // Reset all li backgrounds first
+                document.querySelectorAll('.GliderList li').forEach(item => {
+                    item.style.backgroundColor = '';
+                });
+
+                // Show the temp class (DELETE button)
+                document.querySelector('.temp').style.display = 'block';
+                
+                // Set clicked li background
+                li.style.backgroundColor = '#4a90e2';
+                
+                const thisFilePath = path.join(savedDataPath, file);
+                console.log("Activating file:", thisFilePath);
+                
+                // Display dataset info from JSON
+                displayDatasetInfo(file);
+
+                integrations.callPyFunc('open', [thisFilePath]).then(result => {
+                    x = result;
+                    console.log("Result from Python function:", x);
+                }).catch(error => {
+                    console.error("Error calling Python function:", error);
+                });
+            })
+            // append it as a child to the element
+            Element_gliderList.appendChild(li);
+        });
+    }
+
+    // Helper function to save dataset info to simpleData.json
+    function saveDatasetToJSON(fileName, dimensions, variables, overview, coords, attributes) {
+        const simpleDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+        const jsonPath = path.join(simpleDataPath, 'simpleData.json');
+        let coordPairs = [];
+
+        for (i = 0; i < coords[0].length; i++) {
+            const lat = coords[0][i] !== undefined ? coords[0][i] : 'N/A';
+            const lon = coords[1][i] !== undefined ? coords[1][i] : 'N/A';
+            coordPairs.push({ lat, lon });
+        }
+        
+        try {
+            let existingData = [];
+            if (fs.existsSync(jsonPath)) {
+                const fileContent = fs.readFileSync(jsonPath, 'utf-8');
+                if (fileContent.trim()) {  // Only parse if file is not empty
+                    existingData = JSON.parse(fileContent);
+                }
+            }
+            
+            const newEntry = {
+                "id": Date.now().toString(),
+                "fileName": fileName,
+                "attributes": attributes,
+                "summary": overview.attributes?.summary || "No Overview available",
+                "dims": Object.keys(dimensions),
+                "vars": variables,
+                "coords": coordPairs
+            };
+            
+            existingData.push(newEntry);
+            fs.writeFileSync(jsonPath, JSON.stringify(existingData, null, 2));
+            console.log("Data saved to simpleData.json");
+        } catch (error) {
+            console.error("Error saving to simpleData.json:", error);
+        }
+    }
+
+    // Helper function to display dataset info in the card
+function displayDatasetInfo(fileName) {
+    const simpleDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+    const jsonPath = path.join(simpleDataPath, 'simpleData.json');
+    document.getElementById('dataFileHeader').textContent = `${fileName}`;
+    
+    try {
+        const fileContent = fs.readFileSync(jsonPath, 'utf-8');
+        if (!fileContent.trim()) {
+            console.error("simpleData.json is empty");
+            return;
+        }
+        
+        const allData = JSON.parse(fileContent);
+        const dataset = allData.find(item => item.fileName === fileName);
+        
+        if (!dataset) {
+            console.error("Dataset not found:", fileName);
+            return;
+        }
+        
+        // Clear existing content
+        const cardWrapper = document.getElementById('datasetInfoCardWrapper');
+        cardWrapper.innerHTML = '';
+        
+        // Create a list
+        const ul = document.createElement('ul');
+        
+        // Helper function to create nested list items
+        function addToList(parent, key, value) {
+            const li = document.createElement('li');
+            li.textContent = key;
+            li.style.wordWrap = 'break-word';
+            
+            if (Array.isArray(value)) {
+                // Create nested list for array items (even if empty)
+                const subUl = document.createElement('ul');
+                if (value.length > 0) {
+                    // Special handling for coords
+                    if (key === 'coords' && value.length > 0) {
+                        const first = value[0];
+                        if (first && typeof first === 'object' && ('lat' in first || 'lon' in first)) {
+                            value.forEach((coord, index) => {
+                                const indexLi = document.createElement('li');
+                                indexLi.textContent = `[${index}]`;
+
+                                const coordUl = document.createElement('ul');
+                                const coordLi_Lat = document.createElement('li');
+                                const coordLi_Lon = document.createElement('li');
+                                const lat = coord?.lat !== undefined ? coord.lat : 'N/A';
+                                const lon = coord?.lon !== undefined ? coord.lon : 'N/A';
+                                coordLi_Lat.textContent = `Lat: ${lat}`;
+                                coordLi_Lon.textContent = `Lon: ${lon}`;
+                                coordUl.appendChild(coordLi_Lat);
+                                coordUl.appendChild(coordLi_Lon);
+
+                                indexLi.appendChild(coordUl);
+                                subUl.appendChild(indexLi);
+                            });
+                        } else {
+                            const midpoint = Math.ceil(value.length / 2);
+                            const lats = value.slice(0, midpoint);
+                            const lons = value.slice(midpoint);
+                            
+                            // Handle case where lats and lons have different lengths
+                            const maxLen = Math.max(lats.length, lons.length);
+                            for (let i = 0; i < maxLen; i++) {
+                                const indexLi = document.createElement('li');
+                                indexLi.textContent = `[${i}]`;
+
+                                const coordUl = document.createElement('ul');
+                                const coordLi = document.createElement('li');
+                                const lat = lats[i] !== undefined ? lats[i] : 'N/A';
+                                const lon = lons[i] !== undefined ? lons[i] : 'N/A';
+                                coordLi.textContent = `Lat: ${lat}, Lon: ${lon}`;
+                                coordUl.appendChild(coordLi);
+
+                                indexLi.appendChild(coordUl);
+                                subUl.appendChild(indexLi);
+                            }
+                        }
+                    } else {
+                        value.forEach((item, index) => {
+                            const subLi = document.createElement('li');
+                            subLi.textContent = `[${index}]: ${item}`;
+                            subUl.appendChild(subLi);
+                        });
+                    }
+                } else {
+                    const subLi = document.createElement('li');
+                    subLi.textContent = '(empty)';
+                    subUl.appendChild(subLi);
+                }
+                li.appendChild(subUl);
+            } else if (typeof value === 'object' && value !== null) {
+                // Create nested list for objects
+                const subUl = document.createElement('ul');
+                Object.entries(value).forEach(([objKey, objValue]) => {
+                    const subLi = document.createElement('li');
+                    subLi.textContent = `${objKey}: ${objValue}`;
+                    subUl.appendChild(subLi);
+                });
+                li.appendChild(subUl);
+            } else {
+                // Create nested list for simple values
+                const subUl = document.createElement('ul');
+                const subLi = document.createElement('li');
+                subLi.textContent = value;
+                subUl.appendChild(subLi);
+                li.appendChild(subUl);
+            }
+            
+            parent.appendChild(li);
+        }
+        
+        // Populate with dataset info
+        Object.entries(dataset).forEach(([key, value]) => {
+            addToList(ul, key, value);
+        });
+        
+        cardWrapper.appendChild(ul);
+        console.log("Dataset info displayed:", dataset);
+    } catch (error) {
+        console.error("Error displaying dataset info:", error);
+    }
+}
+     </script>
 </head>
 <body>
     <div class="minibanner" id="minibanner">
@@ -40,32 +298,15 @@
                 <summary>Views</summary>
                     Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta aliquam cupiditate omnis distinctio, atque repellendus molestias fugiat architecto assumenda quasi aliquid perferendis dolorem voluptates optio aspernatur eos nihil asperiores eius.
             </details>
+            <div class="temp">DELETE</div>
         </div>
     </div>
 
     <div class="main" id="main">
         <div class="mapPage">        
             <div class="card">
-                
-                <div class="cardWrapper">
-                    <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
-                                        <p id="widthy">Width:</p>
-                    <p id="heighty">Height:</p>
+                <div class="dataFileHeader" id="dataFileHeader">(Click on a data file to view)</div>
+                <div class="cardWrapper" id="datasetInfoCardWrapper">
                 </div>
             </div>
             <div class="card"></div>
@@ -81,37 +322,8 @@
     </div>
 </body>
 <script>
-    const logging = require('./common/logging.js');
-    const timendate = require('./common/timendate.js');
-    const unitTest = require('./common/unitTest.js');
-    const pathDep = require('./common/pathDep.js');
-    const integrations = require('./common/integrations.js');
-    const fileHandle = require('./common/fileHandle.js');
-
-
-    allFiles = fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc');
-    console.log("All files in savedData folder:", allFiles);
-
-    // Add each file as a list item to GliderList
-    const Element_gliderList = document.getElementById('GliderList');
-    Element_gliderList.innerHTML = ''; // Clear existing items
-    allFiles.forEach(file => {
-        const li = document.createElement('li');
-        li.textContent = file;
-        li.addEventListener('click', () => {
-            console.log("Clicked on file:", file);
-        })
-        Element_gliderList.appendChild(li);
-    });
-
-    
-    integrations.callPyFunc('my_function', ['10', '20']).then(result => {
-        x = result;
-        console.log("Result from Python function:", x);
-    }).catch(error => {
-        console.error("Error calling Python function:", error);
-    });
-
+    // Initial load
+    populateGliderList();
 
     
     document.getElementById("bannerButton1").addEventListener("click", function() {
@@ -119,16 +331,49 @@
     });
     
     document.getElementById("avatar").addEventListener("change", function() {
-        if (this.files.length > 0) {
-            document.getElementById("bannerButton1").textContent = this.files[0].name;
-        }
-    });
+    if (this.files.length > 0) {
+        const file = this.files[0];
+        const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const destPath = path.join(savedDataPath, file.name);
+                fs.writeFileSync(destPath, Buffer.from(e.target.result));
+                console.log("New File copied to savedData:", destPath);
 
-    
+                integrations.callPyFunc('open', [destPath]).then(result => {
+                    console.log("New File Loaded into memory");
 
-    // const d = document.getElementById('tempdet');
-    // d.open = true;
+                    Promise.all([
+                        integrations.callPyFunc('getOverview'),
+                        integrations.callPyFunc('getDimensions'),
+                        integrations.callPyFunc('getVariables'),
+                        integrations.callPyFunc('getCoords')
+                    ]).then(([overview, dimensions, variables, coords]) => {
+                        console.log("Dimensions:", dimensions);
+                        console.log("Variables:", variables);
+                        console.log("Overview:", overview);
+                        console.log("Coordinates:", coords);
+                        
+                        // Save all data to JSON
+                        saveDatasetToJSON(file.name, dimensions, variables, overview, coords, overview.attributes);
+                        
+                        populateGliderList();
+                    }).catch(error => {
+                        console.error("Error gathering dataset info:", error);
+                    });
 
+                }).catch(error => {
+                    console.error("Error calling Python function:", error);
+                });
+            } catch (err) {
+                console.error("Error saving file:", err);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+});
 
     // document.getElementById("mappy").src = pathDep.fromHereToRoot(__dirname) + "/src/media/temppic.png";
     // document.getElementById("titleThingy").textContent = "HTML parent folder: " + pathDep.getCurrentFolderName(__dirname);

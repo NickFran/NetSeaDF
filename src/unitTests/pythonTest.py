@@ -248,6 +248,7 @@ functions = {
     "bulkSSPFile": bulkSSPFile,
     "getValuesAtDimIndex": getValuesAtDimIndex,
     "getVarsGroupedByDepth": getVarsGroupedByDepth,
+    "getDataset": getDataset
 }
 
 functions.update({
@@ -289,7 +290,3 @@ print(list(ds.data_vars['TEMP'])) # JSON
 
 
 
-def makeAveragedArrayOfTEMPValues(allTimeInstances_TEMPArrays):
-    firstTimeTEMPArray = allTimeInstances_TEMPValues[0]
-    secondTimeTEMPArray = allTimeInstances_TEMPValues[1]
-    thirdTimeTEMPArray = allTimeInstances_TEMPValues[2]

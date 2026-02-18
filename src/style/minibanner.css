@@ -1,0 +1,22 @@
+.minibanner .wrapper {
+    background-color: inherit;
+    display: flex;
+    justify-content: center;
+    height: 100%;
+
+    align-items: center;
+}.mapModeButton, .viewModeButton{
+    border: 1px solid #000000;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor:pointer;
+    text-align: center;
+    width: 30%;
+}.mapModeButton{
+    background-color: #007bff;
+    color: white;
+    margin-right: 10px;
+}.viewModeButton{
+    background-color: #e7e7e7;
+    color: rgb(0, 0, 0);
+}

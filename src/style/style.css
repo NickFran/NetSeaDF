@@ -45,8 +45,8 @@ body {
     box-sizing: border-box;
     display: grid;
 
-    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr 1fr; 
-    grid-template-rows: 0.1fr; 
+    grid-template-columns: 1.7fr 1fr 1fr 1fr 1fr 1fr 1fr; 
+    grid-template-rows: 0.15fr; 
     grid-template-areas: 
     "card1 card1     card2 card2 card2 card2 card2"
     "card1 card1     card2 card2 card2 card2 card2"
@@ -64,7 +64,7 @@ body {
     box-sizing: border-box;
     display: none;
 
-    grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr 1fr 1fr; 
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1fr 1fr; 
     grid-template-rows: 0.1fr; 
     grid-template-areas: 
     "card1 card1     card2 card2 card2 card2 card2"
@@ -78,6 +78,8 @@ body {
 
 .card {
     background-color: rgba(255, 255, 255, 0.473);
+    display: flex;
+    flex-direction: column;
     /*
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(1, 1, 1, 0.5);
@@ -103,28 +105,7 @@ body {
 }
 
 
-.minibanner .wrapper {
-    background-color: inherit;
-    display: flex;
-    justify-content: center;
-    height: 100%;
 
-    align-items: center;
-}.mapModeButton, .viewModeButton{
-    border: 1px solid #000000;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor:pointer;
-    text-align: center;
-    width: 30%;
-}.mapModeButton{
-    background-color: #007bff;
-    color: white;
-    margin-right: 10px;
-}.viewModeButton{
-    background-color: #e7e7e7;
-    color: rgb(0, 0, 0);
-}
 
 
 .banner .wrapper{
@@ -167,56 +148,7 @@ body {
 }
 */
 
-.sidebar .wrapper {
-    background-color: inherit;
-    display: flex;
-    flex-direction: column;
-    padding: 15px;
-}.sidebar .wrapper h2{
-    color: white;
-    text-align: center;
-    margin-bottom: 15px;
-}.sidebar .wrapper summary{
-    font-size: large;
-    font-weight: bold;
-    cursor: pointer;
-    background-color: inherit;
-    user-select: none;
-}#GliderDropDown, #ViewsDropDown{
-    color: white;
-    padding: 5px;
-    border-radius: 5px;
-    margin-bottom: 10px;
 
-    border-bottom: #ffffff67 10px solid;
-
-    background-color: inherit;
-}.GliderList{
-    user-select: none;
-    list-style-type: none;
-    padding-top: 3px;
-    padding-left: 20px;
-    padding-bottom: 5px;
-    border-left:rgba(172, 172, 172, 0.514) 2px dotted;
-    margin-top: 10px;
-    border-radius: 0px 5px 5px 0px;
-}.GliderList li{
-    padding: 3px;
-    cursor: pointer;
-    margin: 8px 0;
-    border-bottom: #e7e7e7 1px solid;
-    color: rgb(255, 255, 255);
-    border-radius: 0px 0px 0px 0px;
-    
-    transition: all .2s ease-in;
-}.GliderList li:hover{
-    background-color: #ffffff96;
-    border-radius: 0px 10px 10px 0px;
-    color: #000000;
-    font-weight: bolder;
-    transition: all 0.1s ease-in;
-    padding-left: 10px;
-}
 
 
 .card:nth-child(1) {
@@ -239,5 +171,40 @@ body {
     */
 
 }
+#datasetInfoCardWrapper ul {
+    list-style-type: disc;
+    margin-left: 20px;
+}
+
+#datasetInfoCardWrapper li {
+    margin: 5px 0;
+    margin-left: 10px;
+    color: #000000;
+    font-size: 20px;
+}
+
+#datasetInfoCardWrapper ul ul {
+    list-style-type: circle;
+    margin-left: 40px;
+}
+#dataFileHeader {
+    margin-top: 2px;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    color: #000000;
+    
+    padding: 10px;
+    border-radius: 10px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+    border-bottom: #2437442a 5px solid;
+
+    /* Use this as default
+    position: absolute; 
+    */
+
+}
+
 
 

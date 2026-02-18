@@ -14,3 +14,9 @@
   
 * Upon impiorting file, use xarray to get what we need, then store the results in a JSON object within a gliders.json file with nameID of object set the same name as file.
   * when file it clicked, get its name and look it up in the JSON, find the match and thats how we get what we need for basic info, but it eneds to be loaded into JSON at import, not each click.
+
+* Echarts is not utilized locally and is referencing a network resource
+
+* Make delete dataset button be at teh bottom of the sidebar
+
+* Change display info backt to JSON so that objects can be used instead of just simple text

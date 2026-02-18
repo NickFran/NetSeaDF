@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <script type="module">
+    </script>
+
+<script type="module">
+    const path = require('node:path');
+    const fs = require('node:fs');
+    const integrations = require('../../common/integrations.js');
+    const basicFunctions = require('../../common/basicFunctions.js');
+    import * as echarts from 'https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.esm.js';
+
+    let pathlinker = '../../../../../Arctic_MidDecember'; 
+    
+    async function getNcFileNames(dirPath) {
+        const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        return entries
+            .filter((entry) => entry.isFile() && path.extname(entry.name).toLowerCase() === '.nc')
+            .map((entry) => entry.name);
+    }
+
+    const ncFileNames = await getNcFileNames(path.resolve(__dirname, pathlinker));
+    console.log('Aggregated files', ncFileNames);
+    console.log('Total files:', ncFileNames.length);
+
+
+    const data = {
+        'DEPTH':[],
+        'TEMP':[],  // TEMP[depthIndex] = all TEMP values from all files at that depth
+        'PSAL':[]   // PSAL[depthIndex] = all PSAL values from all files at that depth
+    }
+
+    let depthCoords = null;
+
+    // Add this helper function at the top of your script
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Then in your for loop:
+    const fullData = [];
+    for (const fileName of ncFileNames) {
+        let arrayPosition = `${ncFileNames.indexOf(fileName)+1}/${ncFileNames.length}`
+        console.log(`[${arrayPosition}] + ${fileName} is being processed...`);
+        
+        const openTimeoutMs = 60000;
+        await integrations.callPyFunc("open", path.resolve(__dirname, pathlinker, fileName), { timeoutMs: openTimeoutMs });
+        
+        const dimensions = await integrations.callPyFunc("getDimensions", [], { timeoutMs: 30000 });
+        const size = Object.values(dimensions).reduce((a, b) => a * b, 1);
+        // if (size > 10000){
+        //     console.log(`[${arrayPosition}] Skipping file because it is too big...`);
+        //     continue;
+        // }
+        await delay(basicFunctions.clamp(size*0.05, 50, 1000)); // 1000ms = 1 second
+        
+        console.log(`[${arrayPosition}] Dimensions:`, dimensions);
+        console.log(`[${arrayPosition}] Size:`, size);
+
+        const varTimeoutMs = basicFunctions.clamp(size * 60, 30000, 300000);
+        const varName = 'TEMP';
+        const dimName = 'DEPTH';
+        const depthSize = dimensions.DEPTH ?? 0;
+        const depthChunk = 200;
+        let depthAll = [];
+        let valuesAll = [];
+
+        // build up both arrays in chunks to avoid memory issues and long processing times
+        for (let start = 0; start < depthSize; start += depthChunk) {
+            const end = Math.min(start + depthChunk, depthSize);
+            const chunk = await integrations.callPyFunc(
+                'getVariableByDimension',
+                [varName, dimName, true, false, start, end],
+                { timeoutMs: varTimeoutMs }
+            );
+            depthAll = depthAll.concat(chunk.DEPTH);
+            valuesAll = valuesAll.concat(chunk[varName]); // each index is [time0..time5]
+        }
+
+        const tempByDepth = { [dimName]: depthAll, [varName]: valuesAll };
+        console.log(`[${arrayPosition}] ${varName} by ${dimName}:`, tempByDepth);
+
+        fullData.push(tempByDepth);
+    }
+    console.log('Full aggregated data:', fullData);
+
+        </script>
+</head>
+<body>
+    <h1>TEST</h1>
+</body>
+</html>
