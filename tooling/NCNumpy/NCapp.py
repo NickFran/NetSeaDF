@@ -264,7 +264,68 @@ def SSPPlot():
 		ncnp.XYPlot(SSPArrayData, Z_ArrayData, invert_yaxis=False, title=combinedTitle, XYLabel=["SSP", "Z"])
 
 def SSPPlot_Multi():
-	print("WIP")
+	global targetFiles
+	dsArr = []
+	XYPairArr = []
+
+	for fileName in targetFiles:
+		dsArr.append(xr.open_dataset(os.path.join(choosenPath, fileName), engine='netcdf4'))
+		if len(dsArr) > 25:
+			print("Multi-Plot has a current max of 25 datasets, you have hit the limit")
+			break
+
+	for i, ds in enumerate(dsArr):
+		if ncnp.hasPSAL(ds):
+			SA_ArrayData = []
+			CT_ArrayData = []
+			Z_ArrayData = []
+			SSPArrayData = []
+
+			Coords_ArrayData = []
+			coordPairs = []
+
+			TEMP_ArrayData = ncnp.getAllVarValues(ds, manualInput=True, manualVarName="TEMP")
+			PSAL_ArrayData = ncnp.getAllVarValues(ds, manualInput=True, manualVarName="PSAL")
+			PRES_ArrayData = ncnp.getAllVarValues(ds, manualInput=True, manualVarName="PRES")
+			Coords_ArrayData = ncnp.getCoords(ds)
+			coordPairs = [Coords_ArrayData[0][0], Coords_ArrayData[1][0]]
+
+			for i in range(0, len(PRES_ArrayData)):
+				SA_ArrayData.append(
+					gsw.SA_from_SP(
+						PSAL_ArrayData[i],
+						PRES_ArrayData[i],
+						coordPairs[0],
+						coordPairs[1]
+						))
+				CT_ArrayData.append(
+					gsw.CT_from_t(
+						SA_ArrayData[i],
+						TEMP_ArrayData[i],
+						PRES_ArrayData[i]
+						))
+				SSPArrayData.append(
+					gsw.sound_speed(
+						SA_ArrayData[i],
+						CT_ArrayData[i],
+						PRES_ArrayData[i]
+						))
+				Z_ArrayData.append(
+					gsw.z_from_p(
+						PRES_ArrayData[i],
+						coordPairs[0]
+						))
+				
+			XYPairArr.append(
+				[
+					SSPArrayData,
+					Z_ArrayData
+				]
+			)
+		else:
+			print(f"Index {i}, No PSAL")
+
+	ncnp.XYPlot_Multi(XYPairArr, xlabel="SSP", ylabel="Z", title="SSP & Z", invert_yaxis=False)
 
 operations = {
 	0:{"Name": "Exit", 

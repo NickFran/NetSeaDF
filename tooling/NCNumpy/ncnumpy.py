@@ -175,6 +175,17 @@ def getCoords(ds: xr.Dataset):
     
     return (lats, lons)
 
+def hasPSAL(ds: xr.Dataset) -> bool:
+    """Check if an xarray Dataset has a PSAL variable.
+
+    Returns True if the dataset contains a PSAL variable, False otherwise.
+    Raises TypeError if `ds` is not an `xarray.Dataset`.
+    """
+    if not isinstance(ds, xr.Dataset):
+        raise TypeError(f"hasPSAL expects an xarray.Dataset, got {type(ds)!r}")
+    
+    return 'PSAL' in ds.data_vars or 'PSAL' in ds
+
 if __name__ == '__main__':
     testNumber = 3
 
