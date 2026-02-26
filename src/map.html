@@ -32,7 +32,7 @@
      <script>
         
     // Helper function to populate file list
-    function populateGliderList() {
+    function populateGliderSidebar() {
         // get the folder that the data is in
         const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
         
@@ -103,18 +103,25 @@
         const jsonPath = path.join(simpleDataPath, 'simpleData.json');
         let coordPairs = [];
 
+        // For each lat instance in lats array,
         for (i = 0; i < coords[0].length; i++) {
+            // init let & lon, and set to value of index.
+            // but if the value is undefined, default to N/A
             const lat = coords[0][i] !== undefined ? coords[0][i] : 'N/A';
             const lon = coords[1][i] !== undefined ? coords[1][i] : 'N/A';
+
+            // append coord pair to coordPairs array
             coordPairs.push({ lat, lon });
         }
         
+        // try to do the rest,
         try {
-            let existingData = [];
-            if (fs.existsSync(jsonPath)) {
+            let existingJSONData = [];
+            // Does JSON file exist?
+            if (fileHandle.doesFileAlreadyExist(jsonPath)) {
                 const fileContent = fs.readFileSync(jsonPath, 'utf-8');
                 if (fileContent.trim()) {  // Only parse if file is not empty
-                    existingData = JSON.parse(fileContent);
+                    existingJSONData = JSON.parse(fileContent);
                 }
             }
             
@@ -123,13 +130,14 @@
                 "fileName": fileName,
                 "attributes": attributes,
                 "summary": overview.attributes?.summary || "No Overview available",
-                "dims": Object.keys(dimensions),
+                "dims": dimensions,
                 "vars": variables,
                 "coords": coordPairs
             };
             
-            existingData.push(newEntry);
-            fs.writeFileSync(jsonPath, JSON.stringify(existingData, null, 2));
+            // add new entry to existing data, and write to JSON file
+            existingJSONData.push(newEntry);
+            fs.writeFileSync(jsonPath, JSON.stringify(existingJSONData, null, 2));
             console.log("Data saved to simpleData.json");
         } catch (error) {
             console.error("Error saving to simpleData.json:", error);
@@ -150,7 +158,10 @@ function displayDatasetInfo(fileName) {
         }
         
         const allData = JSON.parse(fileContent);
+
+        // Find the dataset that matches the clicked file name
         const dataset = allData.find(item => item.fileName === fileName);
+        console.log("Dataset found for display:", dataset);
         
         if (!dataset) {
             console.error("Dataset not found:", fileName);
@@ -161,7 +172,7 @@ function displayDatasetInfo(fileName) {
         const cardWrapper = document.getElementById('datasetInfoCardWrapper');
         cardWrapper.innerHTML = '';
         
-        // Create a list
+        // Create a list (using new ul)
         const ul = document.createElement('ul');
         
         // Helper function to create nested list items
@@ -170,6 +181,7 @@ function displayDatasetInfo(fileName) {
             li.textContent = key;
             li.style.wordWrap = 'break-word';
             
+            // If the value is an array, create a nested list for its items
             if (Array.isArray(value)) {
                 // Create nested list for array items (even if empty)
                 const subUl = document.createElement('ul');
@@ -239,6 +251,8 @@ function displayDatasetInfo(fileName) {
                     subUl.appendChild(subLi);
                 });
                 li.appendChild(subUl);
+                
+            // If its not an array or object, just display the value
             } else {
                 // Create nested list for simple values
                 const subUl = document.createElement('ul');
@@ -254,6 +268,7 @@ function displayDatasetInfo(fileName) {
         // Populate with dataset info
         Object.entries(dataset).forEach(([key, value]) => {
             addToList(ul, key, value);
+            console.log(`Added to list - ${key}:`, value);
         });
         
         cardWrapper.appendChild(ul);
@@ -323,13 +338,13 @@ function displayDatasetInfo(fileName) {
 </body>
 <script>
     // Initial load
-    populateGliderList();
-
+    populateGliderSidebar();
     
     document.getElementById("bannerButton1").addEventListener("click", function() {
         document.getElementById("avatar").click();
     });
     
+    // File inputed (added)
     document.getElementById("avatar").addEventListener("change", function() {
     if (this.files.length > 0) {
         const file = this.files[0];
@@ -359,7 +374,7 @@ function displayDatasetInfo(fileName) {
                         // Save all data to JSON
                         saveDatasetToJSON(file.name, dimensions, variables, overview, coords, overview.attributes);
                         
-                        populateGliderList();
+                        populateGliderSidebar();
                     }).catch(error => {
                         console.error("Error gathering dataset info:", error);
                     });
@@ -385,5 +400,9 @@ function displayDatasetInfo(fileName) {
     // More Secure
     // window.api.testMessageThing();
     
+</script>
+<script>
+    let x = fileHandle.doesFileAlreadyExist();
+    console.log("Files in savedData:", x);
 </script>
 </html>

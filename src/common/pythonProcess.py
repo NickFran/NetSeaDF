@@ -50,7 +50,7 @@ def getCoords():
 
     latpossibilities = ['lat', 'latitude', 'LATITUDE', 'LAT']
     foundLats = []
-    longpossibilities = ['long', 'longitude', 'LONGITUDE', 'LONG', 'LON']
+    longpossibilities = ['long', 'longitude', 'LONGITUDE', 'LONG', 'LON', 'lon']
     foundLongs = []
 
     for coordName in coordPossibilities:

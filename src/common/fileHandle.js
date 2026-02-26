@@ -1,8 +1,17 @@
 const fs = require('fs');
 const path = require('path');
+const pathDep = require('./pathDep');
 
-function doesFileAlreadyExist() {
-    return false;
+const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+
+function doesFileAlreadyExist(pathToFile) {
+    /**
+     * Checks if a file already exists at the specified path.
+     * 
+     * @param {string} pathToFile - The full path to the file we want to check.
+     * @returns {boolean} - True if the file exists, false otherwise.
+     */
+    return fs.existsSync(pathToFile);
 }
 
 // Copy file to savedData directory

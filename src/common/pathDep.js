@@ -28,6 +28,14 @@ function getCurrentFolderPath(dirname) {
 
 // Expects Folder as input, uses it to find its corresponding sublevel.
 function fromHereToRoot(dirname) {
+    /**
+     * How many .. do we need to get from the current folder to root?
+     * Using the current directory, go backwards in the directory the exact amount to get the root.
+     * 
+     * @param {string} dirname - The __dirname variable from the file calling this function.
+     * @returns {string} - The path from the current folder to root (e.g. "../../..").
+     */
+
     // One of these per level from root
     let localPathObject = '..'
 
@@ -49,6 +57,16 @@ function fromHereToRoot(dirname) {
 }
 
 function resolveToProperDataPath(dirname, folderName) {
+    /**
+     * Using the current directory, and the folder name we want,
+     * This function will build the proper path to the folder,
+     * automatically resolving the path based on whether we're in development or production mode.
+     * 
+     * @param {string} dirname - The __dirname variable from the file calling this function.
+     * @param {string} folderName - The name of the folder we want to resolve to (e.g. "logs" or "savedData").
+     * @returns {string} - The resolved path to the specified folder (adjusted for dev/prod mode).
+     */
+
     // Electron Method to check dev/prod status of the app
     // Since we're in renderer process, we can't access app directly
     // For now, assume development mode (savedData in root, not in dist)

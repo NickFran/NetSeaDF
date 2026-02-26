@@ -28,6 +28,7 @@
     console.log('Aggregated files', ncFileNames);
     console.log('Total files:', ncFileNames.length);
 
+    
 
     const data = {
         'DEPTH':[],
@@ -46,7 +47,7 @@
     const fullData = [];
     const varName = 'TEMP';
     const dimName = 'DEPTH';
-    const maxFiles = 10; 
+    const maxFiles = 25; 
 
     for (const fileName of ncFileNames) {
         let arrayPosition = `${ncFileNames.indexOf(fileName)+1}/${ncFileNames.length}`

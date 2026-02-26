@@ -20,3 +20,9 @@
 * Make delete dataset button be at teh bottom of the sidebar
 
 * Change display info backt to JSON so that objects can be used instead of just simple text
+
+* PythonProcess getOverview() is not using our custom functions, change this at some point.
+
+* BUG Loading NC file from disk causes timeout
+* map.html, loading NC file has multi promise, it seems like getOverview is the only thing thats needed?
+* Yea, overview is completely useless, we only ever get arrt from it, so just use arrt
