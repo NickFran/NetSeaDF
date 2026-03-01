@@ -55,7 +55,7 @@ function callPyFunc(funcName, args = [], options = {}) {
 
         const safeArgs = Array.isArray(args) ? args : [args];
         ensurePyProc();
-        const timeoutMs = typeof options.timeoutMs === 'number' ? options.timeoutMs : 10000;
+        const timeoutMs = typeof options.timeoutMs === 'number' ? options.timeoutMs : 30000;
 
         const timeoutId = setTimeout(() => {
             const idx = pending.indexOf(handler);
@@ -63,7 +63,10 @@ function callPyFunc(funcName, args = [], options = {}) {
             reject(new Error(`Timeout waiting for Python response: ${funcName}(${JSON.stringify(safeArgs)})`));
         }, timeoutMs);
         
-        const handler = { resolve, reject };
+        const handler = {
+            resolve: (v) => { clearTimeout(timeoutId); resolve(v); },
+            reject:  (e) => { clearTimeout(timeoutId); reject(e); }
+        };
         pending.push(handler);
         
         const req = JSON.stringify({ cmd: funcName, args: safeArgs });

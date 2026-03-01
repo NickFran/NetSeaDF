@@ -1,0 +1,6 @@
+
+# whether to use an LRU cache for file handles. If true, the system will keep recently accessed files open in memory incase they are accessed frequently.
+UseLRUCache: false
+
+# The max number of files to cache in memory. Set to 0 to disable file caching.
+MaxFileCache: 5

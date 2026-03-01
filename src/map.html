@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="./style/style.css">
     <link rel="stylesheet" href="./style/minibanner.css">
     <link rel="stylesheet" href="./style/sidebar.css">
+    <link rel="stylesheet" href="./style/style.css">
     <title>SavV</title>
 
     <!-- MODULES -->
@@ -19,88 +19,40 @@
         const pathDep = require('./common/pathDep.js');
         const integrations = require('./common/integrations.js');
         const fileHandle = require('./common/fileHandle.js');
+        const DOM = require('./common/DOM.js');
     </script>
 
     <!-- VARIABLES -->
     <script>
-        let allFiles = fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc');
-        let isMultiSelect = false; // Track multi-select state
-        let selectedFiles = new Set();
+        // State object for DOM functions
+        const appState = {
+            allFiles: fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc'),
+            isMultiSelect: false,
+            selectedFiles: new Set()
+        };
+        
+        // Dependencies object for DOM functions
+        const ModuleDependencies={
+            "DOM":
+                {
+                pathDep,
+                fileHandle,
+                integrations
+                }
+        };
    </script>
 
     <!-- FUNCTIONS -->
      <script>
         
     // Helper function to populate file list
-    function populateGliderSidebar() {
-        // get the folder that the data is in
-        const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
-        
-        // get the gliderList element
-        const Element_gliderList = document.getElementById('GliderList');
-        
-        // get all files
-        allFiles = fileHandle.listSavedDataFiles(savedDataPath, '.nc');
-        
-        // default to nothing
-        Element_gliderList.innerHTML = '';
-        
-        // for each file, add it to the list
-        allFiles.forEach(file => {
-            const li = document.createElement('li'); // create a new element
-            li.textContent = file; // set its name to the file name
-            li.addEventListener('click', () => { 
-                if (event.shiftKey){
-                    console.log("Shift key was held during click - multi-select not implemented yet")
-                    isMultiSelect = true;
-                    selectedFiles.add(file);
-                } else {
-                    console.log("Shift key was not held during click - opening file normally")
-                    isMultiSelect = false;
-                    selectedFiles = new Set([file]);
-                }
-
-                console.log("Selected files:", Array.from(selectedFiles));
-                if (isMultiSelect){
-                    console.log("Multi-select mode is on");
-                    // SHOW POPUP FOR MULTI-VIEWING
-                }else{
-                    // SHOW NORMALLY
-                }
-
-                // Reset all li backgrounds first
-                document.querySelectorAll('.GliderList li').forEach(item => {
-                    item.style.backgroundColor = '';
-                });
-
-                // Show the temp class (DELETE button)
-                document.querySelector('.temp').style.display = 'block';
-                
-                // Set clicked li background
-                li.style.backgroundColor = '#4a90e2';
-                
-                const thisFilePath = path.join(savedDataPath, file);
-                console.log("Activating file:", thisFilePath);
-                
-                // Display dataset info from JSON
-                displayDatasetInfo(file);
-
-                integrations.callPyFunc('open', [thisFilePath]).then(result => {
-                    x = result;
-                    console.log("Result from Python function:", x);
-                }).catch(error => {
-                    console.error("Error calling Python function:", error);
-                });
-            })
-            // append it as a child to the element
-            Element_gliderList.appendChild(li);
-        });
+    function loadSideBar_Glider() {
+        DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], displayDatasetInfo);
     }
 
     // Helper function to save dataset info to simpleData.json
     function saveDatasetToJSON(fileName, dimensions, variables, overview, coords, attributes) {
-        const simpleDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
-        const jsonPath = path.join(simpleDataPath, 'simpleData.json');
+        const jsonPath = pathDep.jsonPath;
         let coordPairs = [];
 
         // For each lat instance in lats array,
@@ -138,6 +90,7 @@
             // add new entry to existing data, and write to JSON file
             existingJSONData.push(newEntry);
             fs.writeFileSync(jsonPath, JSON.stringify(existingJSONData, null, 2));
+            fileHandle.reparseSimpleData(); // Update in-memory data after writing to file
             console.log("Data saved to simpleData.json");
         } catch (error) {
             console.error("Error saving to simpleData.json:", error);
@@ -146,34 +99,45 @@
 
     // Helper function to display dataset info in the card
 function displayDatasetInfo(fileName) {
-    const simpleDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
-    const jsonPath = path.join(simpleDataPath, 'simpleData.json');
     document.getElementById('dataFileHeader').textContent = `${fileName}`;
     
     try {
-        const fileContent = fs.readFileSync(jsonPath, 'utf-8');
-        if (!fileContent.trim()) {
+        const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
+        if (fileHandle.isSimpleDataEmpty()) {
             console.error("simpleData.json is empty");
             return;
         }
-        
-        const allData = JSON.parse(fileContent);
 
-        // Find the dataset that matches the clicked file name
-        const dataset = allData.find(item => item.fileName === fileName);
-        console.log("Dataset found for display:", dataset);
-        
-        if (!dataset) {
-            console.error("Dataset not found:", fileName);
-            return;
-        }
+        const dataset = fileHandle.getEntryInSimpleData(fileName);
         
         // Clear existing content
         const cardWrapper = document.getElementById('datasetInfoCardWrapper');
-        cardWrapper.innerHTML = '';
+        const AttrCardWrapper = document.getElementById('datasetAttrCardWrapper');
+        const VarCardWrapper = document.getElementById('datasetVarsCardWrapper');
+        DOM.dom_clearElementInnerHTML_UsingObject(cardWrapper);
+        DOM.dom_clearElementInnerHTML_UsingObject(AttrCardWrapper);
+        DOM.dom_clearElementInnerHTML_UsingObject(VarCardWrapper);
         
-        // Create a list (using new ul)
-        const ul = document.createElement('ul');
+        // Create separate lists for each card wrapper
+        const ulInfo = document.createElement('ul');
+        const ulAttr = document.createElement('ul');
+        const ulVars = document.createElement('ul');
+        
+        // Helper function to format coordinate values (truncate to 10 decimals with ellipsis)
+        function formatCoord(value) {
+            if (value === 'N/A') return value;
+            const str = value.toString();
+            const decimalIndex = str.indexOf('.');
+            if (decimalIndex === -1) return str;
+            
+            const wholePart = str.substring(0, decimalIndex);
+            const decimalPart = str.substring(decimalIndex + 1);
+            
+            if (decimalPart.length > 10) {
+                return wholePart + '.' + decimalPart.substring(0, 10) + '...';
+            }
+            return str;
+        }
         
         // Helper function to create nested list items
         function addToList(parent, key, value) {
@@ -199,8 +163,8 @@ function displayDatasetInfo(fileName) {
                                 const coordLi_Lon = document.createElement('li');
                                 const lat = coord?.lat !== undefined ? coord.lat : 'N/A';
                                 const lon = coord?.lon !== undefined ? coord.lon : 'N/A';
-                                coordLi_Lat.textContent = `Lat: ${lat}`;
-                                coordLi_Lon.textContent = `Lon: ${lon}`;
+                                coordLi_Lat.textContent = `Lat: ${formatCoord(lat)}`;
+                                coordLi_Lon.textContent = `Lon: ${formatCoord(lon)}`;
                                 coordUl.appendChild(coordLi_Lat);
                                 coordUl.appendChild(coordLi_Lon);
 
@@ -222,7 +186,7 @@ function displayDatasetInfo(fileName) {
                                 const coordLi = document.createElement('li');
                                 const lat = lats[i] !== undefined ? lats[i] : 'N/A';
                                 const lon = lons[i] !== undefined ? lons[i] : 'N/A';
-                                coordLi.textContent = `Lat: ${lat}, Lon: ${lon}`;
+                                coordLi.textContent = `Lat: ${formatCoord(lat)}, Lon: ${formatCoord(lon)}`;
                                 coordUl.appendChild(coordLi);
 
                                 indexLi.appendChild(coordUl);
@@ -265,13 +229,21 @@ function displayDatasetInfo(fileName) {
             parent.appendChild(li);
         }
         
-        // Populate with dataset info
+        // Populate with dataset info, routing to appropriate wrapper
         Object.entries(dataset).forEach(([key, value]) => {
-            addToList(ul, key, value);
-            console.log(`Added to list - ${key}:`, value);
+            if (key === 'dims' || key === 'coords') {
+                addToList(ulInfo, key, value);
+            } else if (key === 'attributes') {
+                addToList(ulAttr, key, value);
+            } else if (key === 'vars') {
+                addToList(ulVars, key, value);
+            }
+            // Skip other keys (id, fileName, summary)
         });
         
-        cardWrapper.appendChild(ul);
+        cardWrapper.appendChild(ulInfo);
+        AttrCardWrapper.appendChild(ulAttr);
+        VarCardWrapper.appendChild(ulVars);
         console.log("Dataset info displayed:", dataset);
     } catch (error) {
         console.error("Error displaying dataset info:", error);
@@ -283,7 +255,7 @@ function displayDatasetInfo(fileName) {
     <div class="minibanner" id="minibanner">
         <div class="wrapper">
             <button class="mapModeButton" id="mapModeButton">Map</button>
-            <button class="viewModeButton" id="viewModeButton">Views</button>
+            <button class="viewModeButton dis" id="viewModeButton">Views</button>
         </div>
     </div>
 
@@ -292,9 +264,9 @@ function displayDatasetInfo(fileName) {
             
             <input class="AddFileButton" type="file" id="avatar" name="avatar"/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
-            <button href="#" class="bannerButton" id="bannerButton2">del</button>
-            <button href="#" class="bannerButton" id="bannerButton3">icon</button>
-            <button href="#" class="bannerButton" id="bannerButton4">O</button>
+            <button href="#" class="bannerButton dis" id="bannerButton2">del</button>
+            <button href="#" class="bannerButton dis" id="bannerButton3">icon</button>
+            <button href="#" class="bannerButton dis" id="bannerButton4">O</button>
         </div>
     </div>
 
@@ -304,14 +276,11 @@ function displayDatasetInfo(fileName) {
             <details id="GliderDropDown">
                 <summary>Gliders</summary>
                     <ul class="GliderList" id="GliderList">
-                        <li>Glider 1</li>
-                        <li>Glider 2</li>
-                        <li>Glider 3</li>
                     </ul>
             </details>
             <details id="ViewsDropDown">
                 <summary>Views</summary>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta aliquam cupiditate omnis distinctio, atque repellendus molestias fugiat architecto assumenda quasi aliquid perferendis dolorem voluptates optio aspernatur eos nihil asperiores eius.
+                    This text has been defaulted to giberish, this feature is coming soon!
             </details>
             <div class="temp">DELETE</div>
         </div>
@@ -320,12 +289,74 @@ function displayDatasetInfo(fileName) {
     <div class="main" id="main">
         <div class="mapPage">        
             <div class="card">
-                <div class="dataFileHeader" id="dataFileHeader">(Click on a data file to view)</div>
-                <div class="cardWrapper" id="datasetInfoCardWrapper">
+                <div id="dataFileHeader" class="dataFileHeader">(Click on a data file to view)</div>
+                <div id="datasetInfoCardWrapper" class="cardWrapper">
                 </div>
             </div>
-            <div class="card"></div>
-            <div class="card"></div>
+            <div class="card">
+                <div id="datasetAttrCardWrapper" class="cardWrapper datasetAttrCardWrapper">
+                    <ul>
+                        <li>Attribute 1: Value</li>
+                        <li>Attribute 2: Value</li>
+                        <li>Attribute 3: Value</li>
+                        <li>Attribute 1: Value</li>
+                        <li>Attribute 2: Value</li>
+                        <li>Attribute 3: Value</li>
+                        <li>Attribute 1: Value</li>
+                        <li>Attribute 2: Value</li>
+                        <li>Attribute 3: Value</li>
+                        <li>Attribute 1: Value</li>
+                        <li>Attribute 2: Value</li>
+                        <li>Attribute 3: Value</li>
+                        <li>Attribute 1: Value</li>
+                        <li>Attribute 2: Value</li>
+                        <li>Attribute 3: Value</li>
+                        <li>Attribute 1: Value</li>
+                        <li>Attribute 2: Value</li>
+                        <li>Attribute 3: Value</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <div id="datasetVarsCardWrapper" class="cardWrapper datasetVarsCardWrapper">
+                    <ul>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        <li>Variable 1: Value</li>
+                        <li>Variable 2: Value</li>
+                        <li>Variable 3: Value</li>
+                        
+                    </ul>
+                </div>
+            </div>
             <div class="card"></div>
         </div>
         <div class="viewPage">        
@@ -338,7 +369,7 @@ function displayDatasetInfo(fileName) {
 </body>
 <script>
     // Initial load
-    populateGliderSidebar();
+    loadSideBar_Glider();
     
     document.getElementById("bannerButton1").addEventListener("click", function() {
         document.getElementById("avatar").click();
@@ -348,16 +379,15 @@ function displayDatasetInfo(fileName) {
     document.getElementById("avatar").addEventListener("change", function() {
     if (this.files.length > 0) {
         const file = this.files[0];
-        const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
         
         const reader = new FileReader();
         reader.onload = function(e) {
             try {
-                const destPath = path.join(savedDataPath, file.name);
+                const destPath = path.join(pathDep.savedDataPath, file.name);
                 fs.writeFileSync(destPath, Buffer.from(e.target.result));
                 console.log("New File copied to savedData:", destPath);
 
-                integrations.callPyFunc('open', [destPath]).then(result => {
+                integrations.callPyFunc('open', [destPath], { timeoutMs: 60000 }).then(result => {
                     console.log("New File Loaded into memory");
 
                     Promise.all([
@@ -374,7 +404,7 @@ function displayDatasetInfo(fileName) {
                         // Save all data to JSON
                         saveDatasetToJSON(file.name, dimensions, variables, overview, coords, overview.attributes);
                         
-                        populateGliderSidebar();
+                        loadSideBar_Glider();
                     }).catch(error => {
                         console.error("Error gathering dataset info:", error);
                     });
