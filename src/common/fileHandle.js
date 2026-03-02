@@ -2,7 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const pathDep = require('./pathDep');
 
-const savedDataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
+let allData = JSON.parse(fileContent);
+global .allData = allData;
 
 function doesFileAlreadyExist(pathToFile) {
     /**
@@ -49,4 +51,61 @@ function listSavedDataFiles(savedDataPath, extensionFilter = '-1') {
     return providedArray;
 }
 
-module.exports = { doesFileAlreadyExist, listSavedDataFiles, copyFileToSavedData };
+function getKeysOfEntryInSimpleData(fileName) {
+    const keys = Object.keys(getEntryInSimpleData(fileName));
+    return keys;
+}
+
+function getEntryKeyInSimpleData(fileName, key) {
+    const entry = getEntryInSimpleData(fileName);
+    if (key in entry) {
+        return entry[key];
+    } else {
+        console.error(`Key "${key}" not found in dataset for file "${fileName}".`);
+        return null;
+    }
+}
+
+function getEntryInSimpleData(fileName) {
+    if(doesEntryExistInSimpleData(fileName)){
+        const entry = allData.find(item => item.fileName === fileName);
+        return entry;
+    } else {
+        throw new Error("File doesnt exist in simpleData.json!");
+    }
+}
+
+function isSimpleDataEmpty() {
+    const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
+    if (!fileContent.trim()) {
+        //console.error("simpleData.json is empty");
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function doesEntryExistInSimpleData(fileName) {
+    if (!(allData.find(item => item.fileName === fileName))) {
+        console.error("Dataset not found:", fileName);
+        return false;
+    }else {
+        return true;
+    }
+}
+
+function reparseSimpleData() {
+    const newFileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
+    allData = JSON.parse(newFileContent);
+}
+
+module.exports = { 
+    doesFileAlreadyExist, 
+    listSavedDataFiles, 
+    copyFileToSavedData, 
+    isSimpleDataEmpty, 
+    getKeysOfEntryInSimpleData,
+    getEntryInSimpleData,
+    getEntryKeyInSimpleData,
+    reparseSimpleData
+};

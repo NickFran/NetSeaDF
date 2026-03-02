@@ -17,6 +17,7 @@ let win;
 function createWindow() {
     win = new BrowserWindow({ 
         width: 1920, height: 1080,
+        //autoHideMenuBar: true,  // Hide menu bar
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,

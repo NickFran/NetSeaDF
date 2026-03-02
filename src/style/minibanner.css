@@ -7,6 +7,7 @@
     align-items: center;
 }.mapModeButton, .viewModeButton{
     border: 1px solid #000000;
+
     padding: 10px 20px;
     border-radius: 5px;
     cursor:pointer;

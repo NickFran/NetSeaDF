@@ -30,7 +30,7 @@ def clean(v):
 
 def open_ds(path):  # "open"
     global ds; 
-    ds = xr.open_dataset(path); 
+    ds = xr.open_dataset(path, engine="netcdf4"); 
     return "Loaded"
 
 def getDimensions():
@@ -72,7 +72,7 @@ def getOverview():
             "dimensions": dict(ds.dims),
             "variables": list(ds.data_vars),
             "attributes": clean(dict(ds.attrs)),
-            "coordinates": {k: clean(v.values.tolist()) for k, v in ds.coords.items()}
+            "coordinates": list(ds.coords.keys())  # Just return coordinate names, not values
         }
     except Exception as e:
         return {"error": f"getOverview failed: {str(e)}"}

@@ -26,3 +26,5 @@
 * BUG Loading NC file from disk causes timeout
 * map.html, loading NC file has multi promise, it seems like getOverview is the only thing thats needed?
 * Yea, overview is completely useless, we only ever get arrt from it, so just use arrt
+
+* dataset should probably not be loaded upon click, just do string fileNames with selectedFiles object

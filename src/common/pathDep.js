@@ -2,7 +2,6 @@ const path = require('node:path');
 const { performUnitTest } = require('./unitTest.js');
 const { DisplayError } = require('./logging.js');
 
-
 // Takes folder names and converts to hardset ints of the number of sublevels from root.
 const folderSublevelFromRootMap = {
     'dist': 1,
@@ -13,6 +12,9 @@ const folderSublevelFromRootMap = {
     'debug' : 2,
     'mdeia' : 2
 }
+
+const savedDataPath = resolveToProperDataPath(__dirname, 'savedData');
+const jsonPath = path.join(savedDataPath, 'simpleData.json');
 
 // takes the __dirname and returns the current folder name
 function getCurrentFolderName(dirname) {
@@ -119,4 +121,4 @@ function resolveToProperDataPath(dirname, folderName) {
 
 
 
-module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath };
+module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath };
