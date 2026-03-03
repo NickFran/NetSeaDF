@@ -74,7 +74,7 @@ function resolveToProperDataPath(dirname, folderName) {
     // For now, assume development mode (savedData in root, not in dist)
     const isDev = true; 
 
-    let isSpecifiedFolderValid = (folderName == "logs" || folderName == "savedData")
+    let isSpecifiedFolderValid = ["logs", "savedData", "config"].includes(folderName)
 
     if (isSpecifiedFolderValid) { 
         return isDev 

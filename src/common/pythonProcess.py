@@ -33,6 +33,15 @@ def open_ds(path):  # "open"
     ds = xr.open_dataset(path, engine="netcdf4"); 
     return "Loaded"
 
+def close_ds():
+    """Close the currently open dataset"""
+    global ds
+    if ds is not None:
+        ds.close()
+        ds = None
+        return "Closed"
+    return "No dataset to close"
+
 def getDimensions():
     return {k: int(v) for k, v in ds.dims.items()}
 
@@ -69,10 +78,10 @@ def getCoords():
 def getOverview():
     try:
         return {
-            "dimensions": dict(ds.dims),
-            "variables": list(ds.data_vars),
-            "attributes": clean(dict(ds.attrs)),
-            "coordinates": list(ds.coords.keys())  # Just return coordinate names, not values
+            "dimensions": getDimensions(),
+            "variables": getVariables(),
+            "attributes": getAttributes(),
+            "coordinates": getCoords() # Just return coordinate names, not values
         }
     except Exception as e:
         return {"error": f"getOverview failed: {str(e)}"}
@@ -140,6 +149,7 @@ def getVariableByDimension(varName, dimName, compact=False, reduceOtherDims=Fals
 
 functions = {
     "open": open_ds,
+    "close": close_ds,
     "getOverview": getOverview,
     "getAttributes": getAttributes,
     "getSummary": getSummary,

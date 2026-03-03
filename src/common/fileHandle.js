@@ -2,8 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const pathDep = require('./pathDep');
 
+let allData = null;
 const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
-let allData = JSON.parse(fileContent);
+if (isSimpleDataEmpty()) {
+} else {
+    console.log("simpleData.json ia not empty, loading data...");
+    allData = JSON.parse(fileContent);
+}
 global .allData = allData;
 
 function doesFileAlreadyExist(pathToFile) {
@@ -99,6 +104,67 @@ function reparseSimpleData() {
     allData = JSON.parse(newFileContent);
 }
 
+function getAllSimpleData() {
+    return JSON.stringify(allData);
+}
+
+function deleteDataFile(fileName) {
+    /**
+     * Deletes a data file from the savedData directory.
+     * 
+     * @param {string} fileName - The name of the file to delete.
+     * @returns {object} - Object with success status and optional error message.
+     */
+    try {
+        const filePath = path.join(pathDep.savedDataPath, fileName);
+        
+        // Check if file exists before attempting deletion
+        if (!fs.existsSync(filePath)) {
+            console.error(`File not found: ${fileName}`);
+            return { success: false, error: "File not found" };
+        }
+        
+        // Delete the file
+        fs.unlinkSync(filePath);
+        console.log(`File deleted: ${fileName}`);
+        return { success: true };
+        
+    } catch (error) {
+        console.error(`Error deleting file ${fileName}:`, error);
+        return { success: false, error: error.message };
+    }
+}
+
+function deleteEntryInSimpleData(fileName) {
+    /**
+     * Deletes an entry from simpleData.json based on fileName.
+     * 
+     * @param {string} fileName - The name of the file whose entry should be removed.
+     * @returns {object} - Object with success status and optional error message.
+     */
+    try {
+        // Check if entry exists
+        if (!doesEntryExistInSimpleData(fileName)) {
+            console.error(`Entry not found in simpleData.json: ${fileName}`);
+            return { success: false, error: "Entry not found" };
+        }
+        
+        // Filter out the entry with matching fileName
+        allData = allData.filter(item => item.fileName !== fileName);
+        
+        // Write updated data back to simpleData.json
+        fs.writeFileSync(pathDep.jsonPath, JSON.stringify(allData, null, 2));
+        
+        console.log(`Entry deleted from simpleData.json: ${fileName}`);
+        return { success: true };
+        
+    } catch (error) {
+        console.error(`Error deleting entry for ${fileName}:`, error);
+        return { success: false, error: error.message };
+    }
+}
+
+
 module.exports = { 
     doesFileAlreadyExist, 
     listSavedDataFiles, 
@@ -107,5 +173,8 @@ module.exports = {
     getKeysOfEntryInSimpleData,
     getEntryInSimpleData,
     getEntryKeyInSimpleData,
-    reparseSimpleData
+    reparseSimpleData,
+    getAllSimpleData,
+    deleteDataFile,
+    deleteEntryInSimpleData
 };

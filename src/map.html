@@ -3,9 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
+
     <link rel="stylesheet" href="./style/minibanner.css">
     <link rel="stylesheet" href="./style/sidebar.css">
     <link rel="stylesheet" href="./style/style.css">
+    <link rel="stylesheet" href="./style/loading.css">
+    <link rel="stylesheet" href="./style/map.css">
+    <script src="./lib/leaflet/leaflet.js"></script>
     <title>SavV</title>
 
     <!-- MODULES -->
@@ -28,7 +34,9 @@
         const appState = {
             allFiles: fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc'),
             isMultiSelect: false,
-            selectedFiles: new Set()
+            selectedFiles: new Set(),
+            map: undefined,
+            markers: {}
         };
         
         // Dependencies object for DOM functions
@@ -44,14 +52,9 @@
 
     <!-- FUNCTIONS -->
      <script>
-        
-    // Helper function to populate file list
-    function loadSideBar_Glider() {
-        DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], displayDatasetInfo);
-    }
 
-    // Helper function to save dataset info to simpleData.json
-    function saveDatasetToJSON(fileName, dimensions, variables, overview, coords, attributes) {
+    // Helper function to save dataset info to simpleData.json (async version)
+    async function saveDatasetToJSON(fileName, dimensions, variables, overview, coords, attributes) {
         const jsonPath = pathDep.jsonPath;
         let coordPairs = [];
 
@@ -87,171 +90,31 @@
                 "coords": coordPairs
             };
             
-            // add new entry to existing data, and write to JSON file
+            // add new entry to existing data, and write to JSON file asynchronously
             existingJSONData.push(newEntry);
-            fs.writeFileSync(jsonPath, JSON.stringify(existingJSONData, null, 2));
+            await fs.promises.writeFile(jsonPath, JSON.stringify(existingJSONData, null, 2));
             fileHandle.reparseSimpleData(); // Update in-memory data after writing to file
             console.log("Data saved to simpleData.json");
+            DOM.hideLoadingScreen(); // Hide loading screen after data is saved
+
         } catch (error) {
             console.error("Error saving to simpleData.json:", error);
+            DOM.hideLoadingScreen(); // Hide loading screen on error
         }
     }
 
-    // Helper function to display dataset info in the card
-function displayDatasetInfo(fileName) {
-    document.getElementById('dataFileHeader').textContent = `${fileName}`;
-    
-    try {
-        const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
-        if (fileHandle.isSimpleDataEmpty()) {
-            console.error("simpleData.json is empty");
-            return;
-        }
-
-        const dataset = fileHandle.getEntryInSimpleData(fileName);
-        
-        // Clear existing content
-        const cardWrapper = document.getElementById('datasetInfoCardWrapper');
-        const AttrCardWrapper = document.getElementById('datasetAttrCardWrapper');
-        const VarCardWrapper = document.getElementById('datasetVarsCardWrapper');
-        DOM.dom_clearElementInnerHTML_UsingObject(cardWrapper);
-        DOM.dom_clearElementInnerHTML_UsingObject(AttrCardWrapper);
-        DOM.dom_clearElementInnerHTML_UsingObject(VarCardWrapper);
-        
-        // Create separate lists for each card wrapper
-        const ulInfo = document.createElement('ul');
-        const ulAttr = document.createElement('ul');
-        const ulVars = document.createElement('ul');
-        
-        // Helper function to format coordinate values (truncate to 10 decimals with ellipsis)
-        function formatCoord(value) {
-            if (value === 'N/A') return value;
-            const str = value.toString();
-            const decimalIndex = str.indexOf('.');
-            if (decimalIndex === -1) return str;
-            
-            const wholePart = str.substring(0, decimalIndex);
-            const decimalPart = str.substring(decimalIndex + 1);
-            
-            if (decimalPart.length > 10) {
-                return wholePart + '.' + decimalPart.substring(0, 10) + '...';
-            }
-            return str;
-        }
-        
-        // Helper function to create nested list items
-        function addToList(parent, key, value) {
-            const li = document.createElement('li');
-            li.textContent = key;
-            li.style.wordWrap = 'break-word';
-            
-            // If the value is an array, create a nested list for its items
-            if (Array.isArray(value)) {
-                // Create nested list for array items (even if empty)
-                const subUl = document.createElement('ul');
-                if (value.length > 0) {
-                    // Special handling for coords
-                    if (key === 'coords' && value.length > 0) {
-                        const first = value[0];
-                        if (first && typeof first === 'object' && ('lat' in first || 'lon' in first)) {
-                            value.forEach((coord, index) => {
-                                const indexLi = document.createElement('li');
-                                indexLi.textContent = `[${index}]`;
-
-                                const coordUl = document.createElement('ul');
-                                const coordLi_Lat = document.createElement('li');
-                                const coordLi_Lon = document.createElement('li');
-                                const lat = coord?.lat !== undefined ? coord.lat : 'N/A';
-                                const lon = coord?.lon !== undefined ? coord.lon : 'N/A';
-                                coordLi_Lat.textContent = `Lat: ${formatCoord(lat)}`;
-                                coordLi_Lon.textContent = `Lon: ${formatCoord(lon)}`;
-                                coordUl.appendChild(coordLi_Lat);
-                                coordUl.appendChild(coordLi_Lon);
-
-                                indexLi.appendChild(coordUl);
-                                subUl.appendChild(indexLi);
-                            });
-                        } else {
-                            const midpoint = Math.ceil(value.length / 2);
-                            const lats = value.slice(0, midpoint);
-                            const lons = value.slice(midpoint);
-                            
-                            // Handle case where lats and lons have different lengths
-                            const maxLen = Math.max(lats.length, lons.length);
-                            for (let i = 0; i < maxLen; i++) {
-                                const indexLi = document.createElement('li');
-                                indexLi.textContent = `[${i}]`;
-
-                                const coordUl = document.createElement('ul');
-                                const coordLi = document.createElement('li');
-                                const lat = lats[i] !== undefined ? lats[i] : 'N/A';
-                                const lon = lons[i] !== undefined ? lons[i] : 'N/A';
-                                coordLi.textContent = `Lat: ${formatCoord(lat)}, Lon: ${formatCoord(lon)}`;
-                                coordUl.appendChild(coordLi);
-
-                                indexLi.appendChild(coordUl);
-                                subUl.appendChild(indexLi);
-                            }
-                        }
-                    } else {
-                        value.forEach((item, index) => {
-                            const subLi = document.createElement('li');
-                            subLi.textContent = `[${index}]: ${item}`;
-                            subUl.appendChild(subLi);
-                        });
-                    }
-                } else {
-                    const subLi = document.createElement('li');
-                    subLi.textContent = '(empty)';
-                    subUl.appendChild(subLi);
-                }
-                li.appendChild(subUl);
-            } else if (typeof value === 'object' && value !== null) {
-                // Create nested list for objects
-                const subUl = document.createElement('ul');
-                Object.entries(value).forEach(([objKey, objValue]) => {
-                    const subLi = document.createElement('li');
-                    subLi.textContent = `${objKey}: ${objValue}`;
-                    subUl.appendChild(subLi);
-                });
-                li.appendChild(subUl);
-                
-            // If its not an array or object, just display the value
-            } else {
-                // Create nested list for simple values
-                const subUl = document.createElement('ul');
-                const subLi = document.createElement('li');
-                subLi.textContent = value;
-                subUl.appendChild(subLi);
-                li.appendChild(subUl);
-            }
-            
-            parent.appendChild(li);
-        }
-        
-        // Populate with dataset info, routing to appropriate wrapper
-        Object.entries(dataset).forEach(([key, value]) => {
-            if (key === 'dims' || key === 'coords') {
-                addToList(ulInfo, key, value);
-            } else if (key === 'attributes') {
-                addToList(ulAttr, key, value);
-            } else if (key === 'vars') {
-                addToList(ulVars, key, value);
-            }
-            // Skip other keys (id, fileName, summary)
-        });
-        
-        cardWrapper.appendChild(ulInfo);
-        AttrCardWrapper.appendChild(ulAttr);
-        VarCardWrapper.appendChild(ulVars);
-        console.log("Dataset info displayed:", dataset);
-    } catch (error) {
-        console.error("Error displaying dataset info:", error);
-    }
-}
      </script>
 </head>
 <body>
+    <!-- Loading Screen Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <img src="./media/logo.png" alt="Loading..." class="loading-logo" onerror="this.style.display='none'">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading...</p>
+        </div>
+    </div>
+    
     <div class="minibanner" id="minibanner">
         <div class="wrapper">
             <button class="mapModeButton" id="mapModeButton">Map</button>
@@ -282,7 +145,8 @@ function displayDatasetInfo(fileName) {
                 <summary>Views</summary>
                     This text has been defaulted to giberish, this feature is coming soon!
             </details>
-            <div class="temp">DELETE</div>
+            
+            <button id="DeleteFileButton" class="DeleteFileButton">DELETE</button>
         </div>
     </div>
 
@@ -296,68 +160,18 @@ function displayDatasetInfo(fileName) {
             <div class="card">
                 <div id="datasetAttrCardWrapper" class="cardWrapper datasetAttrCardWrapper">
                     <ul>
-                        <li>Attribute 1: Value</li>
-                        <li>Attribute 2: Value</li>
-                        <li>Attribute 3: Value</li>
-                        <li>Attribute 1: Value</li>
-                        <li>Attribute 2: Value</li>
-                        <li>Attribute 3: Value</li>
-                        <li>Attribute 1: Value</li>
-                        <li>Attribute 2: Value</li>
-                        <li>Attribute 3: Value</li>
-                        <li>Attribute 1: Value</li>
-                        <li>Attribute 2: Value</li>
-                        <li>Attribute 3: Value</li>
-                        <li>Attribute 1: Value</li>
-                        <li>Attribute 2: Value</li>
-                        <li>Attribute 3: Value</li>
-                        <li>Attribute 1: Value</li>
-                        <li>Attribute 2: Value</li>
-                        <li>Attribute 3: Value</li>
                     </ul>
                 </div>
             </div>
             <div class="card">
                 <div id="datasetVarsCardWrapper" class="cardWrapper datasetVarsCardWrapper">
                     <ul>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        <li>Variable 1: Value</li>
-                        <li>Variable 2: Value</li>
-                        <li>Variable 3: Value</li>
-                        
                     </ul>
                 </div>
             </div>
-            <div class="card"></div>
+            <div class="card">
+                 <div id="map"></div>
+            </div>
         </div>
         <div class="viewPage">        
             <div class="card"></div>
@@ -369,7 +183,12 @@ function displayDatasetInfo(fileName) {
 </body>
 <script>
     // Initial load
-    loadSideBar_Glider();
+    DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
+    
+    // Hide loading screen after initial page load
+    window.addEventListener('load', function() {
+        setTimeout(DOM.hideLoadingScreen, 500); // Minimum loading time
+    });
     
     document.getElementById("bannerButton1").addEventListener("click", function() {
         document.getElementById("avatar").click();
@@ -379,6 +198,7 @@ function displayDatasetInfo(fileName) {
     document.getElementById("avatar").addEventListener("change", function() {
     if (this.files.length > 0) {
         const file = this.files[0];
+        const fileInput = this; // Store reference to reset later
         
         const reader = new FileReader();
         reader.onload = function(e) {
@@ -387,31 +207,52 @@ function displayDatasetInfo(fileName) {
                 fs.writeFileSync(destPath, Buffer.from(e.target.result));
                 console.log("New File copied to savedData:", destPath);
 
-                integrations.callPyFunc('open', [destPath], { timeoutMs: 60000 }).then(result => {
-                    console.log("New File Loaded into memory");
+                DOM.showLoadingScreen(); // Show loading screen BEFORE Python call
+                
+                // Give browser time to render loading screen before Python processing
+                setTimeout(() => {
+                    integrations.callPyFunc('open', [destPath], { timeoutMs: 60000 }).then(result => {
+                        console.log("New File Loaded into memory");
+                        
+                        // Give browser time to render loading screen before starting intensive work
+                        setTimeout(() => {
+                            Promise.all([
+                                integrations.callPyFunc('getOverview'),
+                            ]).then(async ([overview]) => {
+                                
+                                // Save all data to JSON (now async)
+                                await saveDatasetToJSON(file.name, overview.dimensions, overview.variables, overview, overview.coordinates, overview.attributes);
+                                
+                                // Create marker for the newly added file
+                                const coords = overview.coordinates;
+                                if (coords && coords[0] && coords[0].length > 0 && coords[1] && coords[1].length > 0) {
+                                    const lat = coords[0][0];
+                                    const lon = coords[1][0];
+                                    const popupContent = DOM.leaf_buildPopupContent(
+                                        file.name, 
+                                        lat, 
+                                        lon, 
+                                        JSON.stringify(overview.dimensions)
+                                    );
+                                    DOM.leaf_insertDataMarker(appState, lat, lon, popupContent, {}, file.name);
+                                    console.log(`Marker created for newly added file: ${file.name}`);
+                                }
+                                
+                                DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
+                                
+                                // Reset file input so same file can be selected again
+                                fileInput.value = '';
+                            }).catch(error => {
+                                console.error("Error gathering dataset info:", error);
+                                DOM.hideLoadingScreen(); // Hide loading screen on error
+                            });
+                        }, 100); // 100ms delay to ensure browser paints loading screen
 
-                    Promise.all([
-                        integrations.callPyFunc('getOverview'),
-                        integrations.callPyFunc('getDimensions'),
-                        integrations.callPyFunc('getVariables'),
-                        integrations.callPyFunc('getCoords')
-                    ]).then(([overview, dimensions, variables, coords]) => {
-                        console.log("Dimensions:", dimensions);
-                        console.log("Variables:", variables);
-                        console.log("Overview:", overview);
-                        console.log("Coordinates:", coords);
-                        
-                        // Save all data to JSON
-                        saveDatasetToJSON(file.name, dimensions, variables, overview, coords, overview.attributes);
-                        
-                        loadSideBar_Glider();
                     }).catch(error => {
-                        console.error("Error gathering dataset info:", error);
+                        console.error("Error calling Python function:", error);
+                        DOM.hideLoadingScreen(); // Hide loading screen on error
                     });
-
-                }).catch(error => {
-                    console.error("Error calling Python function:", error);
-                });
+                }, 100); // 100ms delay to ensure browser paints loading screen before Python call
             } catch (err) {
                 console.error("Error saving file:", err);
             }
@@ -420,19 +261,53 @@ function displayDatasetInfo(fileName) {
     }
 });
 
-    // document.getElementById("mappy").src = pathDep.fromHereToRoot(__dirname) + "/src/media/temppic.png";
-    // document.getElementById("titleThingy").textContent = "HTML parent folder: " + pathDep.getCurrentFolderName(__dirname);
-    // logging.log("Map page loaded");
-    
-    // console.log(document.getElementById("widthy").textContent = "Width: "+screen.width);
-    // console.log(document.getElementById("widthy").textContent = "Height: "+screen.height);
+    document.getElementById("DeleteFileButton").addEventListener("click", async function() {
+        let currentTargetFile = Array.from(appState.selectedFiles)[0];
+        console.log("Delete button clicked= " + currentTargetFile);
+        
+        // Close the dataset in Python before deleting the file
+        try {
+            await integrations.callPyFunc('close');
+            console.log("Dataset closed in Python");
+        } catch (error) {
+            console.error("Error closing dataset:", error);
+        }
+        
+        // Remove from UI and data
+        DOM.leaf_removeMapMarker(appState, currentTargetFile);
+        DOM.dom_removeSidebarEntry(currentTargetFile);
+        fileHandle.deleteEntryInSimpleData(currentTargetFile);
+        fileHandle.deleteDataFile(currentTargetFile);
+        appState.selectedFiles.delete(currentTargetFile);
+        
+        // Update allFiles list
+        appState.allFiles = fileHandle.listSavedDataFiles(
+            pathDep.resolveToProperDataPath(__dirname, 'savedData'), 
+            '.nc'
+        );
+        console.log('File deleted and state updated');
 
-    // More Secure
-    // window.api.testMessageThing();
-    
+        DOM.dom_clearElementInnerHTML_UsingString("datasetInfoCardWrapper");
+        DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
+        DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
+        DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
+    });
+
 </script>
+
 <script>
-    let x = fileHandle.doesFileAlreadyExist();
-    console.log("Files in savedData:", x);
+    appState.map = L.map('map').setView([58.66764823678403, -37.95049416624507], 4);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(appState.map);
+
+    const data = JSON.parse(fileHandle.getAllSimpleData());
+
+    data.forEach(entry => {
+        console.log("(Map Marker) for:"+ entry.fileName);
+        let x = DOM.leaf_buildPopupContent(entry.fileName, entry.coords[0]["lat"], entry.coords[0]["lon"], JSON.stringify(entry.dims));
+        DOM.leaf_insertDataMarker(appState, entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
+    });
 </script>
 </html>
