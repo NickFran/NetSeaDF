@@ -21,12 +21,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+      
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/.cache/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
       
       - name: Install dependencies
         run: npm install
       
       - name: Build Windows
         run: npm run build
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
@@ -46,12 +59,25 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
+      
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/electron
+            ~/.cache/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
       
       - name: Install dependencies
         run: npm install
       
       - name: Build macOS
         run: npm run build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4

@@ -2,10 +2,11 @@
 node_modules/
 
 # Python portable distributions (platform-specific binaries)
-PythonPortable/
-PythonPortableMac/
-PythonPortableMac_arm64/
-PythonPortableMac_x64/
+# Commented out to allow committing portable Python for GitHub Actions builds
+# PythonPortable/
+# PythonPortableMac/
+# PythonPortableMac_arm64/
+# PythonPortableMac_x64/
 
 # Environment variables
 .env

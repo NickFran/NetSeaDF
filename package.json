@@ -1,12 +1,14 @@
 {
   "name": "my-electron-app",
   "version": "1.0.0",
+  "description": "SavV - Data Visualization Application",
+  "author": "Nick",
   "main": "./src/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:all": "electron-builder --win --mac",
+    "build": "electron-builder --win --publish never",
+    "build:mac": "electron-builder --mac --publish never",
+    "build:all": "electron-builder --win --mac --publish never",
     "dist": "electron-builder"
   },
   "devDependencies": {

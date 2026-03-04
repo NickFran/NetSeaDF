@@ -1,1 +1,95 @@
-[]
+[
+  {
+    "id": "1772643209997",
+    "fileName": "GL_PR_PF_1902604.nc",
+    "attributes": {
+      "platform_code": "1902604",
+      "platform_name": "ARVOR-DO Profiling Float",
+      "wmo_platform_code": "1902604",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "1902604",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2023-05-20T22:13:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "Institute of Marine Research",
+      "institution_edmo_code": "1351",
+      "institution_country": "Norway",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "844",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "70.79625",
+      "geospatial_lat_max": "71.08511",
+      "geospatial_lon_min": "16.19249",
+      "geospatial_lon_max": "16.45174",
+      "geospatial_vertical_min": "0.20",
+      "geospatial_vertical_max": "1586.50",
+      "time_coverage_start": "2025-11-22T08:24:00Z",
+      "time_coverage_end": "2025-12-12T00:01:00Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-12T00:01:00Z",
+      "last_latitude_observation": "70.93111",
+      "last_longitude_observation": "16.19249",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Kjell Arne MORK",
+      "id": "GL_PR_PF_1902604",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:56:23Z",
+      "history": "2025-12-18T10:56:23Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    },
+    "summary": " ",
+    "dims": {
+      "TIME": 3,
+      "DEPTH": 517
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 70.79624938964844,
+        "lon": 16.451740264892578
+      },
+      {
+        "lat": 71.08511352539062,
+        "lon": 16.413700103759766
+      },
+      {
+        "lat": 70.93110656738281,
+        "lon": 16.192489624023438
+      }
+    ]
+  }
+]
