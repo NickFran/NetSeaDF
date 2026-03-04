@@ -70,9 +70,8 @@ function resolveToProperDataPath(dirname, folderName) {
      */
 
     // Electron Method to check dev/prod status of the app
-    // Since we're in renderer process, we can't access app directly
-    // For now, assume development mode (savedData in root, not in dist)
-    const isDev = true; 
+    // Check if app is packaged (production) by checking if resources path exists
+    const isDev = !process.resourcesPath || process.resourcesPath.includes('node_modules'); 
 
     let isSpecifiedFolderValid = ["logs", "savedData", "config"].includes(folderName)
 
@@ -80,29 +79,13 @@ function resolveToProperDataPath(dirname, folderName) {
         return isDev 
         // If Development Mode
             ? path.join(path.join(fromHereToRoot(dirname) , `${folderName}`))
-        // If Production Mode
-            : path.join(path.join(fromHereToRoot(dirname) , "dist" , `${folderName}`));
+        // If Production Mode - use process.resourcesPath to access extraResources
+            : path.join(process.resourcesPath, "dist", `${folderName}`);
     } else {
-        DisplayError("InvalidValueError, (folder name not log or savedData)", 3);
-        return "InvalidValueError";
+        DisplayError("InvalidFolderNameError, (folder name must be 'logs', 'savedData', or 'config')", 3);
+        return 'InvalidFolderNameError';
     }
-} 
-
-// UNIT TESTS
-// performUnitTest(
-//     getCurrentFolderName(__dirname), 
-//     String.raw`common`
-// );
-
-// performUnitTest(
-//     getCurrentFolderPath(__dirname), 
-//     String.raw`D:\Repository\SavV\src\common`
-// );
-
-// performUnitTest(
-//     path.join(fromHereToRoot(__dirname)), 
-//     String.raw`D:\Repository\SavV`
-// );
+}
 
 // performUnitTest(
 //     path.join(fromHereToRoot(__dirname), "dist", "savedData"), 

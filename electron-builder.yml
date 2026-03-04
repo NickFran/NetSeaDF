@@ -1,0 +1,42 @@
+appId: com.nick.myapp
+productName: SavV
+directories:
+  output: output
+
+win:
+  target: nsis
+  signAndEditExecutable: false
+  extraResources:
+    - from: PythonPortable/
+      to: PythonPortable/
+    - from: config/
+      to: dist/config/
+    - from: savedData/
+      to: dist/savedData/
+    - from: logs/
+      to: dist/logs/
+
+mac:
+  target: dmg
+  category: public.app-category.utilities
+  icon: null
+  extraResources:
+    - from: PythonPortableMac_arm64/
+      to: PythonPortableMac_arm64/
+    - from: PythonPortableMac_x64/
+      to: PythonPortableMac_x64/
+    - from: config/
+      to: dist/config/
+    - from: savedData/
+      to: dist/savedData/
+    - from: logs/
+      to: dist/logs/
+
+asarUnpack:
+  - src/common/pythonProcess.py
+
+files:
+  - src/**/*
+  - package.json
+  - LICENSE
+  - README.md

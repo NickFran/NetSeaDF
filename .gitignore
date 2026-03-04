@@ -1,8 +1,17 @@
 # Dependency directory
 node_modules/
 
+# Python portable distributions (platform-specific binaries)
+PythonPortable/
+PythonPortableMac/
+PythonPortableMac_arm64/
+PythonPortableMac_x64/
+
 # Environment variables
 .env
 
 # IDE/editor settings
 .vscode/
+
+# Build output
+output/

@@ -211,7 +211,7 @@
                 
                 // Give browser time to render loading screen before Python processing
                 setTimeout(() => {
-                    integrations.callPyFunc('open', [destPath], { timeoutMs: 60000 }).then(result => {
+                    integrations.callPyFunc('open', [destPath], { timeoutMs: 120000 }).then(result => {
                         console.log("New File Loaded into memory");
                         
                         // Give browser time to render loading screen before starting intensive work

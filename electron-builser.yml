@@ -1,7 +1,0 @@
-appId: com.nick.myapp
-directories:
-  output: dist
-
-extraResources:
-  - from: python/
-    to: python/
