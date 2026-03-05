@@ -2,6 +2,7 @@ appId: com.nick.myapp
 productName: SavV
 directories:
   output: output
+afterPack: build/afterPack.js
 
 win:
   target: nsis
