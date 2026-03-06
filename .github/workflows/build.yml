@@ -74,6 +74,11 @@ jobs:
       - name: Install dependencies
         run: npm install
       
+      - name: Setup Python environments
+        run: |
+          chmod +x setup-mac-python.sh
+          ./setup-mac-python.sh
+      
       - name: Build macOS
         run: npm run build:mac
         env:

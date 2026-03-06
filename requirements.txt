@@ -1,11 +1,12 @@
-numpy==2.4.1
+numpy==2.2.6
 packaging==26.0
-pandas==3.0.0
+pandas==2.3.3
 pip==24.3.1
 python-dateutil==2.9.0.post0
 six==1.17.0
 tzdata==2025.3
-xarray==2026.1.0
+xarray==2025.6.1
 gsw==3.6.20
-netCDF4==1.7.4
+netCDF4==1.6.5
 fs==2.4.16
+cftime==1.6.5
