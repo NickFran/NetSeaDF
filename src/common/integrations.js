@@ -35,7 +35,7 @@ function ensurePyProc() {
     // In production, pythonProcess.py is unpacked from asar to app.asar.unpacked
     const pythonPath = isDev
         ? path.join(fromHereToRoot(__dirname), 'src', 'common', 'pythonProcess.py')
-        : path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'common', 'pythonProcess.py');
+        : path.join(path.dirname(process.execPath), 'resources', 'app.asar.unpacked', 'src', 'common', 'pythonProcess.py');
     
     // Set up environment for Python
     const env = Object.assign({}, process.env);
