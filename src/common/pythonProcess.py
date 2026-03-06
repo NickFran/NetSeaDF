@@ -43,7 +43,7 @@ def close_ds():
     return "No dataset to close"
 
 def getDimensions():
-    return {k: int(v) for k, v in ds.dims.items()}
+    return {k: int(v) for k, v in ds.sizes.items()}
 
 def getAttributes():
     return clean(dict(ds.attrs))

@@ -1,54 +1,54 @@
 [
   {
-    "id": "1772643209997",
-    "fileName": "GL_PR_PF_1902604.nc",
+    "id": "1772829677365",
+    "fileName": "GL_PR_PF_2904020.nc",
     "attributes": {
-      "platform_code": "1902604",
-      "platform_name": "ARVOR-DO Profiling Float",
-      "wmo_platform_code": "1902604",
+      "platform_code": "2904020",
+      "platform_name": "APEX Profiling Float",
+      "wmo_platform_code": "2904020",
       "ices_platform_code": " ",
-      "coriolis_platform_code": "1902604",
+      "coriolis_platform_code": "2904020",
       "comment": " ",
       "transmitter_system": "IRIDIUM",
-      "start_mission_date": "2023-05-20T22:13:00Z",
+      "start_mission_date": "2025-07-06T04:56:00Z",
       "source": "drifting subsurface profiling float",
       "source_platform_category_code": "46",
-      "institution": "Institute of Marine Research",
-      "institution_edmo_code": "1351",
-      "institution_country": "Norway",
+      "institution": "Alfred Wegener Institute Helmholtz Centre for Polar and Marine Research",
+      "institution_edmo_code": "1368",
+      "institution_country": "Germany",
       "institution_references": " ",
       "naming_authority": "Copernicus Marine In Situ",
       "title": "Global Ocean - In Situ Observation Copernicus",
       "summary": " ",
       "data_mode": "M",
-      "wmo_instrument_type": "844",
+      "wmo_instrument_type": "846",
       "area": "Global Ocean",
-      "geospatial_lat_min": "70.79625",
-      "geospatial_lat_max": "71.08511",
-      "geospatial_lon_min": "16.19249",
-      "geospatial_lon_max": "16.45174",
-      "geospatial_vertical_min": "0.20",
-      "geospatial_vertical_max": "1586.50",
-      "time_coverage_start": "2025-11-22T08:24:00Z",
-      "time_coverage_end": "2025-12-12T00:01:00Z",
+      "geospatial_lat_min": "82.42847",
+      "geospatial_lat_max": "82.55119",
+      "geospatial_lon_min": "43.04811",
+      "geospatial_lon_max": "44.36272",
+      "geospatial_vertical_min": "5.20",
+      "geospatial_vertical_max": "1999.54",
+      "time_coverage_start": "2025-11-18T08:18:16Z",
+      "time_coverage_end": "2025-12-13T00:38:08Z",
       "cdm_data_type": "profile",
       "featureType": "trajectoryProfile",
       "bottom_depth": " ",
-      "last_date_observation": "2025-12-12T00:01:00Z",
-      "last_latitude_observation": "70.93111",
-      "last_longitude_observation": "16.19249",
+      "last_date_observation": "2025-12-13T00:38:08Z",
+      "last_latitude_observation": "82.52475",
+      "last_longitude_observation": "43.90489",
       "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
       "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
       "update_interval": "P1M",
       "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
       "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
-      "creator_name": "Kjell Arne MORK",
-      "id": "GL_PR_PF_1902604",
+      "creator_name": "Benjamin RABE",
+      "id": "GL_PR_PF_2904020",
       "netcdf_version": "netCDF-4 classic model",
       "format_version": "2.0",
       "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
-      "date_modified": "2025-12-18T10:56:23Z",
-      "history": "2025-12-18T10:56:23Z : Creation",
+      "date_modified": "2025-12-18T10:54:23Z",
+      "history": "2025-12-18T10:54:23Z : Creation",
       "publisher_email": "cmems-service@ifremer.fr",
       "publisher_name": "Copernicus Marine Service",
       "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
@@ -56,8 +56,8 @@
     },
     "summary": " ",
     "dims": {
-      "TIME": 3,
-      "DEPTH": 517
+      "TIME": 7,
+      "DEPTH": 168
     },
     "vars": [
       "TIME_QC",
@@ -79,16 +79,32 @@
     ],
     "coords": [
       {
-        "lat": 70.79624938964844,
-        "lon": 16.451740264892578
+        "lat": 82.428466796875,
+        "lon": 43.63002014160156
       },
       {
-        "lat": 71.08511352539062,
-        "lon": 16.413700103759766
+        "lat": 82.53350830078125,
+        "lon": 44.36272048950195
       },
       {
-        "lat": 70.93110656738281,
-        "lon": 16.192489624023438
+        "lat": 82.55119323730469,
+        "lon": 43.93634033203125
+      },
+      {
+        "lat": 82.5256118774414,
+        "lon": 43.37179183959961
+      },
+      {
+        "lat": 82.51924896240234,
+        "lon": 43.21628189086914
+      },
+      {
+        "lat": 82.53148651123047,
+        "lon": 43.04811096191406
+      },
+      {
+        "lat": 82.52474975585938,
+        "lon": 43.90488815307617
       }
     ]
   }
