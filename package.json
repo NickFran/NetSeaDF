@@ -1,6 +1,6 @@
 {
   "name": "my-electron-app",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "SavV - Data Visualization Application",
   "author": "Nick",
   "main": "./src/main.js",

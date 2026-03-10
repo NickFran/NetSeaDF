@@ -4,6 +4,7 @@ const { create } = require('domain');
 const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
+const Menu = electron.Menu;
 const path = require('path');
 const url = require('url');
 
@@ -24,6 +25,39 @@ function createWindow() {
             preload: path.join(__dirname, "common", "preload.js")
         }
     });
+    
+    // Create menu with Transfer option
+    const menuTemplate = [
+        {
+            label: 'File',
+            submenu: [
+                { role: 'quit' }
+            ]
+        },
+        {
+            label: 'Transfer',
+            submenu: [
+                {
+                    label: 'Transfer Data',
+                    click: () => {
+                        console.log('Transfer clicked');
+                        // Add your transfer logic here
+                    }
+                }
+            ]
+        },
+        {
+            label: 'View',
+            submenu: [
+                { role: 'reload' },
+                { role: 'toggleDevTools' }
+            ]
+        }
+    ];
+    
+    const menu = Menu.buildFromTemplate(menuTemplate);
+    Menu.setApplicationMenu(menu);
+    
     win.loadURL(url.format({
         pathname: path.join(__dirname, 'map.html'),
         //pathname: path.join(__dirname, 'unitTests', 'testOfMeans', 'means.html'),

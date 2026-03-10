@@ -1,3 +1,4 @@
+import datetime
 import xarray as xr
 import numpy as np
 import matplotlib.pyplot as plt
@@ -183,8 +184,38 @@ def hasPSAL(ds: xr.Dataset) -> bool:
     """
     if not isinstance(ds, xr.Dataset):
         raise TypeError(f"hasPSAL expects an xarray.Dataset, got {type(ds)!r}")
-    
+
     return 'PSAL' in ds.data_vars or 'PSAL' in ds
+
+def stringTimestampsToObjects(timestamps):
+    """
+    Convert an array of string or numpy timestamps to Python datetime objects.
+    Accepts a list/array of ISO8601 strings or numpy.datetime64 values.
+    Returns a list of datetime.datetime objects.
+    """
+    dt_objects = []
+    for t in timestamps:
+        # Handle numpy.datetime64
+        if hasattr(t, 'astype'):
+            # Convert to datetime64[ms] then to Python object
+            dt_obj = t.astype('datetime64[ms]').astype('O')
+        else:
+            # Assume string
+            dt_obj = datetime.datetime.fromisoformat(str(t).replace('Z', ''))
+        dt_objects.append(dt_obj)
+    return dt_objects
+
+def getTimestamps(ds: xr.Dataset):
+    timestampNamePossibilities = [
+        "time",
+        "Time",
+        "TIME"
+    ]
+
+    for timestampName in timestampNamePossibilities:
+        if timestampName in ds.coords:
+            return ds.coords['TIME'].values
+        
 
 if __name__ == '__main__':
     testNumber = 3
@@ -243,8 +274,32 @@ if __name__ == '__main__':
         XYPlot_Multi(XYPairArr, xlabel='x', ylabel='y', title="TEMP & DEPTH", invert_yaxis=True)
 
     elif testNumber == 3:
-        path = os.path.join(choosenPath, "GL_PR_PF_1902579.nc")
+        path = os.path.join(choosenPath, "GL_PR_PF_1902698.nc")
         # explicitly select the netCDF4 engine (requires the `netCDF4` package)
         ds = xr.open_dataset(path, engine='netcdf4')
+        stamps = getTimestamps(ds)
+        dt_objects = stringTimestampsToObjects(stamps)
+        arraystuff = set()
+        print("All timestamps:")
+        for idx, t in enumerate(dt_objects):
+            print(f"  {idx}: {t}")
 
-        print(getCoords(ds))
+        # Only print pairs where the difference is less than 4 days
+        threshold = datetime.timedelta(days=4.9)
+        print("\nPairs less than 4 days apart:")
+        found = False
+        for i in range(len(dt_objects) - 1):
+            t1 = dt_objects[i]
+            t2 = dt_objects[i+1]
+            diff = t2 - t1
+            if diff > threshold:
+                print(f"  {i}: {t1} -> {i+1}: {t2} | Diff: {diff}")
+                arraystuff.add(i)
+                arraystuff.add(i+1)
+                found = True
+        if not found:
+            print("None found.")
+        print(arraystuff)
+        
+    elif testNumber == 4:
+        pass

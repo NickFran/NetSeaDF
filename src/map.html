@@ -46,62 +46,16 @@
                 pathDep,
                 fileHandle,
                 integrations
+                },
+            "FileHandle":
+                {
+                DOM
                 }
         };
    </script>
 
     <!-- FUNCTIONS -->
-     <script>
-
-    // Helper function to save dataset info to simpleData.json (async version)
-    async function saveDatasetToJSON(fileName, dimensions, variables, overview, coords, attributes) {
-        const jsonPath = pathDep.jsonPath;
-        let coordPairs = [];
-
-        // For each lat instance in lats array,
-        for (i = 0; i < coords[0].length; i++) {
-            // init let & lon, and set to value of index.
-            // but if the value is undefined, default to N/A
-            const lat = coords[0][i] !== undefined ? coords[0][i] : 'N/A';
-            const lon = coords[1][i] !== undefined ? coords[1][i] : 'N/A';
-
-            // append coord pair to coordPairs array
-            coordPairs.push({ lat, lon });
-        }
-        
-        // try to do the rest,
-        try {
-            let existingJSONData = [];
-            // Does JSON file exist?
-            if (fileHandle.doesFileAlreadyExist(jsonPath)) {
-                const fileContent = fs.readFileSync(jsonPath, 'utf-8');
-                if (fileContent.trim()) {  // Only parse if file is not empty
-                    existingJSONData = JSON.parse(fileContent);
-                }
-            }
-            
-            const newEntry = {
-                "id": Date.now().toString(),
-                "fileName": fileName,
-                "attributes": attributes,
-                "summary": overview.attributes?.summary || "No Overview available",
-                "dims": dimensions,
-                "vars": variables,
-                "coords": coordPairs
-            };
-            
-            // add new entry to existing data, and write to JSON file asynchronously
-            existingJSONData.push(newEntry);
-            await fs.promises.writeFile(jsonPath, JSON.stringify(existingJSONData, null, 2));
-            fileHandle.reparseSimpleData(); // Update in-memory data after writing to file
-            console.log("Data saved to simpleData.json");
-            DOM.hideLoadingScreen(); // Hide loading screen after data is saved
-
-        } catch (error) {
-            console.error("Error saving to simpleData.json:", error);
-            DOM.hideLoadingScreen(); // Hide loading screen on error
-        }
-    }
+     <script>    
 
      </script>
 </head>
@@ -125,7 +79,7 @@
     <div class="banner" id="banner">
         <div class="wrapper">   
             
-            <input class="AddFileButton" type="file" id="avatar" name="avatar"/></input>
+            <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton dis" id="bannerButton2">del</button>
             <button href="#" class="bannerButton dis" id="bannerButton3">icon</button>
@@ -204,8 +158,13 @@
         reader.onload = function(e) {
             try {
                 const destPath = path.join(pathDep.savedDataPath, file.name);
-                fs.writeFileSync(destPath, Buffer.from(e.target.result));
-                console.log("New File copied to savedData:", destPath);
+                    const result = fileHandle.copyFileToSavedDataViaBuffer(Buffer.from(e.target.result), file.name, pathDep.savedDataPath);
+                    if (result.success) {
+                        console.log("New File copied to savedData:", result.destPath);
+                    } else {
+                        console.error("Error copying file to savedData:", result.error);
+                        return;
+                    }
 
                 DOM.showLoadingScreen(); // Show loading screen BEFORE Python call
                 
@@ -221,7 +180,7 @@
                             ]).then(async ([overview]) => {
                                 
                                 // Save all data to JSON (now async)
-                                await saveDatasetToJSON(file.name, overview.dimensions, overview.variables, overview, overview.coordinates, overview.attributes);
+                                await fileHandle.saveDatasetToJSON(ModuleDependencies["FileHandle"], file.name, overview);
                                 
                                 // Create marker for the newly added file
                                 const coords = overview.coordinates;
@@ -309,5 +268,27 @@
         let x = DOM.leaf_buildPopupContent(entry.fileName, entry.coords[0]["lat"], entry.coords[0]["lon"], JSON.stringify(entry.dims));
         DOM.leaf_insertDataMarker(appState, entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
     });
+</script>
+<script>
+    x1 = fileHandle.getAllSimpleData();
+        for (entry of JSON.parse(x1)) {
+            // Reset array for each entry
+            let coordPairArray = [];
+            const firstPair = entry.coords[0];
+            console.log(`File (first pair): ${entry.fileName}, Lat: ${firstPair.lat}, Lon: ${firstPair.lon}`);
+
+            // Create group marker at first pair
+            const groupMarker = L.marker([firstPair.lat, firstPair.lon]).bindPopup("Group Marker");
+
+            // Add remaining coord pairs as markers
+            for (coordPair of entry.coords.slice(1)) {
+                console.log(`File: ${entry.fileName}, Lat: ${coordPair.lat}, Lon: ${coordPair.lon}`);
+                coordPairArray.push(L.marker([coordPair.lat, coordPair.lon]));
+            }
+
+            // Group only this entry's markers
+            const group = L.layerGroup([groupMarker, ...coordPairArray]);
+            group.addTo(appState.map);
+        }
 </script>
 </html>

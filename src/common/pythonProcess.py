@@ -1,7 +1,7 @@
 import sys, json, os, math
 import numpy as np
 import xarray as xr
-from datetime import datetime
+import datetime
 
 ds = None
 
@@ -25,7 +25,8 @@ def clean(v):
     if isinstance(v, (float,)): return None if not math.isfinite(v) else v
     if isinstance(v, dict): return {k: clean(val) for k, val in v.items()}
     if isinstance(v, (list, tuple)): return [clean(x) for x in list(v)]
-    if isinstance(v, (np.datetime64, datetime)): return str(v)
+    if isinstance(v, datetime.datetime):
+        return v.isoformat()
     return v
 
 def open_ds(path):  # "open"
@@ -47,6 +48,18 @@ def getDimensions():
 
 def getAttributes():
     return clean(dict(ds.attrs))
+
+def getTimestamps():
+    timestampNamePossibilities = [
+        "time",
+        "Time",
+        "TIME"
+    ]
+
+    for timestampName in timestampNamePossibilities:
+        if timestampName in ds.coords:
+            return clean(ds.coords[timestampName].values)
+    return []
 
 def getSummary():
     return ds.attrs['summary'] if 'summary' in ds.attrs else "No summary available"
@@ -75,13 +88,68 @@ def getCoords():
     except Exception as e:
         return {"error": f"getCoords failed: {str(e)}"}
 
+def convertMsTimestampsToFormattedTimestamps(timestamps, style):
+    formatted = []
+    for t in timestamps:
+        try:
+            dt = None
+            # If t is already a string, try to parse as datetime64
+            if isinstance(t, str):
+                try:
+                    dt = np.datetime64(t)
+                except Exception:
+                    dt = t
+            elif isinstance(t, int):
+                try:
+                    dt = np.datetime64(t, 'ns')
+                except Exception:
+                    dt = np.datetime64(t, 'ms')
+            else:
+                dt = t
+
+            # Format according to style
+            if isinstance(dt, np.datetime64):
+                py_dt = dt.astype('datetime64[ms]').astype(datetime.datetime)
+                if style == 'iso':
+                    formatted.append(py_dt.isoformat())
+                elif style == 'date':
+                    formatted.append(py_dt.strftime('%Y-%m-%d'))
+                elif style == 'datetime':
+                    formatted.append(py_dt.strftime('%Y-%m-%d %H:%M:%S'))
+                elif style == 'no-seconds':
+                    formatted.append(py_dt.strftime('%Y-%m-%d %H:%M'))
+                else:
+                    formatted.append(str(py_dt))
+            elif isinstance(dt, datetime.datetime):
+                if style == 'iso':
+                    formatted.append(dt.isoformat())
+                elif style == 'date':
+                    formatted.append(dt.strftime('%Y-%m-%d'))
+                elif style == 'datetime':
+                    formatted.append(dt.strftime('%Y-%m-%d %H:%M:%S'))
+                elif style == 'no-seconds':
+                    formatted.append(dt.strftime('%Y-%m-%d %H:%M'))
+                else:
+                    formatted.append(str(dt))
+            else:
+                formatted.append(str(dt))
+        except Exception:
+            formatted.append(str(t))
+    return formatted
+    
+
 def getOverview():
     try:
+        timestamps = getTimestamps()
         return {
             "dimensions": getDimensions(),
             "variables": getVariables(),
             "attributes": getAttributes(),
-            "coordinates": getCoords() # Just return coordinate names, not values
+            "coordinates": getCoords(), # Just return coordinate names, not values
+            "timestamps":{
+                "ms":timestamps, 
+                "formatted":convertMsTimestampsToFormattedTimestamps(timestamps, "no-seconds")
+                }
         }
     except Exception as e:
         return {"error": f"getOverview failed: {str(e)}"}
