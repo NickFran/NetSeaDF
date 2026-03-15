@@ -79,7 +79,7 @@
     <div class="banner" id="banner">
         <div class="wrapper">   
             
-            <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple/></input>
+            <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple accept=".nc"/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton dis" id="bannerButton2">del</button>
             <button href="#" class="bannerButton dis" id="bannerButton3">icon</button>
@@ -333,25 +333,25 @@
     });
 </script>
 <script>
-    x1 = fileHandle.getAllSimpleData();
-        for (entry of JSON.parse(x1)) {
-            // Reset array for each entry
-            let coordPairArray = [];
-            const firstPair = entry.coords[0];
-            console.log(`File (first pair): ${entry.fileName}, Lat: ${firstPair.lat}, Lon: ${firstPair.lon}`);
+    // x1 = fileHandle.getAllSimpleData();
+    //     for (entry of JSON.parse(x1)) {
+    //         // Reset array for each entry
+    //         let coordPairArray = [];
+    //         const firstPair = entry.coords[0];
+    //         console.log(`File (first pair): ${entry.fileName}, Lat: ${firstPair.lat}, Lon: ${firstPair.lon}`);
 
-            // Create group marker at first pair
-            const groupMarker = L.marker([firstPair.lat, firstPair.lon]).bindPopup("Group Marker");
+    //         // Create group marker at first pair
+    //         const groupMarker = L.marker([firstPair.lat, firstPair.lon]).bindPopup("Group Marker");
 
-            // Add remaining coord pairs as markers
-            for (coordPair of entry.coords.slice(1)) {
-                console.log(`File: ${entry.fileName}, Lat: ${coordPair.lat}, Lon: ${coordPair.lon}`);
-                coordPairArray.push(L.marker([coordPair.lat, coordPair.lon]));
-            }
+    //         // Add remaining coord pairs as markers
+    //         for (coordPair of entry.coords.slice(1)) {
+    //             console.log(`File: ${entry.fileName}, Lat: ${coordPair.lat}, Lon: ${coordPair.lon}`);
+    //             coordPairArray.push(L.marker([coordPair.lat, coordPair.lon]));
+    //         }
 
-            // Group only this entry's markers
-            const group = L.layerGroup([groupMarker, ...coordPairArray]);
-            group.addTo(appState.map);
-        }
+    //         // Group only this entry's markers
+    //         const group = L.layerGroup([groupMarker, ...coordPairArray]);
+    //         group.addTo(appState.map);
+    //     }
 </script>
 </html>
