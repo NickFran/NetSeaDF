@@ -27,6 +27,7 @@
     border-bottom: #ffffff67 10px solid;
 
     background-color: inherit;
+    overflow-y: auto;
 }.GliderList{
     user-select: none;
     list-style-type: none;
@@ -36,7 +37,24 @@
     border-left:rgba(172, 172, 172, 0.514) 2px dotted;
     margin-top: 10px;
     border-radius: 0px 5px 5px 0px;
-}.GliderList li{
+    max-height: 30vh;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+.GliderList::-webkit-scrollbar {
+    width: 6px;
+}
+.GliderList::-webkit-scrollbar-track {
+    background: transparent;
+}
+.GliderList::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+}
+.GliderList::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+.GliderList li{
     padding: 3px;
     cursor: pointer;
     margin: 4px 0;

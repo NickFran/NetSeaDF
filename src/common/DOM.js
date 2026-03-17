@@ -2,7 +2,13 @@
 const path = require('path');
 
 
-    // Helper function to display dataset info in the card
+/**
+ * Displays detailed information about a dataset in the info cards section of the UI.
+ * @param {*} state - App state object 
+ * @param {*} deps - Module dependencies
+ * @param {*} fileName - The name of the file whose dataset info should be displayed in the info cards.
+ * @returns 
+ */
 function displayDatasetInfo(state, deps, fileName) {
     const { pathDep, fileHandle, integrations } = deps;
 
@@ -47,7 +53,7 @@ function displayDatasetInfo(state, deps, fileName) {
         }
         
         // Helper function to create nested list items
-        function addToList(parent, key, value) {
+        function addToList(parent, key, value, timestamps = null) {
             const li = document.createElement('li');
             li.textContent = key;
             li.style.wordWrap = 'break-word';
@@ -63,7 +69,7 @@ function displayDatasetInfo(state, deps, fileName) {
                         if (first && typeof first === 'object' && ('lat' in first || 'lon' in first)) {
                             value.forEach((coord, index) => {
                                 const indexLi = document.createElement('li');
-                                indexLi.textContent = `[${index}]`;
+                                indexLi.textContent = `[${index}]: ${timestamps[index]}`;
 
                                 const coordUl = document.createElement('ul');
                                 const coordLi_Lat = document.createElement('li');
@@ -103,7 +109,7 @@ function displayDatasetInfo(state, deps, fileName) {
                     } else {
                         value.forEach((item, index) => {
                             const subLi = document.createElement('li');
-                            subLi.textContent = `[${index}]: ${item}`;
+                            subLi.textContent = `${item}`;
                             subUl.appendChild(subLi);
                         });
                     }
@@ -139,7 +145,7 @@ function displayDatasetInfo(state, deps, fileName) {
         // Populate with dataset info, routing to appropriate wrapper
         Object.entries(dataset).forEach(([key, value]) => {
             if (key === 'dims' || key === 'coords') {
-                addToList(ulInfo, key, value);
+                addToList(ulInfo, key, value, Object.entries(dataset)[6][1]["formatted"]);
             } else if (key === 'attributes') {
                 addToList(ulAttr, key, value);
             } else if (key === 'vars') {
@@ -249,34 +255,84 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
         
 }
 
+/**
+ * Using an element's ID string, clears its innerHTML content.
+ * @param {*} elementIdString - The ID of the element whose innerHTML should be cleared.
+ */
 function dom_clearElementInnerHTML_UsingString(elementIdString) {
     const element = document.getElementById(elementIdString);
     element.innerHTML = '';
-}function dom_clearElementInnerHTML_UsingObject(elementObject) {
+}
+/**
+ * Given an element object, clears its innerHTML content.
+ * @param {*} elementObject - The DOM element object whose innerHTML should be cleared.
+ */
+function dom_clearElementInnerHTML_UsingObject(elementObject) {
     elementObject.innerHTML = '';
 }
+/**
+ * Given an element ID string and content, sets the innerHTML of the specified element to the provided content.
+ * @param {*} elementIdString - The ID of the element whose innerHTML should be set.
+ * @param {*} content - The HTML content to set as the innerHTML of the specified element.
+ */
 function dom_SetElementInnerHTML_UsingString(elementIdString, content) {
     const element = document.getElementById(elementIdString);
     element.innerHTML = content;
-}function dom_SetElementInnerHTML_UsingObject(elementObject, contnet) {
+}
+/**
+ * Given an element object and content, sets the innerHTML of the specified element to the provided content.
+ * @param {*} elementObject - The DOM element object whose innerHTML should be set.
+ * @param {*} contnet - The HTML content to set as the innerHTML of the specified element.
+ */
+function dom_SetElementInnerHTML_UsingObject(elementObject, contnet) {
     elementObject.innerHTML = contnet;
 }
 
-// Helper functions for loading screen
+/**
+ * Functions to show and hide the loading screen overlay. The showLoadingScreen function makes the overlay visible and fully opaque, while the hideLoadingScreen function fades it out and then hides it after the fade-out animation completes.
+ * These functions can be called before and after long-running operations (like loading a dataset) to provide visual feedback to the user that something is happening.
+ */
 function showLoadingScreen() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     loadingOverlay.style.display = 'flex';
     loadingOverlay.style.opacity = '1';
 }
+
+/**
+ * Updates the loading screen text to show current progress.
+ * @param {string} text - The text to display on the loading screen.
+ */
+function setLoadingText(text) {
+    const loadingText = document.getElementById('loadingText');
+    if (loadingText) loadingText.textContent = text;
+}
+/**
+ * Functions to show and hide the loading screen overlay. The showLoadingScreen function makes the overlay visible and fully opaque, while the hideLoadingScreen function fades it out and then hides it after the fade-out animation completes.
+ * These functions can be called before and after long-running operations (like loading a dataset) to provide visual feedback to the user that something is happening.
+ */
 function hideLoadingScreen() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     loadingOverlay.style.opacity = '0';
     setTimeout(function() {
         loadingOverlay.style.display = 'none';
+        // Reset loading text back to default
+        const loadingText = document.getElementById('loadingText');
+        if (loadingText) loadingText.textContent = 'Loading...';
     }, 300); // Wait for fade out animation
 }
 
-// Function to insert a data marker on the map
+/**
+ * Inserts a marker onto the Leaflet map at the specified latitude and longitude, with optional popup text and marker options. 
+ * 
+ * If a fileName is provided, it also stores a reference to the marker in the application state for later retrieval or removal.
+ * @param {*} state - app state object
+ * @param {*} lat - latitude coordinate for marker placement
+ * @param {*} lon - longitude coordinate for marker placement
+ * @param {*} popupText - optional text to display in a popup when the marker is clicked
+ * @param {*} markerOptions - optional Leaflet marker options (e.g. custom icon)
+ * @param {*} fileName - optional file name to associate with the marker for state management (e.g. for later removal)
+ * @returns Marker object that was created and added to the map, or null if coordinates were invalid
+ */
 function leaf_insertDataMarker(state, lat, lon, popupText = null, markerOptions = {}, fileName = null) {
     // Validate coordinates
     if (lat === undefined || lon === undefined || lat === 'N/A' || lon === 'N/A') {
@@ -300,6 +356,14 @@ function leaf_insertDataMarker(state, lat, lon, popupText = null, markerOptions 
     return marker;
 }
 
+/**
+ * Given dataset information such as name, latitude, longitude, and dimensions, builds an HTML string to be used as popup content for a Leaflet marker. The popup content includes the dataset name, coordinates (formatted with truncated decimals), dimensions, and a button to view the data. This function can be called when creating markers for datasets to provide informative popups that users can interact with on the map.
+ * @param {*} name - The name of the dataset (e.g. file name) to display in the popup.
+ * @param {*} lat - The latitude coordinate of the dataset, to be displayed in the popup (formatted with truncated decimals).
+ * @param {*} lon - The longitude coordinate of the dataset, to be displayed in the popup (formatted with truncated decimals).
+ * @param {*} dims - The dimensions of the dataset, to be displayed in the popup.
+ * @returns popupContent - An HTML string containing the structured content for the Leaflet marker popup, including dataset information and a button for viewing the data.
+ */
 function leaf_buildPopupContent(name, lat, lon, dims) {
     let popupContent = `<ul>
             <li>File Name: ${name}</li>
@@ -314,6 +378,12 @@ function leaf_buildPopupContent(name, lat, lon, dims) {
     return popupContent;
 }
 
+/**
+ * Stores a reference to a Leaflet marker in the application state, associated with a specific file name. This allows for easy retrieval and management of markers on the map based on the dataset they represent. When a marker is created for a dataset, this function can be called to save the marker reference in the state, enabling features like later removal or updating of the marker when the corresponding dataset is interacted with in the UI.
+ * @param {*} state - The application state object where marker references are stored.
+ * @param {*} fileName - The name of the file (or dataset) that the marker is associated with, used as a key to store the marker reference in the state.
+ * @param {*} marker - The Leaflet marker object that should be stored in the state for later retrieval or management.
+ */
 function leaf_storeStateOfMapMarker(state, fileName, marker) {
     if (!state.markers) {
         state.markers = {};
@@ -324,6 +394,12 @@ function leaf_storeStateOfMapMarker(state, fileName, marker) {
     console.log('Current markers in state:', state.markers);
 }
 
+/**
+ * Removes a marker from the Leaflet map based on the provided file name. This function looks up the marker associated with the given file name in the application state, removes it from the map, and deletes the reference from the state. It also logs the process for debugging purposes. This is useful for managing markers when datasets are removed or updated, ensuring that the map reflects the current state of the data being visualized.
+ * @param {*} state - The application state object where marker references are stored.
+ * @param {*} fileName - The name of the file (or dataset) whose associated marker should be removed from the map and state.
+ * @returns boolean - Returns true if the marker was found and removed, false if no marker was found for the given file name.
+ */
 function leaf_removeMapMarker(state, fileName) {
     /**
      * Removes a marker from the map based on fileName.
@@ -353,6 +429,11 @@ function leaf_removeMapMarker(state, fileName) {
     return true;
 }
 
+/**
+ * Removes a sidebar list item based on fileName.
+ * @param {*} fileName - The name of the file whose sidebar entry should be removed.
+ * @returns boolean - True if entry was found and removed, false otherwise.
+ */
 function dom_removeSidebarEntry(fileName) {
     /**
      * Removes a sidebar list item based on fileName.
@@ -406,6 +487,7 @@ module.exports = {
     dom_clearElementInnerHTML_UsingObject,
     showLoadingScreen,
     hideLoadingScreen,
+    setLoadingText,
     displayDatasetInfo,
     leaf_insertDataMarker,
     leaf_buildPopupContent,

@@ -15,6 +15,9 @@ const folderSublevelFromRootMap = {
 
 const savedDataPath = resolveToProperDataPath(__dirname, 'savedData');
 const jsonPath = path.join(savedDataPath, 'simpleData.json');
+const qeuesPath = resolveToProperDataPath(__dirname, 'qeues');
+const importQeuePath = path.join(qeuesPath, 'importQeue.json');
+const removeQeuePath = path.join(qeuesPath, 'removeQeue.json');
 
 // takes the __dirname and returns the current folder name
 function getCurrentFolderName(dirname) {
@@ -73,7 +76,7 @@ function resolveToProperDataPath(dirname, folderName) {
     // Check if app is packaged (production) by checking if resources path exists
     const isDev = !process.resourcesPath || process.resourcesPath.includes('node_modules'); 
 
-    let isSpecifiedFolderValid = ["logs", "savedData", "config"].includes(folderName)
+    let isSpecifiedFolderValid = ["logs", "savedData", "config", "qeues"].includes(folderName)
 
     if (isSpecifiedFolderValid) { 
         return isDev 
@@ -82,7 +85,7 @@ function resolveToProperDataPath(dirname, folderName) {
         // If Production Mode - use process.resourcesPath to access extraResources
             : path.join(process.resourcesPath, "dist", `${folderName}`);
     } else {
-        DisplayError("InvalidFolderNameError, (folder name must be 'logs', 'savedData', or 'config')", 3);
+        DisplayError("InvalidFolderNameError, (folder name must be 'logs', 'savedData', 'config', or 'qeues')", 3);
         return 'InvalidFolderNameError';
     }
 }
@@ -104,4 +107,4 @@ function resolveToProperDataPath(dirname, folderName) {
 
 
 
-module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath };
+module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath, qeuesPath, importQeuePath, removeQeuePath };

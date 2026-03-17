@@ -14,4 +14,4 @@
 
 * leaflet maps place names are not all in english?
 
-* restrict file importing to only allowed extensions
+* add selection color to all multi files

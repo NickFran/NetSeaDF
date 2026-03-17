@@ -1,5 +1,5 @@
 appId: com.nick.myapp
-productName: SavV
+productName: NetSeaDF
 directories:
   output: output
 afterPack: build/afterPack.js

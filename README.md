@@ -1,6 +1,6 @@
-# SavV
+# NetSeaDF
 
-Savannah's View, a cross-platform desktop application for mapping and data visualization for acoustic datasets.
+NetSeaDF, a cross-platform desktop application for mapping and data visualization for acoustic datasets.
 
 ## Features
 * Importing datasets
@@ -18,7 +18,7 @@ Savannah's View, a cross-platform desktop application for mapping and data visua
 1. Clone the repository:
 ```bash
 git clone <your-repo-url>
-cd SavV
+cd NetSeaDF
 ```
 
 2. Install dependencies:
@@ -102,8 +102,8 @@ npm run build:all
 ### Build Outputs
 
 Built installers will be in the `output/` folder:
-- Windows: `SavV Setup X.X.X.exe`
-- macOS: `SavV-X.X.X.dmg`
+- Windows: `NetSeaDF Setup X.X.X.exe`
+- macOS: `NetSeaDF-X.X.X.dmg`
 
 ### Notes
 
