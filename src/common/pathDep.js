@@ -90,21 +90,6 @@ function resolveToProperDataPath(dirname, folderName) {
     }
 }
 
-// performUnitTest(
-//     path.join(fromHereToRoot(__dirname), "dist", "savedData"), 
-//     String.raw`D:\Repository\SavV\dist\savedData`
-// );
-
-// performUnitTest(
-//     resolveToProperDataPath(__dirname, "logs"), 
-//     String.raw`D:\Repository\SavV\logs`
-// );
-
-// performUnitTest(
-//     resolveToProperDataPath(__dirname, "savedData"), 
-//     String.raw`D:\Repository\SavV\savedData`
-// );
-
 
 
 module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath, qeuesPath, importQeuePath, removeQeuePath };

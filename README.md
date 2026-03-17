@@ -1,12 +1,20 @@
 # NetSeaDF
 ![Main Interface Map Mode](src/media/Main%20Interface_MapMode.png)
 
-NetSeaDF, a cross-platform desktop application for mapping and data visualization for acoustic datasets.
+NetSeaDF, a cross-platform desktop application for mapping and data visualization of ARGO float datasets.
+
+
+## Additional information
+This application is made in accordance with research needs of the Opera Lab at University Of Rhode Island's Graduate School Of Oceanography.
+
+Developed during URI GSO's OECI B2OE Program.
 
 ## Features
-* Importing datasets
+* Importing multiple datasets
 * Displaying multiple datasets on a map
-* Viewing graphs of a dataset and its results
+* Viewing graphs of multiple dataset.
+
+
 
 ## Development Setup
 
