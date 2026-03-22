@@ -24,6 +24,8 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
             DOM.leaf_removeMapMarker(state, file, instance=true);
             state.markers[file].isExpanded = false; // set marker state to not expanded
             state.markers[file].expandedInstances = []; // clear expanded instances array
+            state.markers[file].additionalInstances.polyLines = []; 
+            state.markers[file].additionalInstances.Numbers = []; 
 
         // in not, expand and add instance markers for each additional coordinate pair
         } else {
@@ -48,7 +50,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 // current coord pair instance
                 latNlon = [currentFileToExpand.coords[coordPair].lat, currentFileToExpand.coords[coordPair].lon];
                 let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=coordPair);
-                DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], currentFileToExpand.coords[coordPair].lat, currentFileToExpand.coords[coordPair].lon, instancePopupContent, {}, currentFileToExpand.fileName, instance=true);
+                DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], latNlon[0], latNlon[1], instancePopupContent, {}, currentFileToExpand.fileName, instance=true);
                 state.markers[file].isExpanded = true; // set marker state to expanded
                 polyLineVerts.push(latNlon); // add new coordinate pair to polyline array
                 
@@ -63,7 +65,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 // Add number icon marker to map
                 let instanceNumber = L.marker(latNlon, { icon: numberIcon })
                 instanceNumber.addTo(state.map);
-                appState.markers[file].expandedInstances.push(instanceNumber); // store instance marker reference for later removal when collapsing
+                appState.markers[file].additionalInstances.Numbers.push(instanceNumber); // store instance marker reference for later removal when collapsing
             }
 
             console.log(`Marker for file ${file} expanded with ${currentFileToExpand.coords.length - 1} instance(s)`);
@@ -80,7 +82,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
             });
             // add new line to map
             polyline.addTo(state.map);
-            appState.markers[file].expandedInstances.push(polyline);
+            appState.markers[file].additionalInstances.polyLines.push(polyline);
         }
 }
 

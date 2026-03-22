@@ -15,3 +15,5 @@
 * leaflet maps place names are not all in english?
 
 * add selection color to all multi files
+
+* all instance markers have the same coords, check to make sure this is normal and not some DOM issue.

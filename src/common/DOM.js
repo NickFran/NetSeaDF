@@ -457,21 +457,28 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null) {
  * @param {*} fileName - The name of the file (or dataset) that the marker is associated with, used as a key to store the marker reference in the state.
  * @param {*} marker - The Leaflet marker object that should be stored in the state for later retrieval or management.
  */
-function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null) {
+function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null, type=null) {
     if (!state.markers) {
         state.markers = {};
     }
 
     if (instance){
-        state.markers[fileName]["expandedInstances"].push(marker);
+        if (type == "additional"){
+            state.markers[fileName]["additionalInstances"].push(marker);
+        } else{
+            state.markers[fileName]["expandedInstances"].push(marker);
+        }
     } else {
         state.markers[fileName] = {
             marker: marker, 
             isExpanded: false, 
             expandedInstances:[], 
-            instancesFilterStatus: [], 
+            instancesFilterStatus: [], // we should look to get rid of this.
             isFiltered: false, 
-            additionalInstances: []};
+            additionalInstances: {
+                polyLines:[], 
+                Numbers:[]
+            }};
     }
 }
 
@@ -504,13 +511,24 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
             state.map.removeLayer(instanceMarker);
 
         }
+        for (let instanceMarker of marker["additionalInstances"].polyLines){
+            state.map.removeLayer(instanceMarker);
+
+        }
+        for (let instanceMarker of marker["additionalInstances"].Numbers){
+            state.map.removeLayer(instanceMarker);
+
+        }
     } else {
         if (state.map) {
             state.map.removeLayer(marker["marker"]);
         }
         if (marker["isExpanded"]){
-            for (let instanceMarker of marker["expandedInstances"]){
-                state.map.removeLayer(instanceMarker);
+            for (let instanceMarker of marker["expandedInstances"]){ // isnt this a duplicate?
+            state.map.removeLayer(instanceMarker);
+            }
+            for (let instanceMarker of marker["additionalInstances"]){
+            state.map.removeLayer(instanceMarker);
             }
         }
         // Delete reference from state
