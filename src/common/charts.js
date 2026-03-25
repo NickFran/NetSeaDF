@@ -54,8 +54,8 @@ function initTimeline(state, deps, DOM_Deps) {
                 }
             },
                 grid: {
-                    left: '15%',
-                    right: '15%',
+                    left: '5%',
+                    right: '10%',
                     top: '20%',
                     bottom: '50%',
                     containLabel: true
@@ -84,7 +84,13 @@ function initTimeline(state, deps, DOM_Deps) {
                 axisLabel: {
                     rotate: 45,
                     color: '#243744',
-                    fontSize: 13,
+                    fontSize: (function() {
+                        // Dynamically scale font size based on window width
+                        const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+                        if (width < 800) return 9;
+                        if (width < 1200) return 10;
+                        return 13;
+                    })(),
                     formatter: function(value) {
                         const date = new Date(value);
                         const year = date.getFullYear();
@@ -138,6 +144,54 @@ function initTimeline(state, deps, DOM_Deps) {
                     handleStyle: {
                         color: '#007bff',
                         borderColor: '#243744'
+                    },
+                    labelFormatter: function(value) {
+                        const date = new Date(value);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        let hour = date.getHours();
+                        let min = String(date.getMinutes()).padStart(2, '0');
+                        if (state.mapTimeline12hrClock) {
+                            let ampm = hour >= 12 ? 'PM' : 'AM';
+                            let hour12 = hour % 12;
+                            if (hour12 === 0) hour12 = 12;
+                            hour12 = String(hour12).padStart(2, '0');
+                            return `${year}-${month}-${day} ${hour12}:${min} ${ampm}`;
+                        } else {
+                            hour = String(hour).padStart(2, '0');
+                            return `${year}-${month}-${day} ${hour}:${min}`;
+                        }
+                    }
+                },
+                {
+                    type: 'inside',
+                    xAxisIndex: [0],
+                    start: 0,
+                    end: 100
+                }
+            ],
+            dataZoom: [
+                {
+                    type: 'slider',
+                    show: true,
+                    xAxisIndex: [0],
+                    start: 0,
+                    end: 100,
+                    backgroundColor: '#e0e0e0',
+                    fillerColor: '#007bff33',
+                    borderColor: '#007bff',
+                    handleStyle: {
+                        color: '#007bff',
+                        borderColor: '#243744'
+                    },
+                    textStyle: {
+                        fontSize: (function() {
+                            const width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+                            if (width < 800) return 8;
+                            if (width < 1200) return 10;
+                            return 13;
+                        })()
                     },
                     labelFormatter: function(value, type) {
                         const date = new Date(value);

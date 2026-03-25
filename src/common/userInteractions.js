@@ -61,6 +61,8 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                     lineCap: 'round',
                     lineJoin: 'round'
                 });
+
+                // poly line instances
                 polyline.addTo(state.map);
                 state.markers[file].additionalInstances.polyLines.push(polyline);
 
@@ -71,8 +73,11 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 state.markers[file].isExpanded = true; // set marker state to expanded
                 
                 // init instance number (string for marker icon)
-                
                 DOM.leaf_addPolyNumberToMap(state, file, latNlon, coordPair);
+
+                //underIceFlags
+                // currentFileToExpand.timestamps["ms"][coordPair]
+                // currentFileToExpand.timestamps["ms"][coordPair - 1]
                 
             }
             

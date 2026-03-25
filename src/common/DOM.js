@@ -473,7 +473,7 @@ function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null, type
             marker: marker, 
             isExpanded: false, 
             expandedInstances:[], 
-            instancesFilterStatus: [], // we should look to get rid of this.
+            instancesFilterStatus: [], // we should look to get rid of this. (or make this into the timestamp flag array)
             isFiltered: false, 
             additionalInstances: {
                 polyLines:[], 

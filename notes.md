@@ -20,3 +20,5 @@
 
 * the checkbox for 12hr clock in the timeline selection is creating null values because its not checking if a datetime has been chosed before conversion.
   * watch to see if this causes issues, if so, lets check our mode, then check if that modes range is a valid date, then convert. 
+
+* 12 hr clock checkbox was never implemented on data point tooltips for timestamp.

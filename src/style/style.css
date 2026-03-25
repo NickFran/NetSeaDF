@@ -57,7 +57,7 @@ body {
     display: grid;
 
     grid-template-columns: 1.7fr 1fr 1fr 1fr 1fr 1fr 1fr; 
-    grid-template-rows: auto 0fr 0fr 0fr .15fr; 
+    grid-template-rows: auto 0fr 0fr 0fr .2fr; 
     grid-template-areas: 
     "card3     card4 card4 card4 card4 card4 card4"
     "card3     card4 card4 card4 card4 card4 card4"
@@ -420,19 +420,25 @@ body {
     display: table;
     width: 90%;
     border-collapse: collapse;
-    border: 2px solid #333;
+    border: 1.5px solid #333;
+    font-size: 12px;
 }
 
 .rangeTable th, .rangeTable td {
     border: 1px solid #333;
     padding: 6px 10px;
+    font-size: 12px;
     text-align: center;
+    width: auto;
 } .rangeTable input{
     width: 100%;
+    min-width: 0;
     padding: 5px;
+    font-size: 12px;
     box-sizing: border-box;
     border-radius: 5px;
     border: 1px solid #ccc;
+
 }
 
 .filterButton {

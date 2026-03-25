@@ -211,7 +211,7 @@
                                  document.addEventListener('DOMContentLoaded', function() {
                                      if (window.L && appState && appState.map) {
                                          // Top right control (existing)
-                                         var customControl = window.L.control({position: 'topright'});
+                                         var customControl = window.L.control({position: 'bottomleft'});
                                          customControl.onAdd = function() {
                                              var div = window.L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
                                              div.innerHTML = '<span id="leafletMapHeader" style="padding:4px 12px;font-weight:bold;font-size:1em;background:rgba(255,255,255,0.85);border-radius:6px;box-shadow:0 2px 6px #0002;">Leaflet Map Overview</span>';
@@ -435,7 +435,9 @@ document.getElementById('timelineDropdown').addEventListener('change', function(
     }
 });
 document.getElementById('timelineFilterButton').addEventListener('click', function(event) {
-
+    DOM.leaf_UpdateTimelineHeader(appState, appState.mapTimelineRange.input[0], appState.mapTimelineRange.input[1]);
+    DOM.leaf_filterPlatformsByTimeRange(appState, ModuleDependencies["DOM"], appState.mapTimelineRange.input[0], appState.mapTimelineRange.input[1]);
+    
 }); 
 document.getElementById('timeline12hrInput').addEventListener('change', function(event) {
     appState.mapTimeline12hrClock = event.target.checked;
