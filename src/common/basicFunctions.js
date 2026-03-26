@@ -1,3 +1,5 @@
+const objects = require('./objects');
+
 function clamp(value, min, max) {
   if (value > max) return max;
   if (value < min) return min;
@@ -16,9 +18,10 @@ function getNextIndex(currentIndex, arrayLength, direction) {
 }
 
 function getInbetweenCoords(coord1, coord2, fraction) {
-    const lat = coord1.lat + (coord2.lat - coord1.lat) * fraction;
-    const lon = coord1.lon + (coord2.lon - coord1.lon) * fraction;
-    return { lat, lon };
+    console.log(`Calculating in-between coordinates with fraction ${fraction} between:`, coord1, coord2);
+    const lat = coord1[0] + (coord2[0] - coord1[0]) * fraction;
+    const lon = coord1[1] + (coord2[1] - coord1[1]) * fraction;
+    return {lat, lon};
 }
 
 function format24hr(date) {
@@ -44,4 +47,51 @@ function format12hr(date) {
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds} ${ampm}`;
 }
 
-module.exports = { clamp, getNextIndex, getInbetweenCoords, format24hr, format12hr };
+function getTimestampDifference(timestamp1, timestamp2, importFormat, returnType) {
+    let ts1 = null;
+    let ts2 = null;
+    let diff = null;
+    let result = null;
+
+    if (importFormat === 'formatted') {
+        const ts1 = new Date(timestamp1);
+        const ts2 = new Date(timestamp2);
+        diff = Math.abs(ts1 - ts2);
+        result = diff; // default to days
+
+    } else if (importFormat === 'ms') {
+        ts1 = timestamp1;
+        ts2 = timestamp2;
+        diff = Math.abs(ts1 - ts2);
+
+        switch (returnType) {
+        case objects.GraphType.d:
+            result = diff / (1e9 * 60 * 60 * 24);
+            break;
+        case objects.GraphType.h:
+            result = diff / (1e9 * 60 * 60);
+            break;
+        case objects.GraphType.m:
+            result = diff / (1e9 * 60);
+            break;
+        case objects.GraphType.ms:
+            result = diff / 1e9;
+            break;
+        default:
+            result = diff;
+        }
+    } else {    
+        console.error("Unsupported format for timestamp difference calculation");
+        return null;
+    }
+    return result;
+}
+
+module.exports = { 
+    clamp, 
+    getNextIndex, 
+    getInbetweenCoords, 
+    format24hr, 
+    format12hr, 
+    getTimestampDifference 
+};

@@ -65,6 +65,15 @@ class ViewSettings {
     }
 }
 
+const GraphType = Object.freeze({
+    ns: "nanoseconds",
+    ms: "milliseconds",
+    s: "seconds",
+    m: "minuets",
+    h: "hours",
+    d: "days"
+});
+
 // this needs to be fleshed out, but you get the point
 const dataViewAxisSetting = {
     axis : "x",
@@ -104,3 +113,7 @@ df.deleteFile();
 
 // for i in allFiles
 //    fileArray.append(new DataFile())
+
+module.exports = {
+    GraphType
+};

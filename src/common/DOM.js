@@ -374,7 +374,7 @@ function hideLoadingScreen() {
  * @param {*} fileName - optional file name to associate with the marker for state management (e.g. for later removal)
  * @returns Marker object that was created and added to the map, or null if coordinates were invalid
  */
-function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOptions = {}, fileName = null, instance=null) {
+function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOptions = {}, fileName = null, instance=null, customImage=null) {
     const {pathDep} = dep;
     // Validate coordinates
     if (lat === undefined || lon === undefined || lat === 'N/A' || lon === 'N/A') {
@@ -398,6 +398,12 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
                 // iconAnchor: [16, 32],
                 // popupAnchor: [0, -32]
         });
+    }
+    if (customImage){
+        gliderIcon = L.icon({
+                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", customImage),
+                iconSize: [40, 40]
+                });
     }
     
     const marker = L.marker([lat, lon], { ...markerOptions, icon: gliderIcon }).addTo(state.map);
@@ -423,30 +429,36 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
  * @param {*} dims - The dimensions of the dataset, to be displayed in the popup.
  * @returns popupContent - An HTML string containing the structured content for the Leaflet marker popup, including dataset information and a button for viewing the data.
  */
-function leaf_buildPopupContent(entry, instance=null, buttonText=null) {
+function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInput=false){
     let popupContent = '';
-    if (instance == false) {
-        popupContent = `<ul>
-            <li>File Name: ${entry.fileName}</li>
-            <li>Timestamp: ${entry.timestamps["formatted"][0]}</li>
-            <br>
-            <li>Latitude: ${entry.coords[0]["lat"]}</li>
-            <li>Longitude: ${entry.coords[0]["lon"]}</li>
-            <br>
-            <li>Dimensions: ${JSON.stringify(entry.dims)}</li>
-            <br>
-            <button class="mapPopupButton" id="mapPopupButton" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Timeline"}</button>
-        </ul>`;
+    if (manualInput){
+        popupContent = manualInput;
     } else {
-        popupContent = `<ul>
-            <li>File Name: ${entry.fileName}</li>
-            <li>Timestamp: ${entry.timestamps["formatted"][instance]}</li>
-            <br>
-            <li>Latitude: ${entry.coords[instance]["lat"]}</li>
-            <li>Longitude: ${entry.coords[instance]["lon"]}</li>
-            <br>
-        </ul>`;
+        if (instance == false) {
+                popupContent = `<ul>
+                    <li>File Name: ${entry.fileName}</li>
+                    <li>Timestamp: ${entry.timestamps["formatted"][0]}</li>
+                    <br>
+                    <li>Latitude: ${entry.coords[0]["lat"]}</li>
+                    <li>Longitude: ${entry.coords[0]["lon"]}</li>
+                    <br>
+                    <li>Dimensions: ${JSON.stringify(entry.dims)}</li>
+                    <br>
+                    <button class="mapPopupButton" id="mapPopupButton" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Timeline"}</button>
+                </ul>`;
+            } else {
+                popupContent = `<ul>
+                    <li>File Name: ${entry.fileName}</li>
+                    <li>Timestamp: ${entry.timestamps["formatted"][instance]}</li>
+                    <br>
+                    <li>Latitude: ${entry.coords[instance]["lat"]}</li>
+                    <li>Longitude: ${entry.coords[instance]["lon"]}</li>
+                    <br>
+                </ul>`;
+            }
     }
+    
+
     
     return popupContent;
 }
@@ -473,11 +485,14 @@ function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null, type
             marker: marker, 
             isExpanded: false, 
             expandedInstances:[], 
-            instancesFilterStatus: [], // we should look to get rid of this. (or make this into the timestamp flag array)
+            TimestampFlags: {
+                TimestampFlagDifferences: [],
+            }, // we should look to get rid of this. (or make this into the timestamp flag array)
             isFiltered: false, 
             additionalInstances: {
                 polyLines:[], 
-                Numbers:[]
+                Numbers:[],
+                UnderIceFlags: []
             }};
     }
 }
@@ -497,7 +512,6 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
      * @returns {boolean} - True if marker was found and removed, false otherwise.
      */
     console.log('Attempting to remove marker for:', fileName);
-    console.log('Available markers:', Object.keys(state.markers || {}));
     
     if (!state.markers || !state.markers[fileName]) {
         console.warn(`No marker found for file: ${fileName}`);
@@ -519,6 +533,13 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
             state.map.removeLayer(instanceMarker);
 
         }
+        // for (let instanceMarker of marker["additionalInstances"].UnderIceFlags){
+        //     state.map.removeLayer(instanceMarker);
+
+        // }
+        // for (let instanceMarker of marker["TimestampFlags"].UnderIceFlags){
+        //     state.map.removeLayer(instanceMarker);
+        // }
     } else {
         if (state.map) {
             state.map.removeLayer(marker["marker"]);
@@ -634,6 +655,22 @@ function leaf_addPolyNumberToMap(state, file, latlon, number){
                 state.markers[file].additionalInstances.Numbers.push(instanceNumber); // store instance marker reference for later removal when collapsing
 }
 
+function leaf_addPolyLineToMap(state, file, latlon1, latlon2){
+    const polyline = L.polyline([latlon1, latlon2], {
+                    color: 'blue',
+                    weight: 3,
+                    opacity: 0.8,
+                    dashArray: '10, 5',
+                    lineCap: 'round',
+                    lineJoin: 'round'
+                });
+
+    // poly line instances
+    polyline.addTo(state.map);
+    state.markers[file].additionalInstances.polyLines.push(polyline);
+
+}
+
 function leaf_UpdateTimelineHeader(state, min, max){
     document.getElementById('MapTimelineFilterHeader').innerText = `Timeline Range: ${min} - ${max}`;
     window.updateCenterDivPosition();
@@ -659,5 +696,6 @@ module.exports = {
     getSidebarEntryObjectFromFileName,
     leaf_filterPlatformsByTimeRange,
     leaf_addPolyNumberToMap,
-    leaf_UpdateTimelineHeader
+    leaf_UpdateTimelineHeader,
+    leaf_addPolyLineToMap
 };
