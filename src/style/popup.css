@@ -40,10 +40,12 @@
     height: 100%; /* Ensure the wrapper fills the popup height */
     overflow: hidden; /* Prevent content from overflowing the wrapper */
 }
+.popup-content-wrapper_simple{
+    display:block;
+}
 .popup-content {
     padding: 10px 10px;
     overflow-y: auto;
-    border-left: 1px solid #888888;
     border-top: 1px solid #888888;
 }
 .popup-menu {
@@ -70,8 +72,32 @@
     transition: background 0.2s;
     background-color: #dedede;
     flex-shrink: 0; /* Prevent items from shrinking */
+    width: 81%; /* Ensure items take full width of the menu */
 }.popup-menu-item:hover {
     background-color: #bbbbbb;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+    transition: all 0.05s ease-in-out;
+}
+
+.popup-menu-item-delete {
+    padding: 4px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    text-align: center;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    border-radius: 5px;
+
+    margin-left: auto; /* Push delete button to the right */
+    
+}.popup-menu-item-delete:hover {
+    background-color: #be3434;
+    box-shadow: 0 4px 4px rgba(0,0,0,0.20);
+    border-radius: 10px;
+    transition: all 0.05s ease-in-out;
 }
 
 .popup-close{

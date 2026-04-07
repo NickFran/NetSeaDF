@@ -87,10 +87,10 @@ class popup {
     open() {
         this.overlay.style.display = 'block';
         this.popupBox.style.display = 'block';
-        this.onOpen();
         if (!this.hasOpened) {
             this.onOpen_FirstTime();
         }
+        this.onOpen();
 
         this.hasOpened = true;
     }
@@ -118,6 +118,8 @@ class NotificationPopup extends popup {
     }
 
     addIcon() {
+        this.contentWrapper.classList.remove("popup-content-wrapper");
+        this.contentWrapper.classList.add("popup-content-wrapper_simple");
         // Create the icon element
         const icon = document.createElement("span");
         if (this.notificationType !== null) {
@@ -147,8 +149,11 @@ class MenuPopup extends popup {
     constructor(init = {}, basics = {}, functionality = {}, options = {}) {
         super(init, basics, functionality, options);
         this.menuItems = init.menuItems || []; // Default to an empty array if not provided
+        this.onMenuItemAdded = functionality.onMenuItemAdded || function() {};
+        this.onMenuItemDeleted = functionality.onMenuItemDeleted || function() {};
+        this.lastOpenedMenuItem = null; // Track the last opened menu item
 
-        this.addMenuBar(); // Ensure the method is called on the instance
+        this.addMenuBar();
     }
 
     addMenuBar() {
@@ -161,15 +166,46 @@ class MenuPopup extends popup {
         }
     }
 
-    addMenuItem(element, onClick) {
+    addMenuItem(element,onClick, providedItemData) {
         const menu = this.contentWrapper.querySelector(".popup-menu");
+        let wrapper = document.createElement("div");
+        wrapper._itemData = providedItemData;
+
+        // init delete button
+        let deleteButton = document.createElement('button');
+        let deleteIcon = document.createElement('img');
+        deleteIcon.src = path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "trashcan.svg");
+        deleteButton.style.cursor = 'pointer';
+        deleteButton.style.marginLeft = 'auto';
+        deleteButton.appendChild(deleteIcon);
+
+        // the old element is now the mainElm so that deleteElms can be handled as well for delete buttons
+        let mainElm = element;
         element.classList.add("popup-menu-item");
-        element.addEventListener("click", () => {
+
+        let deleteElm = deleteButton;
+        deleteElm.classList.add("popup-menu-item-delete");
+
+        wrapper.style.display = 'flex';
+        wrapper.appendChild(mainElm);
+        wrapper.appendChild(deleteButton);
+        const thisDeleteButtonsAssociatedMainElmRef = deleteButton.parentElement.children[0] // this is the main element that the delete button is associated with, this is used in the delete function to know which element to remove when the delete button is clicked, since the main element is a child of the wrapper, we can access it through
+        deleteButton.parentElement.children[0]
+        mainElm.addEventListener("click", () => {
             onClick();
+            this.lastOpenedMenuItem = thisDeleteButtonsAssociatedMainElmRef; // set the last opened menu item to the main element associated with the clicked menu item
+        });
+        deleteButton.addEventListener("click", () => {
+            menu.removeChild(wrapper);
+            if (this.lastOpenedMenuItem === thisDeleteButtonsAssociatedMainElmRef) { // if the deleted menu item is the last opened menu item, reset the content to default
+                this.updateContent("<p></p>");
+            }
+            this.onMenuItemDeleted(wrapper._itemData);
         });
 
         if (menu) {
-            menu.appendChild(element);
+            menu.appendChild(wrapper);
+            this.onMenuItemAdded();
         } else {
             console.error("Menu element not found. Ensure addMenuBar() is called.");
         }
@@ -188,6 +224,8 @@ class MenuPopup extends popup {
 class SimplePopup extends popup {
     constructor(init = {}, basics = {}, functionality = {}, options = {}) {
         super(init, basics, functionality, options);
+        this.contentWrapper.classList.remove("popup-content-wrapper");
+        this.contentWrapper.classList.add("popup-content-wrapper_simple");
     }
 }
 

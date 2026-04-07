@@ -1,0 +1,13 @@
+enableDebug: false
+
+#Debug Logging Specifications
+DebugFileIO: false
+DebugState: false
+DebugQueues: false
+DebugNotifications: true
+DebugInteractions: false
+DebugMap: false
+DebugMapMarkers: false
+
+#Logging Level
+onlyLogSeriousNotifications: false

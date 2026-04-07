@@ -58,9 +58,15 @@
                 slider: [],
                 input: []
             },
+            charts: {
+                timeline: null
+            },
             popups: {},
-            popupSeriousness: 0
+            notificationsSeriousnessArray: []
         };
+
+        
+
         
         // Dependencies object for DOM functions
         const ModuleDependencies={
@@ -254,7 +260,7 @@
 
 <script>    
         const mapFilterPopup = new popup.SimplePopup(
-        { type: "simple" },
+        {},
         { 
             title: "Filter", 
             content: `
@@ -308,8 +314,20 @@
                     </div>
             `
         },
-        {onOpen_FirstTime: function() {
-            charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
+        {   onOpen: function() {
+            if (appState.popups.mapFilterPopup.hasOpened) {
+                if (appState.charts.timeline) {
+                    appState.charts.timeline.resize();
+                } else {
+                    console.warn('Timeline chart not found on popup open');
+                }
+
+            }
+            appState.charts.timeline.resize();
+        },
+            onOpen_FirstTime: function() {
+            const timelineChart = charts.initTimeline(appState, ModuleDependencies["charts"], ModuleDependencies["DOM"]);
+            appState.charts.timeline = timelineChart;
         } }
     );
 
@@ -322,6 +340,20 @@
                         <p>No new notifications</p>
                     </div>
             `
+        },
+        {
+            onMenuItemAdded: function() {
+                console.log('Menu item added to notifications menu popup');
+            },
+            onMenuItemDeleted: function(data) {
+                console.log('Menu item deleted from notifications menu popup with data:', data.itemSeriousnessLevel);
+
+                let idx = appState.notificationsSeriousnessArray.indexOf(data.itemSeriousnessLevel);
+                if (idx !== -1) appState.notificationsSeriousnessArray.splice(idx, 1);
+
+                DOM.updateNotificationIndicator(appState, Math.max(...appState.notificationsSeriousnessArray));
+                DOM.updateVisibilityOfNotificationIndicator(appState);
+            }
         }
     );
 
@@ -332,6 +364,8 @@
 <script>
     // Initial load
     DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
+
+    DOM.updateVisibilityOfNotificationIndicator(appState);
     
     // Hide loading screen after initial page load
     window.addEventListener('load', function() {
@@ -548,27 +582,13 @@ userInteractions.userint_focusOnMarker(appState);
 </script>
 
 <script>
+    // DOM.postNotification(appState, params={
+    // notificationType: 'error',
+    // notificationLabel: 'Error',
+    // content: 'badf bad baf'
+    // })
     document.getElementById('bannerButton4').addEventListener('click', function() {
         notificationsMenuPopup.open();
-        DOM.buildNotificationMenuItem(appState, params={
-            notificationType: 'error',
-            notificationLabel: 'New error',
-            content: 'This is a new notification!'
-        })
-        DOM.buildNotificationMenuItem(appState, params={
-            notificationType: 'warning',
-            notificationLabel: 'New warning',
-            content: 'This is a new notification!'
-        })
-        DOM.buildNotificationMenuItem(appState, params={
-            notificationType: 'info',
-            notificationLabel: 'New info',
-            content: 'This is a new notification!'
-        })
-
-        
-
-
     });
 </script>
 </html>

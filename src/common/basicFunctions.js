@@ -107,11 +107,18 @@ function PlatformsMapToFuncsIfNameMatchFound(state, collection, functionName, el
     }
 }
 
+function getNotificationsMaxSeriousness() {
+    return this.notificationsSeriousnessArray.length
+        ? Math.max(...this.notificationsSeriousnessArray)
+        : 0;
+}
+
 module.exports = { 
     clamp, 
     getNextIndex, 
     getInbetweenCoords, 
     format24hr, 
     format12hr, 
-    getTimestampDifference
+    getTimestampDifference,
+    getNotificationsMaxSeriousness
 };

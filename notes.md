@@ -20,4 +20,3 @@
 
 * input timeline range has slightly different formatting than slider output (inputs are including a T)
 
-* add (on menuItem added()) callback when adding a new item to the NotificationMenu class.

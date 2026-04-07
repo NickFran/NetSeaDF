@@ -246,6 +246,8 @@ function initTimeline(state, deps, DOM_Deps) {
         
         DOM.leaf_filterPlatformsByTimeRange(state, DOM_Deps, state.mapTimelineRange.slider[0], state.mapTimelineRange.slider[1]);
     });
+
+    return chart;
 }
 
 module.exports = { initTimeline };
