@@ -12,7 +12,7 @@ Developed during URI GSO's OECI B2OE Program.
 ## Features
 * Importing multiple datasets
 * Displaying multiple datasets on a map
-* Viewing graphs of multiple dataset.
+* Viewing graphs of multiple datasets.
 
 
 ## User Installation / Setup
