@@ -24,6 +24,7 @@ Developed during URI GSO's OECI B2OE Program.
 
 ## Step 3, click on the desired file
 - ![Step 3](src/media/externalMedia/step3.png)
+
 - .exe for Windows
 - .dmg for Mac
 - (Source Code is available as well if desired)
