@@ -54,7 +54,7 @@
     padding: 10px;
     border-right: 1px solid #888888;
     border-top: 1px solid #888888;
-    min-width: 25%;
+    min-width: 41%;
     max-width: 90%;
     max-height: 90%; /* Ensure the menu does not exceed the popup height */
     overflow-y: auto; /* Enable scrolling for overflowing items */
