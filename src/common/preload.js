@@ -1,1 +1,1 @@
-console.log("PRELOADED")
+console.log("PRELOADED: ", __dirname);

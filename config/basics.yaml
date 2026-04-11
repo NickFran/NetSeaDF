@@ -1,16 +1,1 @@
-enableDebug: false
-
-#Debug Logging Specifications
-DebugFileIO: false
-DebugFS: false
-DebugEvents: false
-DebugInput: false
-DebugState: false
-DebugQueues: false
-DebugNotifications: true
-DebugInteractions: false
-DebugMap: false
-DebugMapMarkers: false
-
-#Logging Level
-onlyLogSeriousNotifications: false
+mapDefaultZoomLevel: 3

@@ -1,6 +1,8 @@
 const { getTimestamp } = require("./basicFunctions");
 const fs = require('fs');
 const path = require('path');
+const config = require('./config');
+
 let currentLogRef = null;
 function refLog() {return currentLogRef;}
 function setLog(value) {currentLogRef = value;}
@@ -35,17 +37,19 @@ function log(params = {}) {
     | ${content.message}`
 
     if (!params.ignoreConsole){
-        switch (params.seriousness) {
-            case "info":
-                console.log(contentArrangement1);
-                break;
-            case "warning":
-                console.warn(contentArrangement1);
-                break;
-            case "error":
-                console.error(contentArrangement1);
-                break;
-            }
+        if(config.get('debug', 'enableDebug')){
+            switch (params.seriousness) {
+                case "info":
+                    console.log(contentArrangement1);
+                    break;
+                case "warning":
+                    console.warn(contentArrangement1);
+                    break;
+                case "error":
+                    console.error(contentArrangement1);
+                    break;
+                }
+        }
     }
     if (!params.ignorePopup){
         let temp = new popup.NotificationPopup(
@@ -78,7 +82,9 @@ function log(params = {}) {
         });
     }
     if (!params.ignoreLogging){
-        writeToLogFile(contentArrangement1);
+        if(config.get('debug', 'enableDebug')){
+            writeToLogFile(contentArrangement1);
+        }
     }
 }
 

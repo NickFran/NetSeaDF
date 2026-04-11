@@ -38,6 +38,7 @@
         const userInteractions = require('./common/userInteractions.js');
         const basicFunctions = require('./common/basicFunctions.js');
         const charts = require('./common/charts.js');
+        const config = require('./common/config.js');
 
         const popup = require('./common/popup.js');
     </script>
@@ -66,8 +67,9 @@
             currentLog: null
         };
 
-        appState.currentLog = logging.createLogFile(`${basicFunctions.getTimestamp()}.netseadflog`, pathDep.resolveToProperDataPath(__dirname, 'logs'));
-
+        if(config.get('debug', 'enableDebug')){
+            appState.currentLog = logging.createLogFile(`${basicFunctions.getTimestamp()}.netseadflog`, pathDep.resolveToProperDataPath(__dirname, 'logs'));
+        }
         
         // Dependencies object for DOM functions
         const ModuleDependencies={
@@ -534,7 +536,9 @@
 </script>
 
 <script>
-    appState.map = L.map('map').setView([58.66764823678403, -37.95049416624507], 4);
+    let zoomLevel = basicFunctions.clamp(config.get('basics', 'mapDefaultZoomLevel'), 1, 18);
+    
+    appState.map = L.map('map').setView([58.66764823678403, -37.95049416624507], zoomLevel);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
