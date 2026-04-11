@@ -6,7 +6,7 @@ python-dateutil==2.9.0.post0
 six==1.17.0
 tzdata==2025.3
 xarray==2024.11.0
-gsw==3.6.19
+gsw==3.6.21
 netCDF4==1.7.2
 fs==2.4.16
-cftime==1.6.4
+cftime==1.6.5

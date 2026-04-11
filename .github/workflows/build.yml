@@ -36,11 +36,6 @@ jobs:
       - name: Install dependencies
         run: npm install
       
-      - name: Setup Windows Python Portable
-        run: |
-          python -m venv PythonPortable
-          PythonPortable\Scripts\python.exe -m pip install -r requirements.txt
-      
       - name: Build Windows
         run: npm run build
         env:
