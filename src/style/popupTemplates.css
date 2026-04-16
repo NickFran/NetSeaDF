@@ -1,0 +1,118 @@
+@import url('objects.css');
+
+.settingsMenuWrapper {
+    padding: 10px;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.068);
+    height: 100%;
+}
+
+
+.mainContentArea{
+    background-color: rgba(0, 0, 0, 0.137);
+    height: 100%;
+    flex: 1;
+}
+.subMenu{
+    background-color: rgba(0, 0, 0, 0.144);
+    height:70vh;
+    width:30%;
+    display: flex;
+    flex-direction: column;
+    padding: 5px;
+}
+
+
+.sectionHeader {
+    font-weight: bold;
+    margin-bottom: 10px;
+    text-align: center;
+    width: 100%;
+}
+.sectionContent{
+    background-color: rgb(168, 160, 150);
+    height: 100%;
+    flex: 1;
+    overflow-y: scroll;
+}
+.sectionFooter{
+    background-color: rgb(168, 160, 150);
+    height: 20%;
+    display: flex;
+    justify-content: right;
+}
+
+.saveSettingsButton {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+
+
+
+.sectionButtonWrapper {
+    display: flex;
+    gap: 2px;
+}.sectionButtonWrapper .sectionButton:hover{
+    color: #ffffff;
+}
+.sectionButton{
+    background-color: #bfe2ff;
+    color: rgb(0, 0, 0);
+    padding: 10px 20px;
+    border: 3px solid #ccc;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+    width: 100%;
+    font-weight: bold;
+
+}
+.sectionButtonActive{
+    background-color: #0b7dda;
+    color: #ffffff;
+}
+
+.settingsSection{
+    display: flex;
+    flex-direction: column;
+    padding: 2px;
+}
+
+
+.settingWrapperElm{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    background-color: rgba(240, 248, 255, 0.753);
+    padding: 5px;
+    margin-bottom: 5px;
+}
+.settingLabelElm{
+    font-weight: bold;
+    width: 50%;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #ffffff70;
+}
+.settingValueElm{
+    font-size: 14px;
+    color: #555;
+}
+
+.settingInputElm {
+    color: #333;
+    padding: 5px;
+    border: 1px solid #ccc;
+    
+}

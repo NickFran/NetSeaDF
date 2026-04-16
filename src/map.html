@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="./style/map.css">
     <link rel="stylesheet" href="./style/objects.css">
     <link rel="stylesheet" href="./style/popup.css">
+    <link rel="stylesheet" href="./style/popupTemplates.css">
 
     <script src="./lib/leaflet/leaflet.js"></script>
     <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
@@ -78,7 +79,8 @@
                 pathDep,
                 fileHandle,
                 integrations,
-                basicFunctions
+                basicFunctions,
+                config
                 },
             "FileHandle":
                 {
@@ -142,7 +144,7 @@
                 <img src="media/boxmsg.svg" class="svgIcon">
                 <div class="notificationIndicatorWrapper" id="notificationIndicatorWrapper"><img class="notificationIndicator" id="notificationIndicator" src="media/circlecaution.svg" alt="svgIcon"></div>
             </button>
-            <button href="#" class="bannerButton dis" id="bannerButton5"><img src="media/settings.svg" class="svgIcon"></button>
+            <button href="#" class="bannerButton" id="bannerButton5"><img src="media/settings.svg" class="svgIcon"></button>
         </div>
     </div>
 
@@ -391,6 +393,24 @@
 
     appState.popups.mapFilterPopup = mapFilterPopup;
     appState.popups.notificationsMenuPopup = notificationsMenuPopup;
+
+    const settingsMenu = new popup.SimplePopup(
+        {},
+        {
+            title: "Settings",
+            content: ` `
+         },
+         {
+             onOpen: function() {
+                 DOM.dom_constructSettingsMenu(appState, ModuleDependencies["DOM"]);
+             },
+             onOpen_FirstTime: function() {
+                 //
+             }
+         }
+    );
+
+    appState.popups.settingsMenu = settingsMenu;
      </script>
 
 <script>
@@ -525,8 +545,7 @@
 
     document.getElementById("DeleteFileButton").addEventListener("click", async function() {
         userInteractions.userint_deleteFileButton(appState, ModuleDependencies);
-});
-
+    });
     document.getElementById("backArrow").addEventListener("click", function() {
         userInteractions.userint_pressBackArrow(appState, ModuleDependencies);
     });
@@ -741,13 +760,12 @@ userInteractions.userint_focusOnMarker(appState);
 </script>
 
 <script>
-    // DOM.postNotification(appState, params={
-    // notificationType: 'error',
-    // notificationLabel: 'Error',
-    // content: 'badf bad baf'
-    // })
     document.getElementById('bannerButton4').addEventListener('click', function() {
         notificationsMenuPopup.open();
     });
+    document.getElementById('bannerButton5').addEventListener('click', function() {
+        settingsMenu.open();
+    });
+
 </script>
 </html>
