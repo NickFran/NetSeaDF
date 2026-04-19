@@ -23,3 +23,10 @@
 * add trace stack line numbers for warning notification posts
 
 * windows venv has newer versions for GSW (x.x.21) and cftime (x.x.5), these will need to be downgraded in requirements.txt because mac builds dont exist for them.
+
+* get rid of all config files and put everything into one config.yaml
+   * we have no chouice, the settings menu needs to parse the file to pull the defaults, not dealing with that between multiple yamls.
+
+* soon we will swap the order of the settings so it goes label | value | input
+
+* debug labels are good, but only needed for sliders.

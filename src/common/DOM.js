@@ -1,6 +1,7 @@
 // DOM manipulation functions
 const { time } = require('console');
 const path = require('path');
+const { config } = require('process');
 
 
 
@@ -823,6 +824,189 @@ function updateVisibilityOfNotificationIndicator(state){
     }
 }
 
+function dom_constructSettingsMenu(state, deps){
+    const settingsMenu = state.popups.settingsMenu;
+    const { config } = deps;
+
+    let appSettingsPath = path.join(__dirname, 'appSettings.json');
+    let appSettingsData = fs.readFileSync(appSettingsPath, 'utf-8');
+    let appSettings = JSON.parse(appSettingsData);
+
+    settingsMenu.contentWrapper.innerHTML = ''; // Clear existing content
+
+    let settingsMenuWrapper = document.createElement('div');
+    settingsMenuWrapper.classList.add('settingsMenuWrapper');
+
+    let mainContentArea = document.createElement('div');
+    mainContentArea.classList.add('mainContentArea');
+    let subMenu = document.createElement('div');
+    subMenu.classList.add('subMenu');
+
+    let sectionHeader = document.createElement('h2');
+    sectionHeader.classList.add('sectionHeader');
+    sectionHeader.textContent = "Settings";
+    let sectionContent = document.createElement('div');
+    sectionContent.classList.add('sectionContent');
+    let sectionFooter = document.createElement('div');
+    sectionFooter.classList.add('sectionFooter');
+
+    let saveSettingsButton = document.createElement('button');
+    saveSettingsButton.textContent = "Apply";
+    saveSettingsButton.classList.add('saveSettingsButton');
+
+    
+    settingsMenu.contentWrapper.appendChild(settingsMenuWrapper);
+
+    settingsMenuWrapper.appendChild(subMenu);
+    settingsMenuWrapper.appendChild(mainContentArea);
+
+    mainContentArea.appendChild(sectionHeader);
+    mainContentArea.appendChild(sectionContent);
+    
+
+    
+    let arrayOfDifferentSections = [];
+    let appSettingSections = appSettings[0]["settingSections"];
+    let settingInstances = Object.values(appSettings[1]);
+    console.log("App setting sections found:", appSettingSections);
+    for (let i = 0; i < appSettingSections.length; i++){ // SECTIONS
+        let sectionButtonWrapper = document.createElement('div');
+        sectionButtonWrapper.classList.add('sectionButtonWrapper');
+        let sectionButton = document.createElement('button');
+        sectionButton.textContent = appSettingSections[i].toUpperCase();
+        sectionButton.classList.add('sectionButton');
+        sectionButtonWrapper.appendChild(sectionButton);
+        subMenu.appendChild(sectionButtonWrapper);
+        
+        let newSection = document.createElement('div');
+        newSection.classList.add('settingsSection');
+        newSection.style.display = 'none';
+        arrayOfDifferentSections.push({
+            sectionName: appSettingSections[i],
+            sectionElement: newSection,
+            sectionChildren: [],
+            isActive: false
+        });
+        sectionContent.appendChild(newSection);
+
+    }
+    console.log("Constructed settings menu sections:", arrayOfDifferentSections, settingInstances);
+
+    // For each instance of a config setting
+    for (settingInstance of settingInstances){ // SETTING INSTANCES
+        let settingType = settingInstance.type; // instance type (e.g. "boolean", "number", "string")
+        let sectionUIType = settingInstance.UIType; // UI type (e.g. "range", "select", "checkbox")
+        let settingMin = settingInstance.min; // instance min
+        let settingMax = settingInstance.max; // instance max
+        let settingTargetName = settingInstance.TargetName; // instance name
+        let settingSection = settingInstance.section; // instance section (e.g. "General", "Debug")
+
+        // New vars
+        let settingDefault = -1; // default value for the setting (to be fetched later from appSettings.json)
+        let settingElms = { // each element ref for the setting instance
+            wrapper: null,
+            label: null,
+            value: null,
+            input: null
+        };
+
+        console.log("Processing setting instance:", settingInstance);
+
+        // create DOM elements for the setting instance
+        let settingWrapperElm = document.createElement('div');
+        settingWrapperElm.classList.add('settingWrapperElm');
+
+        let settingLabelElm = document.createElement('label');
+        settingLabelElm.textContent = settingInstance.TargetName;
+        settingLabelElm.classList.add('settingLabelElm');
+
+        let settingValueElm = document.createElement('h5');
+        settingValueElm.textContent = settingDefault;
+        settingValueElm.classList.add('settingValueElm');
+
+        let settingInputElm = document.createElement('input');
+        settingInputElm.type = sectionUIType;
+        settingInputElm.classList.add('settingInputElm');
+        if (sectionUIType === 'range') {
+            if (settingMin !== null) settingInputElm.min = settingMin;
+            if (settingMax !== null) settingInputElm.max = settingMax;
+        }
+        //
+
+
+        // set Elms of this instance to the newly created DOM elements
+        settingElms.wrapper = settingWrapperElm;
+        settingElms.label = settingLabelElm;
+        settingElms.value = settingValueElm;
+        settingElms.input = settingInputElm;
+
+        // attatch the DOM elements together in the correct order (label, value, input)
+        settingWrapperElm.appendChild(settingLabelElm);
+        settingWrapperElm.appendChild(settingInputElm);
+        settingWrapperElm.appendChild(settingValueElm);
+
+        settingValueElm.textContent = config.get(settingSection, settingTargetName);
+        if (sectionUIType === 'checkbox') {
+            settingInputElm.checked = config.get(settingSection, settingTargetName);
+        } else {
+            settingInputElm.value = config.get(settingSection, settingTargetName);
+        }
+        settingInputElm.addEventListener('change', function() {
+            settingValueElm.textContent = sectionUIType === 'checkbox' ? settingInputElm.checked : settingInputElm.value;
+            config.set(settingSection, settingTargetName, sectionUIType === 'checkbox' ? settingInputElm.checked : settingInputElm.value);
+        });
+
+        // find the correct section for this setting instance and append the setting DOM elements to that section (via Data and DOM)
+        for (let i = 0; i < arrayOfDifferentSections.length; i++){
+            if (arrayOfDifferentSections[i].sectionName == settingSection){
+                arrayOfDifferentSections[i].sectionChildren.push({
+                    settingID: settingInstance.id,
+                    settingType: settingType,
+                    settingLabel: settingLabelElm,
+                    settingValue: settingValueElm,
+                    settingInput: settingInputElm,
+                    settingMin: settingMin,
+                    settingMax: settingMax,
+                    settingTargetName: settingTargetName
+                });
+                arrayOfDifferentSections[i].sectionElement.appendChild(settingWrapperElm);
+            }
+        }
+    }
+
+    // add event listener to each sectionElement in arrayOfDifferentSections to handle section switching when the corresponding section button is clicked in the submenu
+    for (let i = 0; i < arrayOfDifferentSections.length; i++){
+        let sectionName = arrayOfDifferentSections[i].sectionName;
+        let sectionElement = arrayOfDifferentSections[i].sectionElement;
+        let sectionButton = subMenu.querySelector(`.sectionButtonWrapper:nth-child(${i+1}) .sectionButton`);
+        sectionButton.addEventListener('click', function() {
+            // Reset all section buttons to default style
+            subMenu.querySelectorAll('.sectionButton').forEach(btn => {
+                btn.classList.remove('sectionButtonActive');
+            });
+            // Set clicked button as active
+            sectionButton.classList.add('sectionButtonActive');
+
+            for (let j = 0; j < arrayOfDifferentSections.length; j++){
+                arrayOfDifferentSections[j].sectionElement.style.display = 'none';
+                arrayOfDifferentSections[j].isActive = false;
+            }
+            arrayOfDifferentSections[i].sectionElement.style.display = 'block';
+            arrayOfDifferentSections[i].isActive = true;
+        });
+    }
+
+
+    //mainContentArea.appendChild(sectionFooter);
+    //sectionFooter.appendChild(saveSettingsButton);
+    console.log("App settings loaded for settings menu:", appSettings);
+
+    arrayOfDifferentSections[1].sectionElement.style.display = 'block';
+    // Set the default section button as active
+    let defaultButton = subMenu.querySelector(`.sectionButtonWrapper:nth-child(2) .sectionButton`);
+    if (defaultButton) defaultButton.classList.add('sectionButtonActive');
+}
+
 
 
 module.exports = {
@@ -848,6 +1032,7 @@ module.exports = {
     buildNotificationMenuItem,
     postNotification,
     updateNotificationIndicator,
-    updateVisibilityOfNotificationIndicator
+    updateVisibilityOfNotificationIndicator,
+    dom_constructSettingsMenu
 
 };
