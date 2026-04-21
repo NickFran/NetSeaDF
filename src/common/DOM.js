@@ -1007,6 +1007,26 @@ function dom_constructSettingsMenu(state, deps){
     if (defaultButton) defaultButton.classList.add('sectionButtonActive');
 }
 
+function dom_toggleViewport(viewportName) {
+    if (viewportName == 'map') {
+        document.getElementById('viewModeButton').style.backgroundColor = '#ffffff00';
+        document.getElementById('mapModeButton').style.backgroundColor = '#007bff';
+        document.getElementById('mapModeButton').style.color = '#ffffff';
+        document.getElementById('viewModeButton').style.color = '#000000';
+
+        document.getElementById('mapPage').style.display = 'grid';
+        document.getElementById('viewPage').style.display = 'none';
+    } else if (viewportName == 'view') {
+        document.getElementById('mapModeButton').style.backgroundColor = '#ffffff00';
+        document.getElementById('viewModeButton').style.backgroundColor = '#007bff';
+        document.getElementById('mapModeButton').style.color = '#000000';
+        document.getElementById('viewModeButton').style.color = '#ffffff';
+
+        document.getElementById('mapPage').style.display = 'none';
+        document.getElementById('viewPage').style.display = 'grid';
+    }
+}
+
 
 
 module.exports = {
@@ -1033,6 +1053,7 @@ module.exports = {
     postNotification,
     updateNotificationIndicator,
     updateVisibilityOfNotificationIndicator,
-    dom_constructSettingsMenu
+    dom_constructSettingsMenu,
+    dom_toggleViewport
 
 };

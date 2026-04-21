@@ -43,6 +43,7 @@ body {
 
 .mapModeButton,.viewModeButton{
     user-select: none;
+    background-color: black;
 }
 
 .sidebar p{
@@ -76,21 +77,21 @@ body {
 
 .viewPage {
     height: 100%;
-    gap: 15px;
-    padding: 15px;
+    gap: 10px;
+    padding: 10px;
 
     box-sizing: border-box;
     display: none;
 
     grid-template-columns: 1.7fr 1fr 1fr 1fr 1fr 1fr 1fr; 
-    grid-template-rows: auto 0fr 0fr 0fr .65fr; 
+    grid-template-rows: auto 0fr 0fr 0fr .01fr; 
     grid-template-areas: 
-    "card1 card1     card2 card2 card2 card2 card2"
-    "card1 card1     card2 card2 card2 card2 card2"
+    "Vcard3     Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4"
+    "Vcard3     Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4"
+    "Vcard3     Vcard4 Vcard4 Vcard4 Vcard4 Vcard4 Vcard4"
 
-    "card3     card4 card4 card4 card4 card4 card4"
-    "card3     card4 card4 card4 card4 card4 card4"
-    "card3     card4 card4 card4 card4 card4 card4";
+    "Vcard1 Vcard1     Vcard2 Vcard2 Vcard2 Vcard2 Vcard2"
+    "Vcard1 Vcard1     Vcard2 Vcard2 Vcard2 Vcard2 Vcard2";
 }
 
 
@@ -213,6 +214,37 @@ body {
 }
 .card:nth-child(4) {/*Double check this later to make sure map goes in correct card*/
     grid-area: card4;
+    background-color: rgba(255, 255, 255, 0.905);
+    width: auto;
+}
+.Vcard:nth-child(1) {
+    grid-area: Vcard1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.905);
+}
+.Vcard:nth-child(2) {
+    grid-area: Vcard2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.905);
+}
+.Vcard:nth-child(3) {
+    grid-area: Vcard3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.905);
+    min-width: 250px; /*Min width for small column box (this perfectly works)*/
+}
+.Vcard:nth-child(4) {/*Double check this later to make sure map goes in correct card*/
+    grid-area: Vcard4;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     background-color: rgba(255, 255, 255, 0.905);
     width: auto;
 }

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="./style/loading.css">
     <link rel="stylesheet" href="./style/map.css">
     <link rel="stylesheet" href="./style/objects.css">
+    <link rel="stylesheet" href="./style/view.css">
     <link rel="stylesheet" href="./style/popup.css">
     <link rel="stylesheet" href="./style/popupTemplates.css">
 
@@ -129,7 +130,7 @@
     <div class="minibanner" id="minibanner">
         <div class="wrapper">
             <button class="mapModeButton" id="mapModeButton">Map</button>
-            <button class="viewModeButton dis" id="viewModeButton">Views</button>
+            <button class="viewModeButton" id="viewModeButton">Views</button>
         </div>
     </div>
 
@@ -166,7 +167,7 @@
     </div>
 
     <div class="main" id="main">
-        <div class="mapPage">        
+        <div class="mapPage" id='mapPage'>        
             <div class="card">
                     
 
@@ -271,11 +272,37 @@
                     </script>
             </div>
         </div>
-        <div class="viewPage">        
-            <div class="card"></div>
-            <div class="card"></div>
-            <div class="card"></div>
-            <div class="card"></div>
+        <div class="viewPage" id='viewPage'>        
+            <div class="Vcard">bottomLeft</div>
+            <div class="Vcard">bottomRight</div>
+            <div class="Vcard">L</div>
+            <div class="Vcard">
+                <h4>New View</h4>
+                <form>
+                    <div class="inputFormWrapper">
+                        <h5>Name: </h5>
+                        <input type="string" id="testInput" name="testInput" value="Test Input">
+                    </div>
+                    <div class="inputFormWrapper">
+                        <h5>Type: </h5>
+                        <select name="graphType" id="graphType" required>
+                        <option value="line">Line</option>
+                        <option value="bar">Bar</option>
+                        </select>
+                    </div>
+                    <div class="inputFormWrapper">
+                        <h5>Data: </h5>
+                        <select name="graphData" id="graphData" required>
+                        <option value="fromMapSelection">Currently Selected</option>
+                        <option value="allVisible">All Visible On Map</option>
+                        <option value="allHidden">All Hidden On Map</option>
+                        <option value="allWithNotes">All With Notes</option>
+                        <option value="all">All (!)</option>
+                        <option value="custom">Custom Selection</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </body>
@@ -766,6 +793,16 @@ userInteractions.userint_focusOnMarker(appState);
     document.getElementById('bannerButton5').addEventListener('click', function() {
         settingsMenu.open();
     });
+
+    document.getElementById('viewModeButton').addEventListener('click', function() {
+        console.log("clicked")
+        DOM.dom_toggleViewport('view');
+    })
+    document.getElementById('mapModeButton').addEventListener('click', function() {
+        console.log("clicked")
+        DOM.dom_toggleViewport('map');
+    })
+    
 
 </script>
 </html>
