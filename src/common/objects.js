@@ -23,7 +23,7 @@ const GraphType = Object.freeze({
     ns: "nanoseconds",
     ms: "milliseconds",
     s: "seconds",
-    m: "minuets",
+    m: "minutes",
     h: "hours",
     d: "days"
 });
@@ -31,3 +31,4 @@ const GraphType = Object.freeze({
 module.exports = {
     GraphType
 };
+

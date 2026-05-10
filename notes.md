@@ -38,3 +38,5 @@
 * manual time range, close, reopen, change to slider...
 
 * check map.html for path.join, instead look into using fromHereToRoot()
+
+* add indicator when view changes but has yet to be regenerated.

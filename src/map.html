@@ -904,7 +904,7 @@ userInteractions.userint_focusOnMarker(appState);
                 return;
             } else {
                 let allfoundVars = fileHandle.getEntryKeyInSimpleData(fileName, 'vars');
-                console.log("Vars per file:", allfoundVars);
+                
                 varsPerFile.push(new Set(allfoundVars));
             }
         });
@@ -977,7 +977,7 @@ userInteractions.userint_focusOnMarker(appState);
         console.log("Add suboption clicked");
         
         appState.currentView.chartInstances.push(DOM.dom_createChartInstance());
-        DOM.renderCharts(appState);
+        DOM.renderCharts(appState, ModuleDependencies["DOM"]);
     });
 
     document.getElementById('columnToggler').addEventListener('click', function() {
@@ -987,7 +987,7 @@ userInteractions.userint_focusOnMarker(appState);
         } else {
             document.getElementById('columnToggler').innerText = '>';
         }
-        DOM.renderCharts(appState);
+        DOM.renderCharts(appState, ModuleDependencies["DOM"]);
     });
 
     document.getElementById('NewViewButton').addEventListener('click', function() {

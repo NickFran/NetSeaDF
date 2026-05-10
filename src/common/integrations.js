@@ -109,7 +109,7 @@ function callPyFunc(funcName, args = [], options = {}) {
     return new Promise((resolve, reject) => {
         const safeArgs = Array.isArray(args) ? args : [args];
         ensurePyProc();
-        const timeoutMs = typeof options.timeoutMs === 'number' ? options.timeoutMs : 60000;
+        const timeoutMs = typeof options.timeoutMs === 'number' ? options.timeoutMs : 90000;
 
         const timeoutId = setTimeout(() => {
             const idx = pending.indexOf(handler);

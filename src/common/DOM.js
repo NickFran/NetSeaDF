@@ -1076,7 +1076,7 @@ function dom_initNewView(appState, params = {}){
                                                                     axis:[
                                                                         createAxisInstance({
                                                                             AxisSide: "Y",
-                                                                            Data: params.vars[0]
+                                                                            Data: "PRES_CORE"
                                                                         }),
                                                                         createAxisInstance({
                                                                             AxisSide: "X",
@@ -1142,13 +1142,7 @@ function renderView(appState, deps) {
     renderCharts(appState, deps);
     const viewNameElement = document.getElementById('viewName');
     if (!viewNameElement) return;
-
-    viewNameElement.textContent = appState.currentView?.name || 'TestView';
-    if (!viewName) {
-        console.log("Not Ready!");
-    };
-    viewName.textContent = appState.currentView.name || 'New View';
-
+    viewNameElement.textContent = `View - ${appState.currentView?.name || 'New View'}`;
 }
 
 function renderCharts (appState, deps) {
@@ -1163,7 +1157,7 @@ function renderCharts (appState, deps) {
     let viewTitleWrapper = document.createElement('div');
     viewTitleWrapper.classList.add('viewTitleWrapper');
     let viewTitle = document.createElement('h4');
-    viewTitle.innerHTML = appState.currentView?.name || 'TestView';
+    viewTitle.innerHTML = `View - ${appState.currentView?.name || 'New View'}`;
 
     let viewConfigAddSubOption = document.createElement('button');
     viewConfigAddSubOption.classList.add('viewConfigAddSubOption');
@@ -1193,6 +1187,7 @@ function renderCharts (appState, deps) {
     generateViewButton.addEventListener('click', function() {
         appState.isViewGenerated = true;
         renderCharts(appState, deps);
+        appState.currentView["targetDim"] = appState.currentView.chartInstances[0].axis[0].Data; // we should look to make this more dynamic in the future when we have more complex views with multiple chart instances and different axis data. For now we will just set the targetDim to be the data of the first axis of the first chart instance.
         console.log(appState.currentView);
     })
 
@@ -1369,17 +1364,17 @@ function onChartInstanceOptionClick(appState, deps, optionType, chartInstanceInd
     switch (optionType) {
         case "chart":
             DOM.switchViewMenu('chartInstanceSettings');
-            setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} Settings`);
+            setViewMenuTitle(`${appState.currentView.chartInstances[chartInstanceIndex].general.Name} Settings`);
             buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
         case "general":
             DOM.switchViewMenu('chartInstanceGeneralSettings');
-            setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} General Settings`);
+            setViewMenuTitle(`${appState.currentView.chartInstances[chartInstanceIndex].general.Name} General Settings`);
             buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
         case "axis":
             DOM.switchViewMenu('chartInstanceAxisSettings');
-            setViewMenuTitle(`Chart Instance ${chartInstanceIndex + 1} Axis Settings`);
+            setViewMenuTitle(`${appState.currentView.chartInstances[chartInstanceIndex].general.Name} Axis Settings`);
             buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
         case "output":
@@ -1448,10 +1443,13 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
 
                 if (setting === "Name") {
                     settingInput.value = generalSettings[setting] || `Chart ${chartInstanceIndex + 1}`;
+
                     
                     settingInput.addEventListener('input', function() {
                         appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.value;
                         appState.currentView.chartInstances[chartInstanceIndex].obj.getElementsByClassName('instanceOptionWrapper')[0].getElementsByClassName('viewConfigOption')[0].textContent = settingInput.value;
+                        setViewMenuTitle(`${settingInput.value} General Settings`);
+                        // 117 appState.currentView.chartInstances[chartInstanceIndex].obj.getElementsByClassName('instanceOptionWrapper')[1].getElementsByClassName('viewConfigOption')[0].textContent = settingInput.value;
                         console.log(`Updated setting ${setting} to`, settingInput.value);
                     });
                     continue; // skip adding another event listener below since it's already added here for the Name setting
@@ -1472,47 +1470,50 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
             renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
             break;
         case "output":
-            renderViewOutput(appState, deps);
+            collectSpecifiedViewVars(appState, deps);
             break;
     }
 
 
 }
 
-function renderViewOutput(appState, deps) {
+function collectSpecifiedViewVars(appState, deps) {
+    console.log(deps);
     let {charts, integrations, pathDep} = deps;
-    let dataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
-    let specifiedAxis = new Set();
-    let viewDataMap = {};
+    let specifiedVars = new Set();
 
     // For Each Chart
     appState.currentView.chartInstances.forEach((chartInstance, index) => {
         // For Each Axis in Chart
         chartInstance.axis.forEach((axis, axisIndex) => {
-            // Add Var
-            specifiedAxis.add(axis.Data);
+            // Add Var (skip null/undefined Data)
+            if (axis.Data != null) specifiedVars.add(axis.Data);
         });
-        // Add Chart
-        viewDataMap[index] = {};
-        // Add Axis to Chart
-        Array.from(specifiedAxis).forEach(varKey => {
-            viewDataMap[index][varKey.toUpperCase()] = [];
-        });
-        // Reset axis for next chart instance
-        specifiedAxis = new Set();
-
     });
 
-    console.log(viewDataMap);
+    console.log(specifiedVars);
+    fetchDataForSpecifiedVars(appState, deps, Array.from(specifiedVars)).then(dataMap => {
+        console.log('Fetched dataMap:', dataMap);
+    }).catch(err => console.error('fetchDataForSpecifiedVars error:', err));
+}
 
-    // appState.currentView.vars.forEach((varKey, index) => {
-    //     let filepath = path.join(dataPath, `${varKey}`);
-    //     integrations.callPyFunc("open_ds", [filepath]);
-    //     integrations.callPyFunc("getVariableByDimension", [""]).then(result => {
-    //         console.log(`Data for variable ${varKey}:`, result);
-    //     }).catch(err => console.error('Data load error:', err));
-        
-    // })
+async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
+    let {integrations, pathDep} = deps;
+    let dataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
+    let dataMap = {};
+
+    for (const fileName of appState.currentView.data) {
+        dataMap[fileName] = {};
+        const filePath = path.join(dataPath, fileName);
+        await integrations.callPyFunc('open', [filePath]);
+        for (const varName of specifiedVars) {
+            console.log(`Fetching variable "${varName}" from file "${fileName}"...`);
+            const result = await integrations.callPyFunc('getVariable', [varName], fileName);
+            dataMap[fileName][varName] = result;
+        }
+    }
+
+    return dataMap;
 }
 
 function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
@@ -1529,7 +1530,6 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
             Data: null
         };
         appState.currentView.chartInstances[chartInstanceIndex].axis.push(newAxis);
-        console.log("Added new axis:", newAxis);
         menuWrapper.innerHTML = '';
         renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
     });
@@ -1575,25 +1575,27 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
         let varsToUse = appState.currentView.vars;
         varsToUse.forEach(opt => {
             let option = document.createElement('option');
-            option.value = opt.toLowerCase();
+            option.value = opt;
             option.textContent = opt;
             axisSelect.appendChild(option);
+            console.log(opt)
         });
         let currentData = appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data;
         if (currentData) {
-            axisSelect.value = currentData.toLowerCase();
-            appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = currentData.toLowerCase();
+            axisSelect.value = currentData;
+            appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = currentData;
         } else if (axisSelect.options.length > 0) {
             // No saved value — default to first option and sync state
             axisSelect.value = axisSelect.options[0].value;
             appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = axisSelect.options[0].value;
+            console.log(`No saved data for axis[${index}], defaulting to first option:`, axisSelect.options[0].value);
         }
 
         // Axis Side Dropdown
         let axisSideSelect = document.createElement('select');
         //axisSideSelect.style.flex = '1';
         axisSideSelect.style.width = '10%';
-        axisSideSelect.style.marginLeft = '20px';
+        axisSideSelect.style.marginLeft = '5px';
         ['X', 'Y'].forEach(opt => {
             let option = document.createElement('option');
             option.textContent = opt;
@@ -1605,7 +1607,7 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
         // Var Dropdown Content
         let axisContent = document.createElement('div');
         axisContent.style.display = 'none';
-        axisContent.style.padding = '6px 16px';
+        axisContent.style.padding = '6px 8px';
 
         let placeholder = document.createElement('p');
         placeholder.textContent = `Axis ${index + 1} — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.`;
@@ -1645,12 +1647,21 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
         // Select listener
         axisSelect.addEventListener('change', function() {
             appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = axisSelect.value;
-            console.log(`axis[${index}].Data set to: ${axisSelect.value}`);
         });
         axisSideSelect.addEventListener('change', function() {            
             appState.currentView.chartInstances[chartInstanceIndex].axis[index].AxisSide = axisSideSelect.value;
-            console.log(`axis[${index}].AxisSide set to: ${axisSideSelect.value}`);
         });
+
+        if(index === 0){
+            axisSelect.disabled = true;
+            axisSideSelect.disabled = true;
+            removeButton.disabled = true;
+
+            if (varsToUse.includes("PRES_CORE")){
+                axisSelect.value = "PRES_CORE";
+                appState.currentView.chartInstances[chartInstanceIndex].axis[0].Data = "PRES_CORE";
+            };
+        }
         
         axisRow.appendChild(arrow);
         axisRow.appendChild(label);
@@ -1676,14 +1687,12 @@ function constructViewDataViaPreferences(appState, viewPreferences){
         case "fromSelection":
             // Construct view data based on the current file selection
             resultingData = Array.from(appState.selectedFiles || []);
-            console.log("Added selected files to view data:", resultingData);
             break;
         case "allVisible":
             // Construct view data based on all visible items on the map
             markerEntries.forEach(([fileName, marker]) => {
                 if (marker.isFiltered === false) {
                     resultingData.push(fileName);
-                    console.log("Added visible marker to view data:", fileName, marker);
                 }
             });
             break;
@@ -1692,7 +1701,6 @@ function constructViewDataViaPreferences(appState, viewPreferences){
             markerEntries.forEach(([fileName, marker]) => {
                 if (marker.isFiltered === true) {
                     resultingData.push(fileName);
-                    console.log("Added hidden marker to view data:", fileName, marker);
                 }
             });
             break;
