@@ -1076,7 +1076,7 @@ function dom_initNewView(appState, params = {}){
                                                                     axis:[
                                                                         createAxisInstance({
                                                                             AxisSide: "Y",
-                                                                            Data: "PRES_CORE"
+                                                                            Data: "PRES_ADJUSTED"
                                                                         }),
                                                                         createAxisInstance({
                                                                             AxisSide: "X",
@@ -1467,7 +1467,7 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
 
             break;
         case "axis":
-            renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
+            renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex);
             break;
         case "output":
             collectSpecifiedViewVars(appState, deps);
@@ -1516,7 +1516,7 @@ async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
     return dataMap;
 }
 
-function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
+function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex) {
     document.getElementById('chartInstanceAxisSettingsMenu').innerHTML = '';
     document.getElementById('chartInstanceAxisSettingsMenu').appendChild(menuWrapper);
 
@@ -1531,7 +1531,7 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
         };
         appState.currentView.chartInstances[chartInstanceIndex].axis.push(newAxis);
         menuWrapper.innerHTML = '';
-        renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
+        renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex);
     });
     menuWrapper.appendChild(addAxisButton);
     //
@@ -1641,7 +1641,7 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
         removeButton.addEventListener('click', function() {
             appState.currentView.chartInstances[chartInstanceIndex].axis.splice(index, 1);
             menuWrapper.innerHTML = '';
-            renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex);
+            renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex);
         });
 
         // Select listener
@@ -1657,9 +1657,9 @@ function renderAxisChartInstance(appState, menuWrapper, chartInstanceIndex) {
             axisSideSelect.disabled = true;
             removeButton.disabled = true;
 
-            if (varsToUse.includes("PRES_CORE")){
-                axisSelect.value = "PRES_CORE";
-                appState.currentView.chartInstances[chartInstanceIndex].axis[0].Data = "PRES_CORE";
+            if (varsToUse.includes("PRES_ADJUSTED")) {
+                axisSelect.value = "PRES_ADJUSTED";
+                appState.currentView.chartInstances[chartInstanceIndex].axis[0].Data = "PRES_ADJUSTED";
             };
         }
         
@@ -1678,8 +1678,11 @@ function setViewMenuTitle(title){
     document.getElementById('viewMenuTitle').textContent = title;
 }
 
-function constructViewDataViaPreferences(appState, viewPreferences){
+function constructViewDataViaPreferences(appState, deps, viewPreferences){
     console.log("Constructing view data based on preferences:", viewPreferences);
+    let isPresDataMissing = false;
+    let {fileHandle, pathDep} = deps;
+
     let resultingData = [];
     const markerEntries = Object.entries(appState.markers || {});
 
@@ -1717,6 +1720,20 @@ function constructViewDataViaPreferences(appState, viewPreferences){
     }
 
     console.log("Resulting view data constructed from preferences:", resultingData);
+    resultingData = resultingData.filter(fileName => {
+        let fileData = fileHandle.getEntryKeyInSimpleData(fileName, 'vars');
+        let hasPres = fileData.includes('PRES'); // 117, this needs to be re-evaluated later to be dynamic for different names
+        let hasPresAdjusted = fileData.includes('PRES_ADJUSTED'); // 117, this needs to be re-evaluated later to be dynamic for different names
+        if (!hasPres && !hasPresAdjusted) {
+            isPresDataMissing = true;
+            return false; // exclude files without a usable depth axis
+        }
+        return true;
+    });
+    if (isPresDataMissing) {
+        alert("Some files were excluded from the view because they are missing a usable depth axis variable (PRES or PRES_ADJUSTED). Please check your files and try again.");
+    }
+
     return resultingData;
 }
 

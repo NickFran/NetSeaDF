@@ -60,19 +60,24 @@ function ensurePyProc() {
     
     pyProc = spawn(pythonExe, [pythonPath], { env });
 
+    let stdoutBuffer = '';
     pyProc.stdout.on('data', (chunk) => {
-        const lines = chunk.toString().split(/\r?\n/).filter(Boolean);
-        lines.forEach((line) => {
+        stdoutBuffer += chunk.toString();
+        let newlineIndex;
+        while ((newlineIndex = stdoutBuffer.indexOf('\n')) !== -1) {
+            const line = stdoutBuffer.slice(0, newlineIndex).trim();
+            stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1);
+            if (!line) continue;
             let payload;
-            try { payload = JSON.parse(line); } catch { 
-                console.log('[PYTHON STDOUT]', line);
-                return; 
+            try { payload = JSON.parse(line); } catch {
+                console.log('[PYTHON STDOUT] (parse error)', line.slice(0, 200));
+                continue;
             }
             const next = pending.shift();
-            if (!next) return;
+            if (!next) continue;
             if (payload.ok) next.resolve(payload.result);
             else next.reject(new Error(payload.error || 'Python error'));
-        });
+        }
     });
 
     let stderrBuffer = '';

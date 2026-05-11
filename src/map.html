@@ -859,7 +859,7 @@ userInteractions.userint_focusOnMarker(appState);
     })
 
     document.getElementById('createViewButton').addEventListener('click', function() {
-        let targetViewData = DOM.constructViewDataViaPreferences(appState, document.getElementById('newViewGraphData').value);
+        let targetViewData = DOM.constructViewDataViaPreferences(appState, ModuleDependencies["DOM"], document.getElementById('newViewGraphData').value);
         appState.viewVars = new Set();
         appState.isViewGenerated = false;
         appState.currentView = {
