@@ -1,5 +1,70 @@
 const eCharts = require('../lib/echarts/echarts.js');
 
+function getPlotPalette() {
+    return [
+        '#5470c6',
+        '#91cc75',
+        '#fac858',
+        '#ee6666',
+        '#73c0de',
+        '#3ba272',
+        '#fc8452',
+        '#9a60b4',
+        '#ea7ccc'
+    ];
+}
+
+function buildFileColorMap(fileNames) {
+    const palette = getPlotPalette();
+    let fileColorMap = {};
+
+    fileNames.forEach((fileName, index) => {
+        fileColorMap[fileName] = palette[index % palette.length];
+    });
+
+    return fileColorMap;
+}
+
+function zipXYArrays(xValues, yValues) {
+    if (!Array.isArray(xValues) || !Array.isArray(yValues)) {
+        return [];
+    }
+
+    let points = [];
+    let pairCount = Math.min(xValues.length, yValues.length);
+
+    for (let i = 0; i < pairCount; i++) {
+        let x = xValues[i];
+        let y = yValues[i];
+
+        if (x == null || y == null) {
+            continue;
+        }
+
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            continue;
+        }
+
+        points.push([x, y]);
+    }
+
+    return points;
+}
+
+function getTimestampIndexesToUse(xTimestampArrays, yTimestampArrays, onlyUseFirstTimestamp) {
+    let maxUsableIndex = Math.min(xTimestampArrays.length, yTimestampArrays.length);
+
+    if (maxUsableIndex <= 0) {
+        return [];
+    }
+
+    if (onlyUseFirstTimestamp) {
+        return [0];
+    }
+
+    return Array.from({ length: maxUsableIndex }, (_, index) => index);
+}
+
 function initTimeline(state, deps, DOM_Deps) {
     const {DOM, fileHandle, basicFunctions} = deps;
    
@@ -53,7 +118,7 @@ function initTimeline(state, deps, DOM_Deps) {
         if (timelineEl) {
             timelineEl.style.height = '200px'; // Adjust as needed
         }
-        const chart = echarts.init(timelineEl);
+        const chart = eCharts.init(timelineEl);
         chart.resize();
         const option = {
             title: {
@@ -250,8 +315,286 @@ function initTimeline(state, deps, DOM_Deps) {
     return chart;
 }
 
-function buildChartInstance() {
-    
+function buildPlotInstance(appState, deps, chartInstanceIndex) {
+    const {charts, integrations, pathDep} = deps;
+    const onlyUseFirstTimestamp = true;
+    const includeDataPoints = true;
+    const includeAxisPointer = true;
+
+    let chartElement = document.createElement('div');
+    chartElement.id = `plotInstance-${chartInstanceIndex}`;
+    chartElement.classList.add('plotInstance');
+    chartElement.style.width = '100%';
+    chartElement.style.height = '620px';
+
+    let chart = eCharts.init(chartElement);
+    chartElement.chartObject = chart;
+
+    let thisChartInstance = appState.currentView.chartInstances[chartInstanceIndex];
+    let thisChartsDataMap = appState.currentView.dataMap || {};
+    let thisChartsAxis = thisChartInstance.axis;
+    let allFilesInvolved = appState.currentView.data || Object.keys(thisChartsDataMap);
+    let Yaxis = appState.currentView.targetDim;
+    let fileColorMap = buildFileColorMap(allFilesInvolved);
+    let xAxisInstances = thisChartsAxis.filter(axisInstance => axisInstance.AxisSide === 'X' && axisInstance.Data);
+    let series = [];
+    let hasMultipleXAxes = xAxisInstances.length > 1;
+    let axisPointerXAxisIndex = 0;
+    let xAxisConfigs = xAxisInstances.map((xAxisInstance, index) => {
+        let axisConfig = {
+            type: 'value',
+            position: index === 0 ? 'bottom' : 'top',
+            axisLine: {
+                show: true
+            },
+            axisTick: {
+                show: true
+            },
+            axisLabel: {
+                show: true
+            },
+            axisPointer: {
+                show: includeAxisPointer,
+                label: {
+                    show: includeAxisPointer && index === axisPointerXAxisIndex
+                }
+            }
+        };
+
+        if (index > 1) {
+            axisConfig.offset = (index - 1) * 30;
+        }
+
+        return axisConfig;
+    });
+
+    let xAxisNameGraphics = [];
+
+    if (thisChartInstance.general?.EnableZoom) {
+        if (xAxisInstances[0]) {
+            xAxisNameGraphics.push({
+                type: 'text',
+                left: '50%',
+                bottom: 20,
+                silent: true,
+                style: {
+                    text: xAxisInstances[0].Data,
+                    fill: '#666',
+                    font: '12px sans-serif',
+                    textAlign: 'center'
+                }
+            });
+        }
+
+        if (hasMultipleXAxes && xAxisInstances[1]) {
+            xAxisNameGraphics.push({
+                type: 'text',
+                left: '50%',
+                top: 72,
+                silent: true,
+                style: {
+                    text: xAxisInstances[1].Data,
+                    fill: '#666',
+                    font: '12px sans-serif',
+                    textAlign: 'center'
+                }
+            });
+        }
+    } else {
+        xAxisConfigs = xAxisConfigs.map((axisConfig, index) => ({
+            ...axisConfig,
+            name: xAxisInstances[index]?.Data,
+            nameLocation: 'middle',
+            nameGap: index === 0 ? 34 : 28
+        }));
+    }
+
+    let dataZoomConfigs = [];
+
+    if (thisChartInstance.general?.EnableZoom) {
+        dataZoomConfigs.push(
+            {
+                type: 'inside',
+                xAxisIndex: xAxisInstances.map((_, index) => index)
+            },
+            {
+                type: 'inside',
+                yAxisIndex: 0
+            },
+            {
+                type: 'slider',
+                xAxisIndex: 0,
+                bottom: 18,
+                height: 26
+            },
+            {
+                type: 'slider',
+                yAxisIndex: 0,
+                right: 10,
+                filterMode: 'none'
+            }
+        );
+
+        if (hasMultipleXAxes) {
+            dataZoomConfigs.push({
+                type: 'slider',
+                xAxisIndex: 1,
+                top: 58,
+                height: 26
+            });
+        }
+    }
+
+    allFilesInvolved.forEach((fileName) => {
+        let fileDataMap = thisChartsDataMap[fileName];
+        if (!fileDataMap) {
+            return;
+        }
+
+        let yTimestampArrays = fileDataMap[Yaxis];
+        if (!Array.isArray(yTimestampArrays)) {
+            return;
+        }
+
+        xAxisInstances.forEach((xAxisInstance, xAxisIndex) => {
+            let xAxisVarName = xAxisInstance.Data;
+            let xTimestampArrays = fileDataMap[xAxisVarName];
+
+            if (!Array.isArray(xTimestampArrays)) {
+                return;
+            }
+
+            let timestampIndexesToUse = getTimestampIndexesToUse(xTimestampArrays, yTimestampArrays, onlyUseFirstTimestamp);
+
+            timestampIndexesToUse.forEach((timestampIndex) => {
+                let linePoints = zipXYArrays(xTimestampArrays[timestampIndex], yTimestampArrays[timestampIndex]);
+
+                if (linePoints.length === 0) {
+                    return;
+                }
+
+                series.push({
+                    name: fileName,
+                    type: 'line',
+                    xAxisIndex,
+                    showSymbol: includeDataPoints,
+                    symbol: 'circle',
+                    symbolSize: includeDataPoints ? 6 : 0,
+                    connectNulls: false,
+                    data: linePoints,
+                    itemStyle: {
+                        color: fileColorMap[fileName]
+                    },
+                    lineStyle: {
+                        color: fileColorMap[fileName],
+                        width: 2
+                    },
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    meta: {
+                        fileName,
+                        xAxisVarName,
+                        yAxisVarName: Yaxis,
+                        timestampIndex
+                    }
+                });
+            });
+        });
+    });
+
+    chart.setOption({
+        title: {
+            text: thisChartInstance.general?.Name || `Chart ${chartInstanceIndex + 1}`,
+            top: 8,
+            left: 'center'
+        },
+        axisPointer: {
+            show: includeAxisPointer,
+            type: 'cross',
+            axis: 'y',
+            snap: false,
+            label: {
+                show: includeAxisPointer
+            }
+        },
+        tooltip: {
+            trigger: includeAxisPointer ? 'axis' : 'item',
+            axisPointer: includeAxisPointer ? {
+                type: 'cross',
+                axis: 'y',
+                snap: false,
+                label: {
+                    show: true
+                }
+            } : undefined,
+            formatter: function(params) {
+                if (includeAxisPointer) {
+                    let tooltipParams = Array.isArray(params) ? params : [params];
+                    let firstParam = tooltipParams.find(seriesParam => seriesParam?.seriesModel?.option?.xAxisIndex === axisPointerXAxisIndex) || tooltipParams[0];
+
+                    if (!firstParam) {
+                        return '';
+                    }
+
+                    let tooltipLines = [
+                        `${firstParam.axisDimension || 'X'}: ${firstParam.axisValue ?? '?'}`
+                    ];
+
+                    tooltipParams.forEach((seriesParam) => {
+                        let point = Array.isArray(seriesParam.data) ? seriesParam.data : [];
+                        let xValue = point[0] ?? '?';
+                        let yValue = point[1] ?? '?';
+                        let meta = seriesParam.seriesModel?.option?.meta || {};
+                        tooltipLines.push(`${meta.fileName || seriesParam.seriesName}<br>${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}`);
+                    });
+
+                    return tooltipLines.join('<br><br>');
+                }
+
+                let point = Array.isArray(params.data) ? params.data : [];
+                let xValue = point[0] ?? '?';
+                let yValue = point[1] ?? '?';
+                let meta = params.seriesModel?.option?.meta || {};
+                return `${meta.fileName || params.seriesName}<br>${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}`;
+            }
+        },
+        legend: {
+            type: 'scroll',
+            top: 42,
+            left: 'center'
+        },
+        grid: {
+            left: '8%',
+            right: '5%',
+            top: hasMultipleXAxes ? 124 : 92,
+            bottom: thisChartInstance.general?.EnableZoom ? 92 : 58,
+            containLabel: true
+        },
+        xAxis: xAxisConfigs,
+        yAxis: {
+            type: 'value',
+            name: Yaxis,
+            nameLocation: 'middle',
+            nameGap: 48,
+            axisPointer: {
+                show: includeAxisPointer,
+                label: {
+                    show: includeAxisPointer
+                }
+            },
+            inverse: true
+        },
+        graphic: xAxisNameGraphics,
+        dataZoom: dataZoomConfigs,
+        series
+    });
+
+    window.addEventListener('resize', function() {
+        chart.resize();
+    });
+
+    return chartElement;
 }
 
-module.exports = { initTimeline };
+module.exports = { initTimeline, buildPlotInstance };

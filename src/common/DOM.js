@@ -1494,6 +1494,10 @@ function collectSpecifiedViewVars(appState, deps) {
     console.log(specifiedVars);
     fetchDataForSpecifiedVars(appState, deps, Array.from(specifiedVars)).then(dataMap => {
         console.log('Fetched dataMap:', dataMap);
+        appState.currentView.dataMap = dataMap;
+        console.log('Updated appState with dataMap:', appState);
+        buildPlots(appState, deps);
+
     }).catch(err => console.error('fetchDataForSpecifiedVars error:', err));
 }
 
@@ -1514,6 +1518,15 @@ async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
     }
 
     return dataMap;
+}
+
+function buildPlots(appState, deps) {
+    const {charts} = deps;
+    document.getElementById('plotOutputWrapper').innerHTML = '';
+    appState.currentView.chartInstances.forEach((chartInstance, index) => {
+        chartInstance.plotObject = charts.buildPlotInstance(appState, deps, index);
+        document.getElementById('plotOutputWrapper').appendChild(chartInstance.plotObject);
+    })
 }
 
 function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex) {

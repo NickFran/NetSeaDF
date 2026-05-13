@@ -1,1 +1,781 @@
-[]
+[
+  {
+    "id": "1778708952548",
+    "fileName": "GL_PR_PF_3902102.nc",
+    "summary": "ARVOR Profiling Float",
+    "dims": {
+      "TIME": 3,
+      "DEPTH": 604
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 69.8134994506836,
+        "lon": 3.7691500186920166
+      },
+      {
+        "lat": 69.20942687988281,
+        "lon": 1.954859972000122
+      },
+      {
+        "lat": 69.02079010009766,
+        "lon": 2.460279941558838
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763372000000000000,
+        1764217100000000000,
+        1765063040000000000
+      ],
+      "formatted": [
+        "2025-11-17 09:33",
+        "2025-11-27 04:18",
+        "2025-12-06 23:17"
+      ]
+    },
+    "attributes": {
+      "platform_code": "3902102",
+      "platform_name": "ARVOR Profiling Float",
+      "wmo_platform_code": "3902102",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "3902102",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2018-06-30T05:02:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "Institute of Oceanology - Polish Academy of Sciences",
+      "institution_edmo_code": "195",
+      "institution_country": "Poland",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "844",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "69.02079",
+      "geospatial_lat_max": "69.81350",
+      "geospatial_lon_min": "1.95486",
+      "geospatial_lon_max": "3.76915",
+      "geospatial_vertical_min": "0.30",
+      "geospatial_vertical_max": "2016.10",
+      "time_coverage_start": "2025-11-17T09:33:20Z",
+      "time_coverage_end": "2025-12-06T23:17:20Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-06T23:17:20Z",
+      "last_latitude_observation": "69.02079",
+      "last_longitude_observation": "2.46028",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Waldemar WALCZOWSKI",
+      "id": "GL_PR_PF_3902102",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:56:46Z",
+      "history": "2025-12-18T10:56:46Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  },
+  {
+    "id": "1778713435673",
+    "fileName": "GL_PR_PF_5907193.nc",
+    "summary": "PROVOR_V_JUMBO Profiling Float",
+    "dims": {
+      "TIME": 6,
+      "DEPTH": 1062
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "TEMP",
+      "TEMP_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 66.57982635498047,
+        "lon": -2.4478399753570557
+      },
+      {
+        "lat": 66.62175750732422,
+        "lon": -2.4897100925445557
+      },
+      {
+        "lat": 66.70941925048828,
+        "lon": -2.5585100650787354
+      },
+      {
+        "lat": 66.81578063964844,
+        "lon": -2.506809949874878
+      },
+      {
+        "lat": 66.92858123779297,
+        "lon": -2.3605000972747803
+      },
+      {
+        "lat": 67.00253295898438,
+        "lon": -2.132430076599121
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763651286000000000,
+        1764091518000000000,
+        1764532247000000000,
+        1764972710000000000,
+        1765412752000000000,
+        1765853404000000000
+      ],
+      "formatted": [
+        "2025-11-20 15:08",
+        "2025-11-25 17:25",
+        "2025-11-30 19:50",
+        "2025-12-05 22:11",
+        "2025-12-11 00:25",
+        "2025-12-16 02:50"
+      ]
+    },
+    "attributes": {
+      "platform_code": "5907193",
+      "platform_name": "PROVOR_V_JUMBO Profiling Float",
+      "wmo_platform_code": "5907193",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "5907193",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2025-05-26T00:04:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "National Institute of Oceanography and Applied Geophysics - OGS - Division of Oceanography",
+      "institution_edmo_code": "120",
+      "institution_country": "Italy",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "R",
+      "wmo_instrument_type": "834",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "66.57983",
+      "geospatial_lat_max": "67.00253",
+      "geospatial_lon_min": "-2.55851",
+      "geospatial_lon_max": "-2.13243",
+      "geospatial_vertical_min": "1.48",
+      "geospatial_vertical_max": "2015.48",
+      "time_coverage_start": "2025-11-20T15:08:06Z",
+      "time_coverage_end": "2025-12-16T02:50:04Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-16T02:50:04Z",
+      "last_latitude_observation": "67.00253",
+      "last_longitude_observation": "-2.13243",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Giorgio Dall'Olmo",
+      "id": "GL_PR_PF_5907193",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:56:15Z",
+      "history": "2025-12-18T10:56:15Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  },
+  {
+    "id": "1778713436583",
+    "fileName": "GL_PR_PF_4902437.nc",
+    "summary": "PROVOR CTS5 Profiling Float",
+    "dims": {
+      "TIME": 1,
+      "DEPTH": 912
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 73.18643188476562,
+        "lon": -63.858638763427734
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763825149000000000
+      ],
+      "formatted": [
+        "2025-11-22 15:25"
+      ]
+    },
+    "attributes": {
+      "platform_code": "4902437",
+      "platform_name": "PROVOR CTS5 Profiling Float",
+      "wmo_platform_code": "4902437",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "4902437",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2022-10-12T10:18:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "Laboratory of Oceanography of Villefranche",
+      "institution_edmo_code": "490",
+      "institution_country": "France",
+      "institution_references": " ",
+      "project_edmerp_code": "13736",
+      "project": "Fr-OOS",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "834",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "73.18643",
+      "geospatial_lat_max": "73.18643",
+      "geospatial_lon_min": "-63.85864",
+      "geospatial_lon_max": "-63.85864",
+      "geospatial_vertical_min": "0.10",
+      "geospatial_vertical_max": "997.54",
+      "time_coverage_start": "2025-11-22T15:25:49Z",
+      "time_coverage_end": "2025-11-22T15:25:49Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-11-22T15:25:49Z",
+      "last_latitude_observation": "73.18643",
+      "last_longitude_observation": "-63.85864",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Marcel BABIN",
+      "id": "GL_PR_PF_4902437",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:55:02Z",
+      "history": "2025-12-18T10:55:02Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  },
+  {
+    "id": "1778713436943",
+    "fileName": "GL_PR_PF_3902686.nc",
+    "summary": "APEX Profiling Float",
+    "dims": {
+      "TIME": 7,
+      "DEPTH": 168
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 82.99346923828125,
+        "lon": 43.1285285949707
+      },
+      {
+        "lat": 83.0390625,
+        "lon": 42.12495040893555
+      },
+      {
+        "lat": 83.08783721923828,
+        "lon": 41.08094024658203
+      },
+      {
+        "lat": 83.10320281982422,
+        "lon": 40.28107833862305
+      },
+      {
+        "lat": 83.1283187866211,
+        "lon": 40.03654861450195
+      },
+      {
+        "lat": 83.14714813232422,
+        "lon": 39.98984146118164
+      },
+      {
+        "lat": 83.16677856445312,
+        "lon": 39.9368896484375
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763455739000000000,
+        1763810194000000000,
+        1764181507000000000,
+        1764537984000000000,
+        1764892059000000000,
+        1765246608000000000,
+        1765615695000000000
+      ],
+      "formatted": [
+        "2025-11-18 08:48",
+        "2025-11-22 11:16",
+        "2025-11-26 18:25",
+        "2025-11-30 21:26",
+        "2025-12-04 23:47",
+        "2025-12-09 02:16",
+        "2025-12-13 08:48"
+      ]
+    },
+    "attributes": {
+      "platform_code": "3902686",
+      "platform_name": "APEX Profiling Float",
+      "wmo_platform_code": "3902686",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "3902686",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2025-07-06T05:12:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "Alfred Wegener Institute Helmholtz Centre for Polar and Marine Research",
+      "institution_edmo_code": "1368",
+      "institution_country": "Germany",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "846",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "82.99347",
+      "geospatial_lat_max": "83.16678",
+      "geospatial_lon_min": "39.93689",
+      "geospatial_lon_max": "43.12853",
+      "geospatial_vertical_min": "4.90",
+      "geospatial_vertical_max": "1998.82",
+      "time_coverage_start": "2025-11-18T08:48:59Z",
+      "time_coverage_end": "2025-12-13T08:48:15Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-13T08:48:15Z",
+      "last_latitude_observation": "83.16678",
+      "last_longitude_observation": "39.93689",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Benjamin RABE",
+      "id": "GL_PR_PF_3902686",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:56:08Z",
+      "history": "2025-12-18T10:56:08Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  },
+  {
+    "id": "1778713437320",
+    "fileName": "GL_PR_PF_5907108.nc",
+    "summary": "ARVOR DEEP Profiling Float",
+    "dims": {
+      "TIME": 3,
+      "DEPTH": 1482
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 77.76313018798828,
+        "lon": 7.892290115356445
+      },
+      {
+        "lat": 78.15232849121094,
+        "lon": 7.276010036468506
+      },
+      {
+        "lat": 77.86113739013672,
+        "lon": 7.638040065765381
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763917440000000000,
+        1764798240000000000,
+        1765651200000000000
+      ],
+      "formatted": [
+        "2025-11-23 17:04",
+        "2025-12-03 21:44",
+        "2025-12-13 18:40"
+      ]
+    },
+    "attributes": {
+      "platform_code": "5907108",
+      "platform_name": "ARVOR DEEP Profiling Float",
+      "wmo_platform_code": "5907108",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "5907108",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2024-06-10T04:10:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "ERIC Euro-Argo",
+      "institution_edmo_code": "4614",
+      "institution_country": "Europe",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "838",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "77.76313",
+      "geospatial_lat_max": "78.15233",
+      "geospatial_lon_min": "7.27601",
+      "geospatial_lon_max": "7.89229",
+      "geospatial_vertical_min": "-0.30",
+      "geospatial_vertical_max": "3502.60",
+      "time_coverage_start": "2025-11-23T17:04:00Z",
+      "time_coverage_end": "2025-12-13T18:40:00Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-13T18:40:00Z",
+      "last_latitude_observation": "77.86114",
+      "last_longitude_observation": "7.63804",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Kjell Arne MORK",
+      "id": "GL_PR_PF_5907108",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:53:53Z",
+      "history": "2025-12-18T10:53:53Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  },
+  {
+    "id": "1778713437681",
+    "fileName": "GL_PR_PF_5907173.nc",
+    "summary": "ARVOR-DO Profiling Float",
+    "dims": {
+      "TIME": 6,
+      "DEPTH": 1216
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 80.42932891845703,
+        "lon": 2.242180109024048
+      },
+      {
+        "lat": 80.44320678710938,
+        "lon": 2.0552799701690674
+      },
+      {
+        "lat": 80.45706176757812,
+        "lon": 1.868749976158142
+      },
+      {
+        "lat": 80.47093963623047,
+        "lon": 1.6819100379943848
+      },
+      {
+        "lat": 80.4848403930664,
+        "lon": 1.494670033454895
+      },
+      {
+        "lat": 80.43933868408203,
+        "lon": 1.2805700302124023
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763505720000000000,
+        1763938230000000000,
+        1764369900000000000,
+        1764802290000000000,
+        1765234020000000000,
+        1765666050000000000
+      ],
+      "formatted": [
+        "2025-11-18 22:42",
+        "2025-11-23 22:50",
+        "2025-11-28 22:45",
+        "2025-12-03 22:51",
+        "2025-12-08 22:47",
+        "2025-12-13 22:47"
+      ]
+    },
+    "attributes": {
+      "platform_code": "5907173",
+      "platform_name": "ARVOR-DO Profiling Float",
+      "wmo_platform_code": "5907173",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "5907173",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2025-07-06T02:39:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "Institute of Oceanology - Polish Academy of Sciences",
+      "institution_edmo_code": "195",
+      "institution_country": "Poland",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "844",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "80.42933",
+      "geospatial_lat_max": "80.48484",
+      "geospatial_lon_min": "1.28057",
+      "geospatial_lon_max": "2.24218",
+      "geospatial_vertical_min": "-0.73",
+      "geospatial_vertical_max": "2030.90",
+      "time_coverage_start": "2025-11-18T22:42:00Z",
+      "time_coverage_end": "2025-12-13T22:47:30Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-13T22:47:30Z",
+      "last_latitude_observation": "80.43934",
+      "last_longitude_observation": "1.28057",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Waldemar WALCZOWSKI",
+      "id": "GL_PR_PF_5907173",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:57:14Z",
+      "history": "2025-12-18T10:57:14Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  },
+  {
+    "id": "1778713438295",
+    "fileName": "GL_PR_PF_4903674.nc",
+    "summary": "ARVOR Profiling Float",
+    "dims": {
+      "TIME": 3,
+      "DEPTH": 608
+    },
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "coords": [
+      {
+        "lat": 70.27110290527344,
+        "lon": -5.396520137786865
+      },
+      {
+        "lat": 70.28932189941406,
+        "lon": -6.249410152435303
+      },
+      {
+        "lat": 70.16065216064453,
+        "lon": -5.690460205078125
+      }
+    ],
+    "timestamps": {
+      "ms": [
+        1763829990000000000,
+        1764676830000000000,
+        1765522590000000000
+      ],
+      "formatted": [
+        "2025-11-22 16:46",
+        "2025-12-02 12:00",
+        "2025-12-12 06:56"
+      ]
+    },
+    "attributes": {
+      "platform_code": "4903674",
+      "platform_name": "ARVOR Profiling Float",
+      "wmo_platform_code": "4903674",
+      "ices_platform_code": " ",
+      "coriolis_platform_code": "4903674",
+      "comment": " ",
+      "transmitter_system": "IRIDIUM",
+      "start_mission_date": "2023-06-01T03:37:00Z",
+      "source": "drifting subsurface profiling float",
+      "source_platform_category_code": "46",
+      "institution": "Institute of Marine Research",
+      "institution_edmo_code": "1351",
+      "institution_country": "Norway",
+      "institution_references": " ",
+      "naming_authority": "Copernicus Marine In Situ",
+      "title": "Global Ocean - In Situ Observation Copernicus",
+      "summary": " ",
+      "data_mode": "M",
+      "wmo_instrument_type": "844",
+      "area": "Global Ocean",
+      "geospatial_lat_min": "70.16065",
+      "geospatial_lat_max": "70.28932",
+      "geospatial_lon_min": "-6.24941",
+      "geospatial_lon_max": "-5.39652",
+      "geospatial_vertical_min": "0.20",
+      "geospatial_vertical_max": "2031.70",
+      "time_coverage_start": "2025-11-22T16:46:30Z",
+      "time_coverage_end": "2025-12-12T06:56:30Z",
+      "cdm_data_type": "profile",
+      "featureType": "trajectoryProfile",
+      "bottom_depth": " ",
+      "last_date_observation": "2025-12-12T06:56:30Z",
+      "last_latitude_observation": "70.16065",
+      "last_longitude_observation": "-5.69046",
+      "references": "http://marine.copernicus.eu http://www.marineinsitu.eu",
+      "license": "https://marine.copernicus.eu/user-corner/service-commitments-and-licence",
+      "update_interval": "P1M",
+      "citation": "These data were collated within the Copernicus Marine Service (In Situ) and EMODnet collaboration framework. Data is made freely available by the Copernicus Marine Service and the programs that contribute to it.",
+      "doi": "https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494",
+      "creator_name": "Kjell Arne MORK",
+      "id": "GL_PR_PF_4903674",
+      "netcdf_version": "netCDF-4 classic model",
+      "format_version": "2.0",
+      "Conventions": "CF-1.11 Copernicus-InSituTAC-FormatManual-2.0.0 Copernicus-InSituTAC-ParametersList-3.3.0 Copernicus-InSituTAC-AttributesList-1.0.0",
+      "date_modified": "2025-12-18T10:55:32Z",
+      "history": "2025-12-18T10:55:32Z : Creation",
+      "publisher_email": "cmems-service@ifremer.fr",
+      "publisher_name": "Copernicus Marine Service",
+      "publisher_url": "https://marine.copernicus.eu/ http://www.marineinsitu.eu/",
+      "publisher_institution": "Ifremer"
+    }
+  }
+]
