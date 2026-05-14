@@ -1045,6 +1045,58 @@ function dom_toggleViewConfigColumn(appState, forceHidden = null) {
 
     viewPage.classList.toggle('vcard3-hidden', hideColumn);
     appState.viewColumnVisible = !appState.viewColumnVisible;
+    animatePlotResize(appState);
+    schedulePlotResize(appState);
+}
+
+function requestResizeForCurrentViewPlots(appState, useResizeRequestHook = true) {
+    let chartInstances = appState?.currentView?.chartInstances || [];
+
+    chartInstances.forEach((chartInstance) => {
+        if (useResizeRequestHook && typeof chartInstance.plotObject?.requestPlotResize === 'function') {
+            chartInstance.plotObject.requestPlotResize();
+            return;
+        }
+
+        if (chartInstance.plotObject?.chartObject && !chartInstance.plotObject.chartObject.isDisposed()) {
+            chartInstance.plotObject.chartObject.resize();
+        }
+    });
+}
+
+function animatePlotResize(appState, duration = 320) {
+    if (appState?.plotResizeAnimationFrame) {
+        cancelAnimationFrame(appState.plotResizeAnimationFrame);
+        appState.plotResizeAnimationFrame = null;
+    }
+
+    let animationStart = performance.now();
+
+    function step(currentTime) {
+        requestResizeForCurrentViewPlots(appState, false);
+
+        if ((currentTime - animationStart) < duration) {
+            appState.plotResizeAnimationFrame = requestAnimationFrame(step);
+            return;
+        }
+
+        appState.plotResizeAnimationFrame = null;
+        requestResizeForCurrentViewPlots(appState, false);
+    }
+
+    appState.plotResizeAnimationFrame = requestAnimationFrame(step);
+}
+
+function schedulePlotResize(appState) {
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+            requestResizeForCurrentViewPlots(appState);
+        });
+    });
+
+    setTimeout(function() {
+        requestResizeForCurrentViewPlots(appState);
+    }, 120);
 }
 
 function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
@@ -1185,10 +1237,12 @@ function renderCharts (appState, deps) {
     generateViewButton.textContent = 'Generate View';
     viewConfigWrapper.appendChild(generateViewButton);
     generateViewButton.addEventListener('click', function() {
+        console.log('GENERATE VIEW CLICKED');
         appState.isViewGenerated = true;
         renderCharts(appState, deps);
         appState.currentView["targetDim"] = appState.currentView.chartInstances[0].axis[0].Data; // we should look to make this more dynamic in the future when we have more complex views with multiple chart instances and different axis data. For now we will just set the targetDim to be the data of the first axis of the first chart instance.
         console.log(appState.currentView);
+        collectSpecifiedViewVars(appState, deps);
     })
 
     // OUTPUT
@@ -1216,6 +1270,8 @@ function renderCharts (appState, deps) {
     } else {        
         viewOutputWrapper.style.display = 'none';
     }
+
+    schedulePlotResize(appState);
 }
 
 function dom_addChartInstanceToCurrentView(appState, deps, index, chartParams = {}){
@@ -1358,6 +1414,10 @@ function switchViewMenu(menuName){
             break;
     }
 
+    if (menuName === "viewOutput") {
+        schedulePlotResize(window.appState || null);
+    }
+
 }
 
 function onChartInstanceOptionClick(appState, deps, optionType, chartInstanceIndex){
@@ -1470,7 +1530,8 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
             renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex);
             break;
         case "output":
-            collectSpecifiedViewVars(appState, deps);
+            //collectSpecifiedViewVars(appState, deps);
+            schedulePlotResize(appState);
             break;
     }
 
@@ -1497,6 +1558,8 @@ function collectSpecifiedViewVars(appState, deps) {
         appState.currentView.dataMap = dataMap;
         console.log('Updated appState with dataMap:', appState);
         buildPlots(appState, deps);
+        schedulePlotResize(appState);
+        
 
     }).catch(err => console.error('fetchDataForSpecifiedVars error:', err));
 }
@@ -1522,7 +1585,18 @@ async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
 
 function buildPlots(appState, deps) {
     const {charts} = deps;
+    appState.currentView.chartInstances.forEach((chartInstance) => {
+        if (typeof chartInstance.plotObject?.cleanupPlotObject === 'function') {
+            chartInstance.plotObject.cleanupPlotObject();
+        }
+
+        if (chartInstance.plotObject?.chartObject && !chartInstance.plotObject.chartObject.isDisposed()) {
+            chartInstance.plotObject.chartObject.dispose();
+        }
+    });
+
     document.getElementById('plotOutputWrapper').innerHTML = '';
+
     appState.currentView.chartInstances.forEach((chartInstance, index) => {
         chartInstance.plotObject = charts.buildPlotInstance(appState, deps, index);
         document.getElementById('plotOutputWrapper').appendChild(chartInstance.plotObject);

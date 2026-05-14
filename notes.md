@@ -15,7 +15,7 @@
 
 * 12 hr clock checkbox was never implemented on data point tooltips for timestamp.
 
-* GSOSPF
+* JSSPF
 * GSOJSnP
 
 * input timeline range has slightly different formatting than slider output (inputs are including a T)
@@ -40,3 +40,7 @@
 * check map.html for path.join, instead look into using fromHereToRoot()
 
 * add indicator when view changes but has yet to be regenerated.
+
+* Work on plotting wrapper for multiple charts on screen
+* Move chart building to generate button, not output screen
+* axis shifts when zoom

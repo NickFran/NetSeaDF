@@ -65,6 +65,123 @@ function getTimestampIndexesToUse(xTimestampArrays, yTimestampArrays, onlyUseFir
     return Array.from({ length: maxUsableIndex }, (_, index) => index);
 }
 
+function getAxisPadding(minValue, maxValue, paddingRatio = 0.05) {
+    if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) {
+        return 0;
+    }
+
+    let span = Math.abs(maxValue - minValue);
+    let referenceSize = span > 0 ? span : Math.max(Math.abs(minValue), Math.abs(maxValue), 1);
+
+    return Math.max(referenceSize * paddingRatio, 0.01);
+}
+
+function roundAxisBoundary(value, decimalPlaces = 2) {
+    let numericValue = Number(value);
+
+    if (!Number.isFinite(numericValue)) {
+        return value;
+    }
+
+    return Number(numericValue.toFixed(decimalPlaces));
+}
+
+function getPaddedAxisMin(axisExtent, paddingRatio = 0.05) {
+    if (!axisExtent || !Number.isFinite(axisExtent.min) || !Number.isFinite(axisExtent.max)) {
+        return axisExtent?.min;
+    }
+
+    return roundAxisBoundary(axisExtent.min - getAxisPadding(axisExtent.min, axisExtent.max, paddingRatio));
+}
+
+function getPaddedAxisMax(axisExtent, paddingRatio = 0.05) {
+    if (!axisExtent || !Number.isFinite(axisExtent.min) || !Number.isFinite(axisExtent.max)) {
+        return axisExtent?.max;
+    }
+
+    return roundAxisBoundary(axisExtent.max + getAxisPadding(axisExtent.min, axisExtent.max, paddingRatio));
+}
+
+function formatAxisNumber(value) {
+    let numericValue = Number(value);
+
+    if (!Number.isFinite(numericValue)) {
+        return value;
+    }
+
+    return numericValue.toFixed(2);
+}
+
+function enableChartAutoResize(chart, chartElement) {
+    if (!chart || !chartElement) {
+        return function() {};
+    }
+
+    let resizeFrameId = null;
+    let resizeTimeoutId = null;
+    let parentElement = chartElement.parentElement;
+    let grandParentElement = parentElement?.parentElement;
+    let observedElement = grandParentElement || parentElement;
+
+    function performChartResize() {
+        if (resizeFrameId !== null) {
+            cancelAnimationFrame(resizeFrameId);
+        }
+
+        resizeFrameId = requestAnimationFrame(function() {
+            resizeFrameId = null;
+
+            if (!chart.isDisposed()) {
+                chart.resize();
+            }
+        });
+    }
+
+    function requestChartResize() {
+        if (resizeTimeoutId !== null) {
+            clearTimeout(resizeTimeoutId);
+        }
+
+        resizeTimeoutId = setTimeout(function() {
+            resizeTimeoutId = null;
+            performChartResize();
+        }, 75);
+    }
+
+    let resizeObserver = null;
+
+    if (typeof ResizeObserver !== 'undefined' && observedElement) {
+        resizeObserver = new ResizeObserver(function() {
+            requestChartResize();
+        });
+
+        resizeObserver.observe(observedElement);
+    }
+
+    chartElement.requestPlotResize = requestChartResize;
+    window.addEventListener('resize', requestChartResize);
+
+    return function cleanupChartAutoResize() {
+        window.removeEventListener('resize', requestChartResize);
+
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+        }
+
+        if (resizeFrameId !== null) {
+            cancelAnimationFrame(resizeFrameId);
+            resizeFrameId = null;
+        }
+
+        if (resizeTimeoutId !== null) {
+            clearTimeout(resizeTimeoutId);
+            resizeTimeoutId = null;
+        }
+
+        delete chartElement.requestPlotResize;
+    };
+}
+
 function initTimeline(state, deps, DOM_Deps) {
     const {DOM, fileHandle, basicFunctions} = deps;
    
@@ -317,7 +434,7 @@ function initTimeline(state, deps, DOM_Deps) {
 
 function buildPlotInstance(appState, deps, chartInstanceIndex) {
     const {charts, integrations, pathDep} = deps;
-    const onlyUseFirstTimestamp = true;
+    const onlyUseFirstTimestamp = false;
     const includeDataPoints = true;
     const includeAxisPointer = true;
 
@@ -344,6 +461,12 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
         let axisConfig = {
             type: 'value',
             position: index === 0 ? 'bottom' : 'top',
+            min: function(axisExtent) {
+                return getPaddedAxisMin(axisExtent);
+            },
+            max: function(axisExtent) {
+                return getPaddedAxisMax(axisExtent);
+            },
             axisLine: {
                 show: true
             },
@@ -425,13 +548,19 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 type: 'slider',
                 xAxisIndex: 0,
                 bottom: 18,
-                height: 26
+                height: 26,
+                labelFormatter: function(value) {
+                    return formatAxisNumber(value);
+                }
             },
             {
                 type: 'slider',
                 yAxisIndex: 0,
                 right: 10,
-                filterMode: 'none'
+                filterMode: 'none',
+                labelFormatter: function(value) {
+                    return formatAxisNumber(value);
+                }
             }
         );
 
@@ -440,7 +569,10 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 type: 'slider',
                 xAxisIndex: 1,
                 top: 58,
-                height: 26
+                height: 26,
+                labelFormatter: function(value) {
+                    return formatAxisNumber(value);
+                }
             });
         }
     }
@@ -531,7 +663,10 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
             formatter: function(params) {
                 if (includeAxisPointer) {
                     let tooltipParams = Array.isArray(params) ? params : [params];
-                    let firstParam = tooltipParams.find(seriesParam => seriesParam?.seriesModel?.option?.xAxisIndex === axisPointerXAxisIndex) || tooltipParams[0];
+                    let firstParam = tooltipParams.find(seriesParam => {
+                        let seriesOption = seriesParam?.seriesIndex != null ? series[seriesParam.seriesIndex] : undefined;
+                        return seriesOption?.xAxisIndex === axisPointerXAxisIndex;
+                    }) || tooltipParams[0];
 
                     if (!firstParam) {
                         return '';
@@ -545,7 +680,7 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                         let point = Array.isArray(seriesParam.data) ? seriesParam.data : [];
                         let xValue = point[0] ?? '?';
                         let yValue = point[1] ?? '?';
-                        let meta = seriesParam.seriesModel?.option?.meta || {};
+                        let meta = seriesParam.seriesIndex != null ? (series[seriesParam.seriesIndex]?.meta || {}) : (seriesParam.seriesModel?.option?.meta || {});
                         let seriesColor = typeof seriesParam.color === 'string' ? seriesParam.color : (seriesParam.color?.colorStops?.[0]?.color || '#333');
                         tooltipLines.push(`<div style="border-left: 8px solid ${seriesColor}; padding-left: 10px; margin-top: 4px; color: #000;"><div style="font-weight: 600; color: #000;">${meta.fileName || seriesParam.seriesName}</div><div style="color: #000;">${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}</div></div>`);
                     });
@@ -556,7 +691,7 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 let point = Array.isArray(params.data) ? params.data : [];
                 let xValue = point[0] ?? '?';
                 let yValue = point[1] ?? '?';
-                let meta = params.seriesModel?.option?.meta || {};
+                let meta = params.seriesIndex != null ? (series[params.seriesIndex]?.meta || {}) : (params.seriesModel?.option?.meta || {});
                 let seriesColor = typeof params.color === 'string' ? params.color : (params.color?.colorStops?.[0]?.color || '#333');
                 return `<div style="border-left: 8px solid ${seriesColor}; padding-left: 10px; color: #000;"><div style="font-weight: 600; color: #000;">${meta.fileName || params.seriesName}</div><div style="color: #000;">${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}</div></div>`;
             }
@@ -579,6 +714,12 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
             name: Yaxis,
             nameLocation: 'middle',
             nameGap: 48,
+            min: function(axisExtent) {
+                return getPaddedAxisMin(axisExtent);
+            },
+            max: function(axisExtent) {
+                return getPaddedAxisMax(axisExtent);
+            },
             axisPointer: {
                 show: includeAxisPointer,
                 label: {
@@ -592,9 +733,8 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
         series
     });
 
-    window.addEventListener('resize', function() {
-        chart.resize();
-    });
+    chartElement.cleanupPlotObject = function() {};
+    chartElement.cleanupPlotObject = enableChartAutoResize(chart, chartElement);
 
     return chartElement;
 }
