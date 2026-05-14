@@ -546,7 +546,8 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                         let xValue = point[0] ?? '?';
                         let yValue = point[1] ?? '?';
                         let meta = seriesParam.seriesModel?.option?.meta || {};
-                        tooltipLines.push(`${meta.fileName || seriesParam.seriesName}<br>${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}`);
+                        let seriesColor = typeof seriesParam.color === 'string' ? seriesParam.color : (seriesParam.color?.colorStops?.[0]?.color || '#333');
+                        tooltipLines.push(`<div style="border-left: 8px solid ${seriesColor}; padding-left: 10px; margin-top: 4px; color: #000;"><div style="font-weight: 600; color: #000;">${meta.fileName || seriesParam.seriesName}</div><div style="color: #000;">${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}</div></div>`);
                     });
 
                     return tooltipLines.join('<br><br>');
@@ -556,7 +557,8 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 let xValue = point[0] ?? '?';
                 let yValue = point[1] ?? '?';
                 let meta = params.seriesModel?.option?.meta || {};
-                return `${meta.fileName || params.seriesName}<br>${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}`;
+                let seriesColor = typeof params.color === 'string' ? params.color : (params.color?.colorStops?.[0]?.color || '#333');
+                return `<div style="border-left: 8px solid ${seriesColor}; padding-left: 10px; color: #000;"><div style="font-weight: 600; color: #000;">${meta.fileName || params.seriesName}</div><div style="color: #000;">${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}</div></div>`;
             }
         },
         legend: {
