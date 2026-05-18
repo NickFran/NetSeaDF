@@ -55,11 +55,20 @@
             currentFileIndexTarget: null,
             map: undefined,
             markers: {},
+            filteredMarkers:[],
             mapTimelineMode: "slider", // or "input"
             mapTimeline12hrClock: false,
             mapTimelineRange: {
                 slider: [],
                 input: []
+            },
+            mapLocationFiltering: {
+                locationFilterMap: null,
+                locationFilterBounds: null,
+                    latMin: -90,
+                    latMax: 90,
+                    lonMin: -180,
+                    lonMax: 180
             },
             charts: {
                 timeline: null
@@ -337,7 +346,16 @@
                         <option value="custom" disabled>Custom Selection</option>
                         </select>
                     </div>
+                    <div class="inputFormWrapper checkboxInputFormWrapper">
+                        <h5 class="inputLabelWPadding">Only Use First Timestamp/s: </h5>
+                        <input type="checkbox" id="useOnlyFirstTimestampInput" name="useOnlyFirstTimestampInput" class="useOnlyFirstTimestampInput">
+                    </div>
+                    <div class="inputFormWrapper checkboxInputFormWrapper">
+                        <h5 class="inputLabelWPadding">Only Use Files With PRES/PSAL/TEMP: </h5>
+                        <input type="checkbox" id="useOnlyFilesWithPPTInput" name="useOnlyFilesWithPPTInput" class="useOnlyFilesWithPPTInput">
+                    </div>
                     <button type="button" class="createViewButton" id="createViewButton">Create View</button>
+                    
                 </form>
                 <div class="chartInstanceSettingsMenu" id="chartInstanceSettingsMenu">123</div>
                 <div class="chartInstanceGeneralSettingsMenu" id="chartInstanceGeneralSettingsMenu"></div>
@@ -346,6 +364,7 @@
             </div>
         </div>
     </div>
+    
 </body>
 
 
@@ -359,23 +378,53 @@
     // document.getElementById('chartInstanceAxisSettingsMenu').style.display = 'none';
 </script>
 <script>    
+        const mapFilterDropdownWrapper = document.createElement("div");
+        mapFilterDropdownWrapper.classList.add("mapFilterDropdownWrapper");
+
+        const mapPopupfilterTypeLabel = document.createElement("span");
+        mapPopupfilterTypeLabel.textContent = "Filter Type:";
+        mapPopupfilterTypeLabel.classList.add("mapPopupfilterTypeLabel");
+        mapPopupfilterTypeLabel.textContent = "Filter Type:";
+
+        const mapPopupfilterTypeDropdown = document.createElement("select");
+        mapPopupfilterTypeDropdown.id = "mapPopupfilterTypeDropdown";
+        mapPopupfilterTypeDropdown.classList.add("mapPopupfilterTypeDropdown");
+        mapPopupfilterTypeDropdown.addEventListener("change", function() {
+            
+        })
+        const mapPopupfilterTypeDropdownOption1 = document.createElement("option");
+        mapPopupfilterTypeDropdownOption1.value = "option1";
+        mapPopupfilterTypeDropdownOption1.textContent = "Time";
+        mapPopupfilterTypeDropdown.appendChild(mapPopupfilterTypeDropdownOption1);
+        const mapPopupfilterTypeDropdownOption2 = document.createElement("option");
+        mapPopupfilterTypeDropdownOption2.value = "option2";
+        mapPopupfilterTypeDropdownOption2.textContent = "Location";
+        mapPopupfilterTypeDropdown.appendChild(mapPopupfilterTypeDropdownOption2);
+
+        mapPopupfilterTypeDropdown.appendChild(mapPopupfilterTypeDropdownOption1);
+        mapPopupfilterTypeDropdown.appendChild(mapPopupfilterTypeDropdownOption2);
+
+        mapFilterDropdownWrapper.appendChild(mapPopupfilterTypeLabel);
+        mapFilterDropdownWrapper.appendChild(mapPopupfilterTypeDropdown);
+
         const mapFilterPopup = new popup.SimplePopup(
-        {},
+        {leftHeaderElement: mapFilterDropdownWrapper},
         { 
+            
             title: "Filter", 
             content: `
-                    <div class="timelineOptionWrapper">
+                    <div class="timelineOptionWrapper" id="timelineOptionWrapper">
                         <h4>Timeline Preference</h4>
                         <select id="timelineDropdown" class="timelineDropdown">
                             <option value="option1">Manual Slider</option>
                             <option value="option2">Manual Input</option>
                         </select>
                     </div>
-                    <div class="timelineOptionWrapper">
+                    <div class="timelineOptionWrapper" id="timeline12hrOptionWrapper">
                         <input id="timeline12hrInput" class="timelineInput" type="checkbox">Use 12 HR clock (only for slider)</input>
                     </div>
 
-                    <div class="timelineWrapper">
+                    <div class="timelineWrapper" id="timelineWrapper">
                         <table class="rangeTable">
                             <tr>
                                 <th></th>
@@ -396,7 +445,7 @@
                         <div class="timeline" id="timeline" style="width: 100%; height: 100%;"></div>
                     </div>
 
-                    <div class="SelectedTimelineRangeWrapper">
+                    <div class="SelectedTimelineRangeWrapper" id="SelectedTimelineRangeWrapper">
                     <table class="rangeTable">
                             <tr>
                                 <th>Start</th>
@@ -411,6 +460,28 @@
                                 </td>
                             </tr>
                         </table>
+                    </div>
+
+                    <div class="LocationFilterWrapper" id="LocationFilterWrapper">
+                    <div class="locFiltMap"></div>
+                    <div class="filtInputsWrapper">
+                        <div class="filtInputInstanceWrapper">
+                            <h5>N</h5>
+                            <input type="number" class="locFiltInput" id="latMin" value="-90" step="0.000001" min="-90" max="90">
+                        </div>
+                        <div class="filtInputInstanceWrapper">
+                            <h5>S</h5>
+                            <input type="number" class="locFiltInput" id="latMax" value="90" step="0.000001" min="-90" max="90">
+                        </div>
+                        <div class="filtInputInstanceWrapper">
+                            <h5>W</h5>
+                            <input type="number" class="locFiltInput" id="lonMin" value="-180" step="0.000001" min="-180" max="180">
+                        </div>
+                        <div class="filtInputInstanceWrapper">
+                            <h5>E</h5>
+                            <input type="number" class="locFiltInput" id="lonMax" value="180" step="0.000001" min="-180" max="180">
+                        </div>
+                    </div>
                     </div>
             `
         },
@@ -490,6 +561,18 @@
 
     appState.popups.settingsMenu = settingsMenu;
      </script>
+
+<script>
+    document.getElementById('LocationFilterWrapper').style.display = 'none';
+    appState.mapLocationFiltering.locationFilterMap = L.map(document.querySelector('.locFiltMap')).setView([58.66764823678403, -37.95049416624507], 5);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(appState.mapLocationFiltering.locationFilterMap);
+    appState.mapLocationFiltering.locationFilterBounds = null;
+
+    
+</script>
 
 <script>
     // Initial load
@@ -858,6 +941,61 @@ userInteractions.userint_focusOnMarker(appState);
         DOM.dom_toggleViewport('map');
     })
 
+    document.getElementById('mapPopupfilterTypeDropdown').addEventListener('change', function() {
+        let selectedValue = this.value;
+        if (selectedValue === "option1"){
+            document.getElementById('LocationFilterWrapper').style.display = 'none';
+            document.getElementById('timelineOptionWrapper').style.display = 'flex';
+            document.getElementById('timeline12hrOptionWrapper').style.display = 'flex';
+            document.getElementById('timelineWrapper').style.display = 'flex';
+            document.getElementById('SelectedTimelineRangeWrapper').style.display = 'flex';
+        }
+        if (selectedValue === "option2"){
+            document.getElementById('timelineOptionWrapper').style.display = 'none';
+            document.getElementById('timeline12hrOptionWrapper').style.display = 'none';
+            document.getElementById('timelineWrapper').style.display = 'none';
+            document.getElementById('SelectedTimelineRangeWrapper').style.display = 'none';
+            document.getElementById('LocationFilterWrapper').style.display = 'block';
+            appState.mapLocationFiltering.locationFilterMap.invalidateSize()
+            updateLocationFilterBounds();
+        }
+        
+    });
+
+    function updateLocationFilterBounds() {
+        if (document.getElementById('latMin').value === "") document.getElementById('latMin').value = 0;
+        if (document.getElementById('latMax').value === "") document.getElementById('latMax').value = 0;
+        if (document.getElementById('lonMin').value === "") document.getElementById('lonMin').value = 0;
+        if (document.getElementById('lonMax').value === "") document.getElementById('lonMax').value = 0;
+        appState.mapLocationFiltering.latMin = parseFloat(document.getElementById('latMin').value);
+        appState.mapLocationFiltering.latMax = parseFloat(document.getElementById('latMax').value);
+        appState.mapLocationFiltering.lonMin = parseFloat(document.getElementById('lonMin').value);
+        appState.mapLocationFiltering.lonMax = parseFloat(document.getElementById('lonMax').value);
+
+        appState.mapLocationFiltering.locationFilterBounds = [[appState.mapLocationFiltering.latMin, appState.mapLocationFiltering.lonMin], [appState.mapLocationFiltering.latMax, appState.mapLocationFiltering.lonMax]];
+        // Update the rectangle on the map
+        if (appState.mapLocationFiltering.locationFilterRectangle) {
+            appState.mapLocationFiltering.locationFilterMap.removeLayer(appState.mapLocationFiltering.locationFilterRectangle);
+        }
+        appState.mapLocationFiltering.locationFilterRectangle = L.rectangle(appState.mapLocationFiltering.locationFilterBounds, {color: "#ff7800", weight: 1}).addTo(appState.mapLocationFiltering.locationFilterMap);
+        appState.mapLocationFiltering.locationFilterMap.fitBounds(appState.mapLocationFiltering.locationFilterBounds);
+    
+        DOM.leaf_filterPlatformsByLocation(appState, ModuleDependencies["DOM"]);
+    }
+
+    document.getElementById('latMin').addEventListener('change', function() {
+        updateLocationFilterBounds();
+    });
+    document.getElementById('latMax').addEventListener('change', function() {
+        updateLocationFilterBounds();
+    });
+    document.getElementById('lonMin').addEventListener('change', function() {
+        updateLocationFilterBounds();
+    });
+    document.getElementById('lonMax').addEventListener('change', function() {
+        updateLocationFilterBounds();
+    });
+
     document.getElementById('createViewButton').addEventListener('click', function() {
         let targetViewData = DOM.constructViewDataViaPreferences(appState, ModuleDependencies["DOM"], document.getElementById('newViewGraphData').value);
         appState.viewVars = new Set();
@@ -961,7 +1099,9 @@ userInteractions.userint_focusOnMarker(appState);
             type: document.getElementById('newViewGraphType').value,
             dataSelection: document.getElementById('newViewGraphData').value,
             vars: Array.from(appState.viewVars),
-            data: targetViewData
+            data: targetViewData,
+            OnlyUseFirstTimestamps: document.getElementById('useOnlyFirstTimestampInput').checked,
+            useOnlyFilesWithPPTInput: document.getElementById('useOnlyFilesWithPPTInput').checked
         });
 
         console.log("New View Created:", appState.currentView);

@@ -18,7 +18,9 @@ class popup {
         this.height = options.height || "80%";
 
         this.hasOpened = false;
+        this.leftHeaderElement = init.leftHeaderElement || null;
         this.init();
+
     }
 
     init() {
@@ -66,6 +68,14 @@ class popup {
         closeBtn.addEventListener("click", () => {
             this.close();
         });
+
+        if (this.leftHeaderElement) {
+            header.appendChild(this.leftHeaderElement);
+        }
+        // const x = document.createElement('div');
+        // x.classList.add('popup-x');
+        // x.textContent = 'X';
+        // header.appendChild(x);
 
         // Assemble the tree
         header.appendChild(title);

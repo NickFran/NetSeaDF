@@ -352,6 +352,7 @@ function showLoadingScreen() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     loadingOverlay.style.display = 'flex';
     loadingOverlay.style.opacity = '1';
+    loadingOverlay.style.pointerEvents = 'auto';
 }
 
 /**
@@ -369,6 +370,7 @@ function setLoadingText(text) {
 function hideLoadingScreen() {
     const loadingOverlay = document.getElementById('loadingOverlay');
     loadingOverlay.style.opacity = '0';
+    loadingOverlay.style.pointerEvents = 'none';
     setTimeout(function() {
         loadingOverlay.style.display = 'none';
         // Reset loading text back to default
@@ -513,6 +515,7 @@ function leaf_storeStateOfMapMarker(state, fileName, marker, instance=null, type
             TimestampFlags: {
                 TimestampFlagDifferences: [],
             }, // we should look to get rid of this. (or make this into the timestamp flag array)
+            isLocFiltered: false,
             isFiltered: false, 
             additionalInstances: {
                 polyLines:[], 
@@ -590,7 +593,7 @@ function leaf_removeMapMarker(state, fileName, instance=null) {
 }
 
 function leaf_OpaqueMapMarker(state, fileName, opaque, index, isInstance=false) {
-    console.log('Attempting to obscure marker for:', fileName, index);
+    //console.log('Attempting to obscure marker for:', fileName, index);
     state.markers[fileName].marker.setOpacity(opaque);
 }
 
@@ -657,16 +660,52 @@ function leaf_filterPlatformsByTimeRange(state, dep, startTime, endTime) {
         let endDate = new Date(endTime);
         if (evalDate > startDate && evalDate < endDate) {
             console.log(`Timestamp within range [${0}]:`, currentEvalTimestamp);
-            leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
             state.markers[entry.fileName].isFiltered = false;
         } else {
-            leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
             state.markers[entry.fileName].isFiltered = true;
         }
+
+        if (state.markers[entry.fileName].isFiltered || state.markers[entry.fileName].isLocFiltered){
+                leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
+            } else {
+                leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
+            }
     }
-    // get total number of filtered markers
-    const totalFiltered = Object.values(state.markers).filter(marker => marker.isFiltered).length;
-    console.log(`Total markers filtered out: ${Object.keys(state.markers).length - totalFiltered}`);
+    
+    handleMarkerFiltering(state);
+}
+
+function leaf_filterPlatformsByLocation(state, dep) {
+    const {pathDep, fileHandle, integrations} = dep;
+
+    let data = fileHandle.getAllSimpleData();
+    for (const entry of JSON.parse(data)) {
+        let currentEvalLocation = entry.coords[0];
+        
+        if (currentEvalLocation["lat"] > state.mapLocationFiltering.latMin && currentEvalLocation["lat"] < state.mapLocationFiltering.latMax
+            && 
+            currentEvalLocation["lon"] > state.mapLocationFiltering.lonMin && currentEvalLocation["lon"] < state.mapLocationFiltering.lonMax) 
+            {
+                state.markers[entry.fileName].isLocFiltered = false;
+            } else {
+                state.markers[entry.fileName].isLocFiltered = true;
+            }
+
+        if (state.markers[entry.fileName].isFiltered || state.markers[entry.fileName].isLocFiltered){
+                leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
+            } else {
+                leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
+            }
+    }
+    
+    handleMarkerFiltering(state);
+}
+
+function handleMarkerFiltering(state){
+    const totalFiltered = Object.values(state.markers).filter(marker => marker.isLocFiltered || marker.isFiltered).length;
+    state.filteredMarkers = totalFiltered;
+    //console.log(`Total markers filtered out: ${Object.keys(state.markers).length - totalFiltered}`);
+    console.log(state.markers);
     document.getElementById('leafletMapHeader').innerHTML = `Visible: ${Object.keys(state.markers).length - totalFiltered} out of ${Object.keys(state.markers).length} platforms`;
 }
 
@@ -1122,7 +1161,9 @@ function dom_initNewView(appState, params = {}){
                     chartInstances: params.chartInstances || [dom_createChartInstance({
                                                                     general: {
                                                                         Name: null,
-                                                                        EnableZoom: true
+                                                                        EnableZoom: true,
+                                                                        EnableDataPoints: true,
+                                                                        EnableAxisPointers: true
                                                                     },
                                                                     obj:null,
                                                                     axis:[
@@ -1155,7 +1196,9 @@ function dom_createChartInstance(params = {}) {
     let Defaults = {
         general: {
             Name: null,
-            EnableZoom: true
+            EnableZoom: true,
+            EnableDataPoints: true,
+            EnableAxisPointers: true
         },
         obj:null,
         axis:[
@@ -1543,6 +1586,9 @@ function collectSpecifiedViewVars(appState, deps) {
     let {charts, integrations, pathDep} = deps;
     let specifiedVars = new Set();
 
+    showLoadingScreen();
+    setLoadingText('Generating plots...');
+
     // For Each Chart
     appState.currentView.chartInstances.forEach((chartInstance, index) => {
         // For Each Axis in Chart
@@ -1553,15 +1599,23 @@ function collectSpecifiedViewVars(appState, deps) {
     });
 
     console.log(specifiedVars);
-    fetchDataForSpecifiedVars(appState, deps, Array.from(specifiedVars)).then(dataMap => {
+    fetchDataForSpecifiedVars(appState, deps, Array.from(specifiedVars)).then(async dataMap => {
         console.log('Fetched dataMap:', dataMap);
         appState.currentView.dataMap = dataMap;
         console.log('Updated appState with dataMap:', appState);
         buildPlots(appState, deps);
         schedulePlotResize(appState);
-        
 
-    }).catch(err => console.error('fetchDataForSpecifiedVars error:', err));
+        await Promise.all(
+            appState.currentView.chartInstances.map((chartInstance) => chartInstance.plotObject?.plotReadyPromise || Promise.resolve())
+        );
+
+        hideLoadingScreen();
+
+    }).catch(err => {
+        console.error('fetchDataForSpecifiedVars error:', err);
+        hideLoadingScreen();
+    });
 }
 
 async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
@@ -1600,7 +1654,8 @@ function buildPlots(appState, deps) {
     appState.currentView.chartInstances.forEach((chartInstance, index) => {
         chartInstance.plotObject = charts.buildPlotInstance(appState, deps, index);
         document.getElementById('plotOutputWrapper').appendChild(chartInstance.plotObject);
-    })
+    });
+
 }
 
 function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex) {
@@ -1781,7 +1836,7 @@ function constructViewDataViaPreferences(appState, deps, viewPreferences){
         case "allVisible":
             // Construct view data based on all visible items on the map
             markerEntries.forEach(([fileName, marker]) => {
-                if (marker.isFiltered === false) {
+                if (marker.isFiltered  === false && marker.isLocFiltered === false) {
                     resultingData.push(fileName);
                 }
             });
@@ -1789,7 +1844,7 @@ function constructViewDataViaPreferences(appState, deps, viewPreferences){
         case "allHidden":
             // Construct view data based on all hidden items on the map
             markerEntries.forEach(([fileName, marker]) => {
-                if (marker.isFiltered === true) {
+                if (marker.isFiltered === true || marker.isLocFiltered === true) {
                     resultingData.push(fileName);
                 }
             });
@@ -1843,6 +1898,7 @@ module.exports = {
     dom_SetElementInnerHTML_UsingObject,
     getSidebarEntryObjectFromFileName,
     leaf_filterPlatformsByTimeRange,
+    leaf_filterPlatformsByLocation,
     leaf_addPolyNumberToMap,
     leaf_UpdateTimelineHeader,
     leaf_addPolyLineToMap,

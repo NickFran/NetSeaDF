@@ -92,6 +92,15 @@
 	letter-spacing: 0.06em;
 }
 
+.viewPage .Vcard:nth-child(4) .inputFormWrapper.checkboxInputFormWrapper {
+	grid-template-columns: auto auto;
+	justify-content: start;
+}
+
+.viewPage .Vcard:nth-child(4) .inputFormWrapper.checkboxInputFormWrapper h5 {
+	text-align: left;
+}
+
 .viewPage .Vcard:nth-child(4) input,
 .viewPage .Vcard:nth-child(4) select {
 	width: 100%;
@@ -137,6 +146,19 @@
 
 .viewPage .Vcard:nth-child(4) option {
 	color: #17324b;
+}
+
+.viewPage .Vcard:nth-child(4) .inputFormWrapper.checkboxInputFormWrapper input[type="checkbox"] {
+	width: 22px;
+	height: 22px;
+	min-width: 22px;
+	max-width: 22px;
+	padding: 0;
+	margin: 0;
+	justify-self: start;
+	align-self: center;
+	accent-color: #459fff;
+	box-shadow: none;
 }
 
 @media (max-width: 900px) {
@@ -463,4 +485,11 @@
 	flex-direction: row;
 	gap: 20px;
 	margin-top: 20px;
+}
+
+.inputLabelWPadding{
+	padding-left: 36px;
+}
+.useOnlyFirstTimestampInput{
+	margin-right: 5px;
 }

@@ -42,5 +42,8 @@
 * add indicator when view changes but has yet to be regenerated.
 
 * Work on plotting wrapper for multiple charts on screen
-* Move chart building to generate button, not output screen
 * axis shifts when zoom
+* ignore uneeded vars from NC files
+* add setting for max time before flag of under ice (setting implemented, now just needs hook in code)
+
+* POPUP FOR FILTERS HAS OFFSET TITLE

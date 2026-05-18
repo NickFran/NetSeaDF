@@ -2,10 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const pathDep = require('./pathDep');
 const queue = require('./queue.js');
+const config = require('./config.js');
 
-let allData = null;
+let allData = [];
 const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
 if (isSimpleDataEmpty()) {
+    allData = [];
 } else {
     console.log("simpleData.json ia not empty, loading data...");
     allData = JSON.parse(fileContent);
@@ -37,6 +39,14 @@ function copyFileToSavedData(sourceFilePath, destDir) {
     try {
         const fileName = path.basename(sourceFilePath);
         const destPath = path.join(destDir, fileName);
+
+        if (doesFileAlreadyExist(destPath) && !config.get('IO', 'enableImportOverWritting')) {
+            return {
+                success: true,
+                skipped: true,
+            };
+        }
+
         fs.copyFileSync(sourceFilePath, destPath);
         return { success: true, destPath, fileName };
     } catch (error) {
@@ -54,6 +64,14 @@ function copyFileToSavedData(sourceFilePath, destDir) {
 function copyFileToSavedDataViaBuffer(buffer, fileName, destDir) {
     try {
         const destPath = path.join(destDir, fileName);
+
+        if (doesFileAlreadyExist(destPath) && !config.get('IO', 'enableImportOverWritting')) {
+            return {
+                success: true,
+                skipped: true,
+            };
+        }
+
         fs.writeFileSync(destPath, buffer);
         return { success: true, destPath, fileName };
     } catch (error) {
@@ -170,9 +188,15 @@ function isSimpleDataEmpty() {
  * @param {Object} fileName - The name of the file to check for in simpleData.json.
  * @returns {boolean} - True if an entry with the specified fileName exists in simpleData.json, false otherwise.
  */
-function doesEntryExistInSimpleData(fileName) {
+function doesEntryExistInSimpleData(fileName, logIfMissing = true) {
+    if (!Array.isArray(allData) || allData.length === 0) {
+        return false;
+    }
+
     if (!(allData.find(item => item.fileName === fileName))) {
-        console.error("Dataset not found:", fileName);
+        if (logIfMissing) {
+            console.error("Dataset not found:", fileName);
+        }
         return false;
     }else {
         return true;
@@ -189,7 +213,8 @@ function reparseSimpleData() {
     try {
         const newFileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
         if (!newFileContent.trim()) {
-            console.warn("simpleData.json is empty, not updating allData.");
+            allData = [];
+            console.warn("simpleData.json is empty, resetting in-memory data.");
             return;
         }
         allData = JSON.parse(newFileContent);
@@ -320,8 +345,13 @@ async function saveDatasetToJSON(dep, fileName, overview) {
                 "attributes": attributes
             };
             
-            // add new entry to existing data, and write to JSON file asynchronously
-            existingJSONData.push(newEntry);
+            // Replace any existing entry for this file instead of creating duplicates
+            const existingEntryIndex = existingJSONData.findIndex(item => item.fileName === fileName);
+            if (existingEntryIndex !== -1) {
+                existingJSONData[existingEntryIndex] = newEntry;
+            } else {
+                existingJSONData.push(newEntry);
+            }
             await fs.promises.writeFile(jsonPath, JSON.stringify(existingJSONData, null, 2));
             reparseSimpleData(); // Update in-memory data after writing to file
             console.log("Data saved to simpleData.json");
@@ -344,12 +374,18 @@ async function saveDatasetToJSON(dep, fileName, overview) {
 async function processImportQeue(appState, ModuleDependencies) {
     const {DOM, integrations} = ModuleDependencies["queue"];
     const queueEntries = queue.readImportQeue();
-    console.log(`Processing ${queueEntries} items in import queue...`);
+    console.log(`Processing ${queueEntries.length} items in import queue...`);
     for (let i = 0; i < queueEntries.length; i++) {
         const entry = queueEntries[i];
         console.log(`Processing queue item ${i + 1}/${queueEntries.length}: ${entry.fileName}`);
         DOM.setLoadingText(`Importing file ${i + 1} of ${queueEntries.length}: ${entry.fileName}`);
         try {
+            if (doesEntryExistInSimpleData(entry.fileName, false) && !config.get('IO', 'enableImportOverWritting')) {
+                console.log(`Skipping import for ${entry.fileName} because overwrite is disabled and dataset already exists.`);
+                queue.markQeueEntryDone(entry.fileName);
+                continue;
+            }
+
             await integrations.callPyFunc('open', [entry.destPath], { timeoutMs: 120000 });
             console.log(`File loaded into memory: ${entry.fileName}`);
             const overview = await integrations.callPyFunc('getOverview');

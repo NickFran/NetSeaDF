@@ -112,6 +112,23 @@ function formatAxisNumber(value) {
     return numericValue.toFixed(2);
 }
 
+function resizeChartWhenVisible(chart, chartElement) {
+    if (!chart || !chartElement || chart.isDisposed()) {
+        return false;
+    }
+
+    let chartBounds = chartElement.getBoundingClientRect();
+
+    if (chartBounds.width <= 0 || chartBounds.height <= 0) {
+        return false;
+    }
+
+    chart.resize();
+    chartElement.style.visibility = 'visible';
+
+    return true;
+}
+
 function enableChartAutoResize(chart, chartElement) {
     if (!chart || !chartElement) {
         return function() {};
@@ -130,16 +147,19 @@ function enableChartAutoResize(chart, chartElement) {
 
         resizeFrameId = requestAnimationFrame(function() {
             resizeFrameId = null;
-
-            if (!chart.isDisposed()) {
-                chart.resize();
-            }
+            resizeChartWhenVisible(chart, chartElement);
         });
     }
 
-    function requestChartResize() {
+    function requestChartResize(immediate = false) {
         if (resizeTimeoutId !== null) {
             clearTimeout(resizeTimeoutId);
+            resizeTimeoutId = null;
+        }
+
+        if (immediate) {
+            performChartResize();
+            return;
         }
 
         resizeTimeoutId = setTimeout(function() {
@@ -434,18 +454,46 @@ function initTimeline(state, deps, DOM_Deps) {
 
 function buildPlotInstance(appState, deps, chartInstanceIndex) {
     const {charts, integrations, pathDep} = deps;
-    const onlyUseFirstTimestamp = false;
-    const includeDataPoints = true;
-    const includeAxisPointer = true;
+    const onlyUseFirstTimestamp = appState.currentView.OnlyUseFirstTimestamps;
+    const includeDataPoints = appState.currentView.chartInstances[chartInstanceIndex].general.EnableDataPoints;
+    const includeAxisPointer = appState.currentView.chartInstances[chartInstanceIndex].general.EnableAxisPointers;
 
     let chartElement = document.createElement('div');
     chartElement.id = `plotInstance-${chartInstanceIndex}`;
     chartElement.classList.add('plotInstance');
     chartElement.style.width = '100%';
     chartElement.style.height = '620px';
+    chartElement.style.visibility = 'hidden';
+    chartElement.plotReadyResolved = false;
+    chartElement.plotReadyPromise = new Promise(function(resolve) {
+        chartElement.resolvePlotReady = resolve;
+    });
 
     let chart = eCharts.init(chartElement);
     chartElement.chartObject = chart;
+    let plotReadyTimeoutId = null;
+
+    function markPlotReady() {
+        if (chartElement.plotReadyResolved) {
+            return;
+        }
+
+        chartElement.plotReadyResolved = true;
+
+        if (plotReadyTimeoutId !== null) {
+            clearTimeout(plotReadyTimeoutId);
+            plotReadyTimeoutId = null;
+        }
+
+        if (!chart.isDisposed()) {
+            chart.off('finished', markPlotReady);
+        }
+
+        chartElement.resolvePlotReady();
+    }
+
+    chart.on('finished', markPlotReady);
+    plotReadyTimeoutId = setTimeout(markPlotReady, 1000);
 
     let thisChartInstance = appState.currentView.chartInstances[chartInstanceIndex];
     let thisChartsDataMap = appState.currentView.dataMap || {};
@@ -702,8 +750,8 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
             left: 'center'
         },
         grid: {
-            left: '8%',
-            right: '5%',
+            left: '5%',
+            right: '8%',
             top: hasMultipleXAxes ? 124 : 92,
             bottom: thisChartInstance.general?.EnableZoom ? 92 : 58,
             containLabel: true
@@ -733,8 +781,22 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
         series
     });
 
-    chartElement.cleanupPlotObject = function() {};
-    chartElement.cleanupPlotObject = enableChartAutoResize(chart, chartElement);
+    let cleanupChartAutoResize = enableChartAutoResize(chart, chartElement);
+    chartElement.cleanupPlotObject = function() {
+        cleanupChartAutoResize();
+
+        if (plotReadyTimeoutId !== null) {
+            clearTimeout(plotReadyTimeoutId);
+            plotReadyTimeoutId = null;
+        }
+
+        if (!chart.isDisposed()) {
+            chart.off('finished', markPlotReady);
+        }
+
+        markPlotReady();
+    };
+    chartElement.requestPlotResize(true);
 
     return chartElement;
 }
