@@ -47,3 +47,5 @@
 * add setting for max time before flag of under ice (setting implemented, now just needs hook in code)
 
 * POPUP FOR FILTERS HAS OFFSET TITLE
+
+* ln 71 userInt for under ice calc

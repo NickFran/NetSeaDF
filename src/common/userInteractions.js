@@ -68,7 +68,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
 
                 let timestampInstancesDiff = basicFunctions.getTimestampDifference(a, b, importFormat="ms", returnType=objects.GraphType.d);
                 
-                if (timestampInstancesDiff > 5) { // default to 200 for debugging, 
+                if (timestampInstancesDiff > 10) { // default to 200 for debugging, 
                     state.markers[file].TimestampFlags.TimestampFlagDifferences.push(timestampInstancesDiff);
                     polyLineInstance.setStyle({ color: 'red' });
                     
