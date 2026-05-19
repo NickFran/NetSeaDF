@@ -2,6 +2,7 @@ import sys, json, os, math
 import numpy as np
 import xarray as xr
 import datetime
+import gsw
 
 ds = None
 
@@ -215,6 +216,27 @@ def getVariableByDimension(varName, dimName, compact=False, reduceOtherDims=Fals
     except Exception as e:
         return {"error": f"getVariableByDimension failed: {str(e)}"}
 
+def bulkSSP(pres, temp, psal, lats, lons):
+    result = {}
+    keys = list(pres.keys())
+    for i, timestamp in enumerate(keys):
+        lat = lats[i]
+        lon = lons[i]
+        presArr = pres[timestamp]
+        tempArr = temp[timestamp]
+        psalArr = psal[timestamp]
+        SSPArray = []
+        for j in range(len(presArr)):
+            if presArr[j] is None or tempArr[j] is None or psalArr[j] is None:
+                SSPArray.append(None)
+                continue
+            SA = gsw.SA_from_SP(psalArr[j], presArr[j], lon, lat)
+            CT = gsw.CT_from_t(SA, tempArr[j], presArr[j])
+            SSP = gsw.sound_speed(SA, CT, presArr[j])
+            SSPArray.append(SSP)
+        result[timestamp] = clean(SSPArray)
+    return result
+
 functions = {
     "open": open_ds,
     "close": close_ds,
@@ -225,7 +247,8 @@ functions = {
     "getDimensions": getDimensions,
     "getVariables": getVariables,
     "getVariable": getVariable,
-    "getVariableByDimension": getVariableByDimension  # Add this line
+    "getVariableByDimension": getVariableByDimension,  # Add this line
+    "bulkSSP": bulkSSP
 }
 
 # One-shot mode when called with argv (e.g., execFile)

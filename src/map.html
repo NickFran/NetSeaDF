@@ -1029,7 +1029,35 @@ userInteractions.userint_focusOnMarker(appState);
             });
             return;
         }
-        
+        console.log("before", targetViewData);
+        if (document.getElementById('useOnlyFilesWithPPTInput').checked) {
+            targetViewData = targetViewData.filter(fileName => {
+                let fileVars = fileHandle.getEntryKeyInSimpleData(fileName, 'vars');
+                const hasPres = fileVars.includes('PRES') || fileVars.includes('PRES_ADJUSTED');
+                const hasTemp = fileVars.includes('TEMP') || fileVars.includes('TEMP_ADJUSTED');
+                const hasPsal = fileVars.includes('PSAL') || fileVars.includes('PSAL_ADJUSTED');
+                return hasPres && hasTemp && hasPsal;
+            });
+            if (targetViewData.length === 0) {
+                logging.log(params={
+                    callerInfo: basicFunctions.getCallerInfo(),
+                    state: appState,
+                    dep: ModuleDependencies["logging"],
+                    msgLabel: `No Files With PRES/PSAL/TEMP`,
+                    msg: `All selected files were excluded because none of them contain PRES, PSAL, and TEMP variables.`,
+                    seriousness: 'warning',
+                    code: '0001',
+                    class: 'INPUT',
+                    ignoreConsole: false,
+                    ignorePopup: false,
+                    ignoreNotification: false,
+                    ignoreLogging: false
+                });
+                return;
+            }
+        }
+        console.log("after", targetViewData);
+
         let varsPerFile = [];
         let areFileVarsUnbalanced = false;
         targetViewData.forEach((fileName) => {
@@ -1087,7 +1115,9 @@ userInteractions.userint_focusOnMarker(appState);
                 ignoreLogging: false
             });
         }
+
         
+
         console.log("View vars (intersection):", appState.viewVars);
 
         

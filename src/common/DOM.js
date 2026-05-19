@@ -1,6 +1,6 @@
 // DOM manipulation functions
 const { time } = require('console');
-const { dependencies } = require('echarts');
+const { dependencies, util } = require('echarts');
 const { app } = require('electron');
 const path = require('path');
 const { config } = require('process');
@@ -1151,7 +1151,7 @@ function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
 }
 
 function dom_initNewView(appState, params = {}){
-    let defaultVars = ["--SSP--"];
+    let defaultVars = ["SSP"];
     params.vars.push(...defaultVars);
     let Defaults = {
                     name: params.name || 'New View',
@@ -1602,6 +1602,9 @@ function collectSpecifiedViewVars(appState, deps) {
     fetchDataForSpecifiedVars(appState, deps, Array.from(specifiedVars)).then(async dataMap => {
         console.log('Fetched dataMap:', dataMap);
         appState.currentView.dataMap = dataMap;
+
+        
+
         console.log('Updated appState with dataMap:', appState);
         buildPlots(appState, deps);
         schedulePlotResize(appState);
@@ -1619,7 +1622,7 @@ function collectSpecifiedViewVars(appState, deps) {
 }
 
 async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
-    let {integrations, pathDep} = deps;
+    let {integrations, pathDep, fileHandle} = deps;
     let dataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
     let dataMap = {};
 
@@ -1629,11 +1632,64 @@ async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
         await integrations.callPyFunc('open', [filePath]);
         for (const varName of specifiedVars) {
             console.log(`Fetching variable "${varName}" from file "${fileName}"...`);
-            const result = await integrations.callPyFunc('getVariable', [varName], fileName);
-            dataMap[fileName][varName] = result;
+            if (varName === "SSP"){
+                dataMap[fileName][varName] = {};
+            } else{
+                const result = await integrations.callPyFunc('getVariable', [varName], fileName);
+                dataMap[fileName][varName] = result;
+            }
+        }
+
+        if ("SSP" in dataMap[fileName]){
+            let utilizedPres = null;
+            let utilizedTemp = null;
+            let utilizedPsal = null;
+            let coords = fileHandle.getEntryKeyInSimpleData(fileName, "coords");
+
+            if ("PRES" in dataMap[fileName]) {
+                utilizedPres = dataMap[fileName]["PRES"];
+            } else if ("PRES_ADJUSTED" in dataMap[fileName]) {
+                utilizedPres = dataMap[fileName]["PRES_ADJUSTED"];
+            } else {
+                let result = await integrations.callPyFunc('getVariable', ["PRES"], fileName);
+                utilizedPres = result;
+            }
+            if ("TEMP" in dataMap[fileName]) {
+                utilizedTemp = dataMap[fileName]["TEMP"];
+            } else if ("TEMP_ADJUSTED" in dataMap[fileName]) {
+                utilizedTemp = dataMap[fileName]["TEMP_ADJUSTED"];
+            } else {
+                let result = await integrations.callPyFunc('getVariable', ["TEMP"], fileName);
+                utilizedTemp = result;
+            }
+            if ("PSAL" in dataMap[fileName]) {
+                utilizedPsal = dataMap[fileName]["PSAL"];
+            } else if ("PSAL_ADJUSTED" in dataMap[fileName]) {
+                utilizedPsal = dataMap[fileName]["PSAL_ADJUSTED"];
+            } else {
+                let result = await integrations.callPyFunc('getVariable', ["PSAL"], fileName);
+                utilizedPsal = result;
+            }
+
+            let presDict = {};
+            let tempDict = {};
+            let psalDict = {};
+            let lats = [];
+            let lons = [];
+            for (let i = 0; i < utilizedPres.length; i++) {
+                presDict[i] = utilizedPres[i];
+                tempDict[i] = utilizedTemp[i];
+                psalDict[i] = utilizedPsal[i];
+                lats.push(coords[i]["lat"]);
+                lons.push(coords[i]["lon"]);
+            }
+            const sspResult = await integrations.callPyFunc('bulkSSP', [presDict, tempDict, psalDict, lats, lons], fileName);
+            //dataMap[fileName]["SSP_PRIMED"] = [utilizedPres, utilizedTemp, utilizedPsal, coords];
+            dataMap[fileName]["SSP"] = Object.keys(sspResult).sort((a, b) => a - b).map(k => sspResult[k]);
         }
     }
 
+    console.log(dataMap);
     return dataMap;
 }
 
