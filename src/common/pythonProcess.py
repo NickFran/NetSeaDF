@@ -32,7 +32,7 @@ def clean(v):
 
 def open_ds(path):  # "open"
     global ds; 
-    ds = xr.open_dataset(path, engine="netcdf4"); 
+    ds = xr.open_dataset(path, engine="netcdf4", decode_timedelta=True); 
     return "Loaded"
 
 def close_ds():
@@ -50,41 +50,45 @@ def getDimensions():
 def getAttributes():
     return clean(dict(ds.attrs))
 
+def get_first_matching_array(name_possibilities, include_data_vars=True):
+    coord_lookup = {name.lower(): name for name in ds.coords}
+    data_var_lookup = {name.lower(): name for name in ds.data_vars}
+
+    for candidate in name_possibilities:
+        actual_name = coord_lookup.get(candidate.lower())
+        if actual_name is not None:
+            return clean(np.atleast_1d(ds.coords[actual_name].values).tolist())
+
+    if include_data_vars:
+        for candidate in name_possibilities:
+            actual_name = data_var_lookup.get(candidate.lower())
+            if actual_name is not None:
+                return clean(np.atleast_1d(ds[actual_name].values).tolist())
+
+    return []
+
 def getTimestamps():
     timestampNamePossibilities = [
         "time",
         "Time",
-        "TIME"
+        "TIME",
+        "JULD",
+        "juld",
+        "TIME_LOCATION",
+        "time_location"
     ]
 
-    for timestampName in timestampNamePossibilities:
-        if timestampName in ds.coords:
-            return clean(ds.coords[timestampName].values)
-    return []
+    return get_first_matching_array(timestampNamePossibilities)
 
 def getSummary():
     return ds.attrs['summary'] if 'summary' in ds.attrs else "No summary available"
 
 def getCoords():
-    coordPossibilities = [
-        'lat', 'latitude', 'LATITUDE', 'LAT',
-        'long', 'longitude', 'LONGITUDE', 'LONG', 'LON'
-        ]
-
-    latpossibilities = ['lat', 'latitude', 'LATITUDE', 'LAT']
-    foundLats = []
-    longpossibilities = ['long', 'longitude', 'LONGITUDE', 'LONG', 'LON', 'lon']
-    foundLongs = []
-
-    for coordName in coordPossibilities:
-
-        if (coordName in ds.coords) and (coordName in latpossibilities): 
-            foundLats = clean(ds.coords[coordName].values.tolist())
-
-        if (coordName in ds.coords) and (coordName in longpossibilities):
-            foundLongs = clean(ds.coords[coordName].values.tolist())
-
     try:
+        latpossibilities = ['lat', 'latitude', 'LATITUDE', 'LAT']
+        longpossibilities = ['long', 'longitude', 'LONGITUDE', 'LONG', 'LON', 'lon']
+        foundLats = get_first_matching_array(latpossibilities)
+        foundLongs = get_first_matching_array(longpossibilities)
         return foundLats, foundLongs
     except Exception as e:
         return {"error": f"getCoords failed: {str(e)}"}
@@ -161,6 +165,33 @@ def getVariables():
 def getVariable(varName):
     if varName not in ds.data_vars: return {"error": f"Variable '{varName}' not found"}
     return clean(ds[varName].values.tolist())
+
+def getLastNonNanValueInFirstProfile(varName, profileDim="N_PROF"):
+    try:
+        if varName not in ds:
+            return {"error": f"Variable '{varName}' not found"}
+
+        var = ds[varName]
+
+        if profileDim in var.dims:
+            var = var.isel({profileDim: 0})
+
+        values = np.asarray(var.values).reshape(-1).tolist()
+        filtered_values = []
+
+        for value in values:
+            if value is None:
+                continue
+            if isinstance(value, (float, np.floating)) and not np.isfinite(value):
+                continue
+            filtered_values.append(value)
+
+        if not filtered_values:
+            return {"error": f"Variable '{varName}' has no non-NaN values in the first profile"}
+
+        return clean(filtered_values[-1])
+    except Exception as e:
+        return {"error": f"getLastNonNanValueInFirstProfile failed: {str(e)}"}
 
 # eventually convert this to options like in integratinos.js (if its allows with child process)
 def getVariableByDimension(varName, dimName, compact=False, reduceOtherDims=False, start=None, end=None, reduceDims=None):
@@ -247,6 +278,7 @@ functions = {
     "getDimensions": getDimensions,
     "getVariables": getVariables,
     "getVariable": getVariable,
+    "getLastNonNanValueInFirstProfile": getLastNonNanValueInFirstProfile,
     "getVariableByDimension": getVariableByDimension,  # Add this line
     "bulkSSP": bulkSSP
 }

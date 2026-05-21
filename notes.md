@@ -49,3 +49,7 @@
 * POPUP FOR FILTERS HAS OFFSET TITLE
 
 * ln 71 userInt for under ice calc
+
+* plot output doesnt use view name
+
+* number measurements for both axis
