@@ -5,8 +5,11 @@ const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
 const Menu = electron.Menu;
+const dialog = electron.dialog;
+const ipcMain = electron.ipcMain;
 const path = require('path');
 const url = require('url');
+const transfer = require('./common/transfer.js');
 
 // more secure
 // electron.ipcMain.handle("test-thing", async (_, msg) => {
@@ -14,6 +17,93 @@ const url = require('url');
 // })
 
 let win;
+
+ipcMain.handle('transfer-export-data', async (event, transferOptions) => {
+    try {
+        const targetWindow = BrowserWindow.fromWebContents(event.sender);
+        const pickerResult = await dialog.showOpenDialog(targetWindow, {
+            title: 'Choose Export Folder',
+            buttonLabel: 'Export Here',
+            properties: ['openDirectory', 'createDirectory']
+        });
+
+        if (pickerResult.canceled || pickerResult.filePaths.length === 0) {
+            return {
+                success: false,
+                canceled: true
+            };
+        }
+
+        const exportResult = await transfer.createTransferArchive(
+            transferOptions,
+            pickerResult.filePaths[0],
+            app.getVersion()
+        );
+
+        return exportResult;
+    } catch (error) {
+        console.error('Transfer export failed:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+});
+
+ipcMain.handle('transfer-select-import-package', async (event) => {
+    try {
+        const targetWindow = BrowserWindow.fromWebContents(event.sender);
+        const pickerResult = await dialog.showOpenDialog(targetWindow, {
+            title: 'Choose Transfer Package',
+            buttonLabel: 'Import Package',
+            properties: ['openFile'],
+            filters: [
+                {
+                    name: 'NetSeaDF Transfer Packages',
+                    extensions: ['zip']
+                }
+            ]
+        });
+
+        if (pickerResult.canceled || pickerResult.filePaths.length === 0) {
+            return {
+                success: false,
+                canceled: true
+            };
+        }
+
+        return {
+            success: true,
+            filePath: pickerResult.filePaths[0]
+        };
+    } catch (error) {
+        console.error('Transfer package selection failed:', error);
+        return {
+            success: false,
+            error: error.message
+        };
+    }
+});
+
+async function promptForImportPackage(targetWindow) {
+    const pickerResult = await dialog.showOpenDialog(targetWindow, {
+        title: 'Choose Transfer Package',
+        buttonLabel: 'Import Package',
+        properties: ['openFile'],
+        filters: [
+            {
+                name: 'NetSeaDF Transfer Packages',
+                extensions: ['zip']
+            }
+        ]
+    });
+
+    if (pickerResult.canceled || pickerResult.filePaths.length === 0) {
+        return null;
+    }
+
+    return pickerResult.filePaths[0];
+}
 
 function sendRendererEvent(channel, payload = null) {
     if (!win || win.isDestroyed()) {
@@ -62,9 +152,23 @@ function createWindow() {
                 },
                 {
                     label: 'Import Transferred Data',
-                    click: () => {
+                    click: async () => {
                         console.log('Import clicked');
-                        // Add your import logic here
+                        try {
+                            const selectedPackagePath = await promptForImportPackage(win);
+                            if (!selectedPackagePath) {
+                                return;
+                            }
+
+                            sendRendererEvent('menu-import-transfer-package-selected', {
+                                filePath: selectedPackagePath
+                            });
+                        } catch (error) {
+                            console.error('Import package selection failed:', error);
+                            sendRendererEvent('menu-import-transfer-data-error', {
+                                error: error.message
+                            });
+                        }
                     }
                 }
             ]

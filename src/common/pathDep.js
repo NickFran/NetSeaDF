@@ -1,8 +1,8 @@
 const path = require('node:path');
-const { performUnitTest } = require('./unitTest.js');
-const { DisplayError } = require('./logging.js');
-const {log} = require('./logging.js');
-const {getCallerInfo} = require('./basicFunctions.js');
+
+function reportPathDepError(message) {
+    console.error(message);
+}
 
 // Takes folder names and converts to hardset ints of the number of sublevels from root.
 const folderSublevelFromRootMap = {
@@ -58,7 +58,7 @@ function fromHereToRoot(dirname) {
     if (folderName in folderSublevelFromRootMap) {
         return path.join(folderPath, ...builtDotsArray); // 3 ... is the spread operator
     } else {
-        DisplayError("NotFoundError, (foldername not found in sublevel Map)", 3);
+        reportPathDepError("NotFoundError, (foldername not found in sublevel Map)");
         return 'NotFoundError';
     }
 }
@@ -87,7 +87,7 @@ function resolveToProperDataPath(dirname, folderName) {
         // If Production Mode - use process.resourcesPath to access extraResources
             : path.join(process.resourcesPath, "dist", `${folderName}`);
     } else {
-        DisplayError("InvalidFolderNameError, (folder name must be 'logs', 'savedData', 'config', or 'qeues')", 3);
+        reportPathDepError("InvalidFolderNameError, (folder name must be 'logs', 'savedData', 'config', or 'qeues')");
         return 'InvalidFolderNameError';
     }
 }

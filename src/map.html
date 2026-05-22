@@ -42,6 +42,7 @@
     <script>
         const path = require('path');
         const fs = require('fs');
+        const { ipcRenderer } = require('electron');
 
         const logging = require('./common/logging.js');
         const unitTest = require('./common/unitTest.js');
@@ -49,6 +50,7 @@
         const integrations = require('./common/integrations.js');
         const fileHandle = require('./common/fileHandle.js');
         const queue = require('./common/queue.js');
+        const transfer = require('./common/transfer.js');
         const DOM = require('./common/DOM.js');
         const userInteractions = require('./common/userInteractions.js');
         const basicFunctions = require('./common/basicFunctions.js');
@@ -663,6 +665,295 @@
         window.__pendingTransferDataMenuClick = false;
         handleTransferDataMenuClick();
     }
+
+    async function importTransferredPackage(filePath) {
+        let extractionResult = null;
+        const importSummary = {
+            platformsImported: 0,
+            platformsSkipped: 0,
+            viewsImported: 0,
+            viewsSkipped: 0,
+            settingsImported: 0,
+            settingsSkipped: 0
+        };
+
+        try {
+            DOM.showLoadingScreen();
+            DOM.setLoadingText('Preparing transfer package import...');
+
+            if (!filePath) {
+                const selectionResult = await ipcRenderer.invoke('transfer-select-import-package');
+                if (selectionResult?.canceled) {
+                    return;
+                }
+
+                if (!selectionResult?.success) {
+                    throw new Error(selectionResult?.error || 'Failed to select a transfer package.');
+                }
+
+                filePath = selectionResult.filePath;
+            }
+
+            DOM.setLoadingText('Extracting transfer package...');
+            extractionResult = await transfer.extractTransferArchive(filePath);
+            if (!extractionResult?.success) {
+                throw new Error(extractionResult?.error || 'Failed to extract the selected transfer package.');
+            }
+
+            DOM.setLoadingText('Importing transfer package...');
+
+            const queueEntries = [];
+
+            extractionResult.fileManifest.settings.forEach((entry) => {
+                const result = config.importConfigFile(entry.sourcePath);
+                if (!result.success) {
+                    throw new Error(result.error || `Failed to import settings from ${entry.fileName}.`);
+                }
+
+                if (result.success && !result.skipped) {
+                    importSummary.settingsImported += 1;
+                } else if (result.skipped) {
+                    importSummary.settingsSkipped += 1;
+                }
+            });
+
+            extractionResult.fileManifest.views.forEach((entry) => {
+                const result = fileHandle.copyFileToSavedData(entry.sourcePath, pathDep.savedDataPath);
+                if (result.success && !result.skipped) {
+                    importSummary.viewsImported += 1;
+                } else if (result.skipped) {
+                    importSummary.viewsSkipped += 1;
+                }
+            });
+
+            extractionResult.fileManifest.platforms.forEach((entry) => {
+                const result = fileHandle.copyFileToSavedData(entry.sourcePath, pathDep.savedDataPath);
+                if (result.success && !result.skipped) {
+                    importSummary.platformsImported += 1;
+                    queueEntries.push({
+                        fileName: entry.fileName,
+                        destPath: entry.destPath
+                    });
+                } else if (result.skipped) {
+                    importSummary.platformsSkipped += 1;
+                }
+            });
+
+            if (queueEntries.length > 0) {
+                queue.addToImportQeue(queueEntries);
+                DOM.setLoadingText('Processing imported platform data...');
+                await fileHandle.processImportQeue(appState, ModuleDependencies);
+            }
+
+            DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
+            DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"], handleSavedViewSelection);
+
+            const settingsRestartMessage = importSummary.settingsImported > 0
+                ? '<br><br>Imported settings are saved to disk. Restart the app if you want the imported settings to fully apply right away.'
+                : '';
+
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: `Transfer Import Complete`,
+                msg: `Platforms imported: ${importSummary.platformsImported} (skipped: ${importSummary.platformsSkipped})<br>
+                Views imported: ${importSummary.viewsImported} (skipped: ${importSummary.viewsSkipped})<br>
+                Settings imported: ${importSummary.settingsImported} (skipped: ${importSummary.settingsSkipped})${settingsRestartMessage}`,
+                seriousness: 'info',
+                code: '0000',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+        } catch (error) {
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: `Transfer Import Failed`,
+                msg: error.message,
+                seriousness: 'warning',
+                code: '0003',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+        } finally {
+            if (extractionResult?.tempDir) {
+                transfer.cleanupTransferExtraction(extractionResult.tempDir);
+            }
+
+            DOM.hideLoadingScreen();
+        }
+    }
+
+    async function handleImportTransferredDataMenuClick() {
+        await importTransferredPackage(null);
+    }
+
+    function handleImportTransferredDataError(errorMessage) {
+        logging.log(params={
+            callerInfo: basicFunctions.getCallerInfo(),
+            state: appState,
+            dep: ModuleDependencies["logging"],
+            msgLabel: `Transfer Import Failed`,
+            msg: errorMessage,
+            seriousness: 'warning',
+            code: '0003',
+            class: 'FS',
+            ignoreConsole: false,
+            ignorePopup: false,
+            ignoreNotification: false,
+            ignoreLogging: false
+        });
+    }
+
+    window.handleImportTransferredDataMenuClick = handleImportTransferredDataMenuClick;
+    window.handleImportTransferredPackageSelected = importTransferredPackage;
+    window.handleImportTransferredDataError = handleImportTransferredDataError;
+
+    if (window.__pendingImportTransferredDataMenuClick) {
+        window.__pendingImportTransferredDataMenuClick = false;
+        handleImportTransferredDataMenuClick();
+    }
+
+    if (window.__pendingImportTransferredPackagePath) {
+        const pendingImportTransferredPackagePath = window.__pendingImportTransferredPackagePath;
+        window.__pendingImportTransferredPackagePath = null;
+        importTransferredPackage(pendingImportTransferredPackagePath);
+    }
+
+    if (window.__pendingImportTransferredDataError) {
+        const pendingImportTransferredDataError = window.__pendingImportTransferredDataError;
+        window.__pendingImportTransferredDataError = null;
+        handleImportTransferredDataError(pendingImportTransferredDataError);
+    }
+
+    document.getElementById('confirmTransferDataButton').addEventListener('click', async function() {
+        const transferOptions = {
+            includePlatforms: document.getElementById('transferPlatformsInput').checked,
+            includeViews: document.getElementById('transferViewsInput').checked,
+            includeSettings: document.getElementById('transferSettingsInput').checked
+        };
+
+        if (!transferOptions.includePlatforms && !transferOptions.includeViews && !transferOptions.includeSettings) {
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: `No Transfer Options Selected`,
+                msg: `Please select at least one data type before starting a transfer export.`,
+                seriousness: 'warning',
+                code: '0001',
+                class: 'INPUT',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+            return;
+        }
+
+        if (!ipcRenderer || typeof ipcRenderer.invoke !== 'function') {
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: `Transfer Export Unavailable`,
+                msg: `The transfer export bridge is unavailable. Restart the application and try again.`,
+                seriousness: 'warning',
+                code: '0003',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+            return;
+        }
+
+        DOM.showLoadingScreen();
+        DOM.setLoadingText('Creating transfer package...');
+
+        try {
+            console.log('Starting transfer export with options:', transferOptions);
+            const result = await ipcRenderer.invoke('transfer-export-data', transferOptions);
+
+            if (result?.canceled) {
+                logging.log(params={
+                    callerInfo: basicFunctions.getCallerInfo(),
+                    state: appState,
+                    dep: ModuleDependencies["logging"],
+                    msgLabel: `Transfer Export Cancelled`,
+                    msg: `No export folder was selected. Transfer export was cancelled.`,
+                    seriousness: 'info',
+                    code: '0000',
+                    class: 'FS',
+                    ignoreConsole: false,
+                    ignorePopup: true,
+                    ignoreNotification: true,
+                    ignoreLogging: false
+                });
+                return;
+            }
+
+            if (!result?.success) {
+                logging.log(params={
+                    callerInfo: basicFunctions.getCallerInfo(),
+                    state: appState,
+                    dep: ModuleDependencies["logging"],
+                    msgLabel: `Transfer Export Failed`,
+                    msg: result?.error || 'An unknown error occurred while creating the transfer package.',
+                    seriousness: 'warning',
+                    code: '0003',
+                    class: 'FS',
+                    ignoreConsole: false,
+                    ignorePopup: false,
+                    ignoreNotification: false,
+                    ignoreLogging: false
+                });
+                return;
+            }
+
+            appState.popups.transferDataPopup.close();
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: `Transfer Export Complete`,
+                msg: `Transfer package created successfully.<br><br>Archive: ${result.archivePath}<br>Included Files: ${result.fileCount}`,
+                seriousness: 'info',
+                code: '0000',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+        } catch (error) {
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: `Transfer Export Error`,
+                msg: error.message,
+                seriousness: 'warning',
+                code: '0003',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+        } finally {
+            DOM.hideLoadingScreen();
+        }
+    });
      </script>
 
 <script>

@@ -49,4 +49,42 @@ function set(name, key, value) {
     fs.writeFileSync(path.join(configDir, `${name}.yaml`), toYaml(data), 'utf8');
 }
 
-module.exports = { get, set };
+function importConfigFile(sourceFilePath) {
+    const fileName = path.basename(sourceFilePath);
+    const configName = path.basename(fileName, '.yaml');
+    const targetPath = path.join(configDir, `${configName}.yaml`);
+
+    if (!fs.existsSync(sourceFilePath)) {
+        return { success: false, error: `Imported config file not found: ${fileName}` };
+    }
+
+    if (!fs.existsSync(targetPath)) {
+        return { success: false, error: `Target config file not found: ${configName}.yaml` };
+    }
+
+    const raw = fs.readFileSync(sourceFilePath, 'utf8');
+    const importedData = parseYaml(raw);
+    const importedKeys = Object.keys(importedData);
+
+    if (importedKeys.length === 0) {
+        return {
+            success: true,
+            skipped: true,
+            fileName,
+            updatedKeys: []
+        };
+    }
+
+    importedKeys.forEach((key) => {
+        set(configName, key, importedData[key]);
+    });
+
+    return {
+        success: true,
+        skipped: false,
+        fileName,
+        updatedKeys: importedKeys
+    };
+}
+
+module.exports = { get, set, importConfigFile };
