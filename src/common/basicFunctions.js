@@ -1,5 +1,53 @@
 const objects = require('./objects');
 
+function normalizeVariableName(name) {
+    return typeof name === 'string' ? name.trim().toLowerCase() : '';
+}
+
+function getVariableAliases(targetName) {
+    const normalizedTarget = normalizeVariableName(targetName);
+
+    for (const [canonicalName, aliases] of Object.entries(objects.varPossibilities)) {
+        const normalizedAliases = aliases.map(normalizeVariableName);
+        if (normalizeVariableName(canonicalName) === normalizedTarget || normalizedAliases.includes(normalizedTarget)) {
+            return aliases;
+        }
+    }
+
+    return typeof targetName === 'string' && targetName.trim() ? [targetName] : [];
+}
+
+function getMatchingVariableName(variableNames, targetName, preferredOrder = []) {
+    if (!Array.isArray(variableNames) || variableNames.length === 0) {
+        return null;
+    }
+
+    const normalizedToActual = new Map(
+        variableNames.map((name) => [normalizeVariableName(name), name])
+    );
+
+    const searchOrder = [...preferredOrder, ...getVariableAliases(targetName)];
+    const seen = new Set();
+
+    for (const candidate of searchOrder) {
+        const normalizedCandidate = normalizeVariableName(candidate);
+        if (!normalizedCandidate || seen.has(normalizedCandidate)) {
+            continue;
+        }
+        seen.add(normalizedCandidate);
+
+        if (normalizedToActual.has(normalizedCandidate)) {
+            return normalizedToActual.get(normalizedCandidate);
+        }
+    }
+
+    return null;
+}
+
+function hasMatchingVariable(variableNames, targetName, preferredOrder = []) {
+    return getMatchingVariableName(variableNames, targetName, preferredOrder) !== null;
+}
+
 function clamp(value, min, max) {
   if (value > max) return max;
   if (value < min) return min;
@@ -142,6 +190,15 @@ function getCallerInfo() {
     return { file: 'unknown', path: 'unknown', line: '?', col: '?' };
 }
 
+function findMatchingVariable(variables, targetName) {
+    for (const variable of variables) {
+        if (variable.name === targetName) {
+            return variable;
+        }
+    }
+    return null;
+}
+
 module.exports = { 
     clamp, 
     getNextIndex, 
@@ -149,6 +206,10 @@ module.exports = {
     format24hr, 
     format12hr, 
     getTimestampDifference,
+    normalizeVariableName,
+    getVariableAliases,
+    getMatchingVariableName,
+    hasMatchingVariable,
     getNotificationsMaxSeriousness,
     getTimestamp,
     getCallerInfo

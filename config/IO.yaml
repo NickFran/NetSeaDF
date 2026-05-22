@@ -1,3 +1,2 @@
-UseLRUCache: false
-enableImportOverWritting: false
-MaxFileCache: 5
+enableSaveOverwriting_ForViews: false
+enableImportOverWritting_ForPlatforms: false

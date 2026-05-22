@@ -13,7 +13,7 @@
     text-align: center;
     margin: 7.5px 0;
 }.sidebar .wrapper summary{
-    font-size: large;
+    font-size: medium;
     font-weight: bold;
     cursor: pointer;
     background-color: inherit;
@@ -28,7 +28,8 @@
 
     background-color: inherit;
     overflow-y: auto;
-}.GliderList{
+}.GliderList,
+.ViewsList{
     user-select: none;
     list-style-type: none;
     padding-top: 3px;
@@ -41,21 +42,27 @@
     overflow-y: auto;
     padding-right: 10px;
 }
-.GliderList::-webkit-scrollbar {
+.GliderList::-webkit-scrollbar,
+.ViewsList::-webkit-scrollbar {
     width: 6px;
 }
-.GliderList::-webkit-scrollbar-track {
+.GliderList::-webkit-scrollbar-track,
+.ViewsList::-webkit-scrollbar-track {
     background: transparent;
 }
-.GliderList::-webkit-scrollbar-thumb {
+.GliderList::-webkit-scrollbar-thumb,
+.ViewsList::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.3);
     border-radius: 3px;
 }
-.GliderList::-webkit-scrollbar-thumb:hover {
+.GliderList::-webkit-scrollbar-thumb:hover,
+.ViewsList::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.5);
 }
-.GliderList li{
+.GliderList li,
+.ViewsList li{
     padding: 3px;
+    font-size: small;
     cursor: pointer;
     margin: 4px 0;
     border-bottom: #e7e7e7 1px solid;
@@ -63,13 +70,28 @@
     border-radius: 0px 0px 0px 0px;
     
     transition: all .2s ease-in;
-}.GliderList li:hover{
+}.GliderList li:hover,
+.ViewsList li:hover{
     background-color: #ffffff96;
     border-radius: 0px 10px 10px 0px;
     color: #000000;
     font-weight: bolder;
     transition: all 0.1s ease-in;
     padding-left: 10px;
+}
+
+.ViewsList .emptyViewsListItem{
+    cursor: default;
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+}
+
+.ViewsList .emptyViewsListItem:hover{
+    background-color: transparent;
+    border-radius: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: normal;
+    padding-left: 3px;
 }
 
 .DeleteFileButton {

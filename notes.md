@@ -53,3 +53,9 @@
 * plot output doesnt use view name
 
 * number measurements for both axis
+
+* red names for non pres files (add a setting, colorNONPresFilesRed)
+
+* move multi select advance buttons to bottom near on sides of teleport
+
+* eval highlight over all elements that shouldnt highlight.

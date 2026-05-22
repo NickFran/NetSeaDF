@@ -19,6 +19,14 @@ class DataView {
     }
 }
 
+const varPossibilities = Object.freeze({
+    "temperature": ["temperature", "temp", "t", "TEMP", "TEMP_ADJUSTED"],
+    "pressure": ["pressure", "pres", "p", "PRES", "PRES_ADJUSTED"],
+    "salinity": ["salinity", "psal", "sal", "s", "PSAL", "PSAL_ADJUSTED"],
+    "humidity": ["humidity", "hum", "h"],
+    // Add more variables and their possible names here
+});
+
 const GraphType = Object.freeze({
     ns: "nanoseconds",
     ms: "milliseconds",
@@ -29,6 +37,7 @@ const GraphType = Object.freeze({
 });
 
 module.exports = {
+    varPossibilities,
     GraphType
 };
 

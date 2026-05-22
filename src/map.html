@@ -25,6 +25,18 @@
 
     <title>NetSeaDF</title>
 
+    <!-- <div class="saveViewPopupWrapper">
+        <div class="saveViewInputWrapper">
+            <h4>Name: </h4>
+            <input type="text" id="saveViewNameInput" class="saveViewNameInput" placeholder="Enter view name...">
+        </div>
+        <div class="saveViewInputWrapper">
+            <h4>Cache Data:</h4>
+            <input type="checkbox" id="cacheDataInput" class="cacheDataInput"><span class="cacheDataInputLabel">Yes</span>
+        </div>
+        <button id="confirmSaveViewButton" class="confirmSaveViewButton">Save</button>
+    </div> -->
+
     <!-- MODULES -->
     <script>
         const path = require('path');
@@ -77,15 +89,17 @@
             notificationsSeriousnessArray: [],
             currentLog: null,
             viewColumnVisible: true,
+            hasViewBeenCreated: false,
             currentView: {
                     name: null,
                     type: null,
                     dataSelection: null,
                     chartInstances: [],
-                    vars: null
-            },
-            viewVars: new Set(),
-            isViewGenerated: false
+                    vars: null,
+                    viewVars: new Set(),
+                    isViewGenerated: false,
+                    includePlotData: false
+                }
         };
 
         if(config.get('debug', 'enableDebug')){
@@ -105,13 +119,16 @@
                 },
             "FileHandle":
                 {
-                DOM
+                DOM,
+                integrations,
+                basicFunctions
                 },
             "queue":
                 {
                 DOM,
                 integrations,
-                fileHandle
+                fileHandle,
+                basicFunctions
                 },
             "userInteractions":
                 {
@@ -161,8 +178,9 @@
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
             <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/fileadd.svg" class="svgIcon"></button>
-            <button href="#" class="bannerButton" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"></button>
-            <button href="#" class="bannerButton" id="bannerButton4">
+            <button href="#" class="bannerButton" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"><span class="sideBtnText">Create View</span></button>
+            <button href="#" class="bannerButton" id="SaveViewButton"><img src="media/file.svg" class="svgIcon"><span class="sideBtnText">Save View</span></button>
+            <button href="#" class="bannerButtonNotif" id="bannerButton4">
                 <img src="media/boxmsg.svg" class="svgIcon">
                 <div class="notificationIndicatorWrapper" id="notificationIndicatorWrapper"><img class="notificationIndicator" id="notificationIndicator" src="media/circlecaution.svg" alt="svgIcon"></div>
             </button>
@@ -180,7 +198,8 @@
             </details>
             <details id="ViewsDropDown">
                 <summary>Views</summary>
-                    This text has been defaulted to giberish, this feature is coming soon!
+                    <ul class="ViewsList" id="ViewsList">
+                    </ul>
             </details>
             
             <!--<button id="DeleteFileButton" class="DeleteFileButton">DELETE</button>    -->
@@ -372,6 +391,7 @@
     DOM.switchViewMenu('createNewView');
     DOM.dom_setVisibilityOfConfigColumn(appState, false); 
     document.getElementById('NewViewButton').style.display = 'none';
+    document.getElementById('SaveViewButton').style.display = 'none';
     //document.getElementById('createNewViewForm').style.display = 'none';
     // document.getElementById('chartInstanceSettingsMenu').style.display = 'none';
     // document.getElementById('chartInstanceGeneralSettingsMenu').style.display = 'none';
@@ -560,6 +580,37 @@
     );
 
     appState.popups.settingsMenu = settingsMenu;
+
+
+
+    const saveViewMessagePopup = new popup.SimplePopup(
+        {},
+        {
+            title: "Save View",
+            content: `
+            <div class="saveViewPopupWrapper">
+                <div class="saveViewInputWrapper">
+                    <h4>Name: </h4>
+                    <input type="text" id="saveViewNameInput" class="saveViewNameInput" placeholder="Enter view name...">
+                </div>
+                <div class="saveViewInputWrapper">
+                    <h4>Include Plot Data:</h4>
+                    <input type="checkbox" id="cacheDataInput" class="cacheDataInput">
+                </div>
+                <button id="confirmSaveViewButton" class="confirmSaveViewButton">Save</button>
+            </div>
+            `
+         },
+         {
+             onOpen: function() {
+                 //
+             },
+             onOpen_FirstTime: function() {
+                 //
+             }
+         }
+    )
+    appState.popups.saveViewMessagePopup = saveViewMessagePopup;
      </script>
 
 <script>
@@ -577,6 +628,7 @@
 <script>
     // Initial load
     DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
+    DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"]);
 
     DOM.updateVisibilityOfNotificationIndicator(appState);
     
@@ -934,11 +986,11 @@ userInteractions.userint_focusOnMarker(appState);
 
     document.getElementById('viewModeButton').addEventListener('click', function() {
         console.log("clicked")
-        DOM.dom_toggleViewport('view');
+        DOM.dom_toggleViewport(appState, 'view');
     })
     document.getElementById('mapModeButton').addEventListener('click', function() {
         console.log("clicked")
-        DOM.dom_toggleViewport('map');
+        DOM.dom_toggleViewport(appState, 'map');
     })
 
     document.getElementById('mapPopupfilterTypeDropdown').addEventListener('change', function() {
@@ -998,14 +1050,15 @@ userInteractions.userint_focusOnMarker(appState);
 
     document.getElementById('createViewButton').addEventListener('click', function() {
         let targetViewData = DOM.constructViewDataViaPreferences(appState, ModuleDependencies["DOM"], document.getElementById('newViewGraphData').value);
-        appState.viewVars = new Set();
-        appState.isViewGenerated = false;
         appState.currentView = {
                     name: null,
                     type: null,
                     dataSelection: null,
                     chartInstances: [],
-                    vars: null
+                    vars: null,
+                    viewVars: new Set(),
+                    isViewGenerated: false,
+                    includePlotData: false
         };
 
         if (targetViewData.length === 0) {
@@ -1033,9 +1086,9 @@ userInteractions.userint_focusOnMarker(appState);
         if (document.getElementById('useOnlyFilesWithPPTInput').checked) {
             targetViewData = targetViewData.filter(fileName => {
                 let fileVars = fileHandle.getEntryKeyInSimpleData(fileName, 'vars');
-                const hasPres = fileVars.includes('PRES') || fileVars.includes('PRES_ADJUSTED');
-                const hasTemp = fileVars.includes('TEMP') || fileVars.includes('TEMP_ADJUSTED');
-                const hasPsal = fileVars.includes('PSAL') || fileVars.includes('PSAL_ADJUSTED');
+                const hasPres = basicFunctions.hasMatchingVariable(fileVars, 'pressure', ['PRES', 'PRES_ADJUSTED']);
+                const hasTemp = basicFunctions.hasMatchingVariable(fileVars, 'temperature', ['TEMP', 'TEMP_ADJUSTED']);
+                const hasPsal = basicFunctions.hasMatchingVariable(fileVars, 'salinity', ['PSAL', 'PSAL_ADJUSTED']);
                 return hasPres && hasTemp && hasPsal;
             });
             if (targetViewData.length === 0) {
@@ -1077,11 +1130,11 @@ userInteractions.userint_focusOnMarker(appState);
 
         
         // Intersection: collect all sets first, THEN filter
-        appState.viewVars = new Set();
+        appState.currentView.viewVars = new Set();
         if (varsPerFile.length > 0) {
             varsPerFile[0].forEach(v => {
                 if (varsPerFile.every(s => s.has(v))) {
-                    appState.viewVars.add(v);
+                    appState.currentView.viewVars.add(v);
                 } else {
                     areFileVarsUnbalanced = true;
                 }
@@ -1105,7 +1158,7 @@ userInteractions.userint_focusOnMarker(appState);
                 msg: `An attempt was made to create a view with files that do not share the same amount of variables (some have more vars than others).<br><br>
                 To prevent errors, The view has defaulted to only including the variables that are found in all the files.<br><br>
                 
-                The only variables included in the new view are: ${Array.from(appState.viewVars).join("<br> ")}<br><br>`,
+                The only variables included in the new view are: ${Array.from(appState.currentView.viewVars).join("<br> ")}<br><br>`,
                 seriousness: 'info',
                 code: '0001',
                 class:'INPUT',
@@ -1118,17 +1171,22 @@ userInteractions.userint_focusOnMarker(appState);
 
         
 
-        console.log("View vars (intersection):", appState.viewVars);
+            console.log("View vars (intersection):", appState.currentView.viewVars);
 
         
         
 
-        
+        appState.hasViewBeenCreated = true;
+        document.getElementById('SaveViewButton').style.display = 'block'; 
+
         DOM.dom_initNewView(appState, {
             name: document.getElementById('newViewName').value,
             type: document.getElementById('newViewGraphType').value,
             dataSelection: document.getElementById('newViewGraphData').value,
-            vars: Array.from(appState.viewVars),
+            vars: Array.from(appState.currentView.viewVars),
+            viewVars: new Set(appState.currentView.viewVars),
+            isViewGenerated: appState.currentView.isViewGenerated,
+            includePlotData: appState.currentView.includePlotData,
             data: targetViewData,
             OnlyUseFirstTimestamps: document.getElementById('useOnlyFirstTimestampInput').checked,
             useOnlyFilesWithPPTInput: document.getElementById('useOnlyFilesWithPPTInput').checked
@@ -1170,6 +1228,60 @@ userInteractions.userint_focusOnMarker(appState);
         alert("Test 1");
         alert("→ Test 2 ←");
         alert("<h2>Test 3</h2>");
+    });
+
+    document.getElementById('SaveViewButton').addEventListener('click', function() {
+        document.getElementById('saveViewNameInput').value = appState.currentView.name || 'choose a name...';
+        appState.popups.saveViewMessagePopup.open();
+    });
+
+    document.getElementById('confirmSaveViewButton').addEventListener('click', async function() {
+        DOM.showLoadingScreen();
+        DOM.setLoadingText('Saving view...');
+
+        try {
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        const includePlotData = document.getElementById('cacheDataInput').checked;
+        appState.currentView.includePlotData = includePlotData;
+
+        const copyOfCurrentView = {
+            ...appState.currentView,
+            includePlotData,
+            dataMap: includePlotData ? (appState.currentView.dataMap || {}) : {}
+        };
+
+        const requestedViewName = document.getElementById('saveViewNameInput').value.trim() || copyOfCurrentView.name || 'Untitled View';
+        const sanitizedViewName = fileHandle.sanitizeViewFileName(requestedViewName);
+        const targetFileName = `${sanitizedViewName}${fileHandle.VIEW_FILE_EXTENSION}`;
+        const existingViews = fileHandle.listSavedViewFiles();
+        const doesViewAlreadyExist = existingViews.includes(targetFileName);
+
+        const saveResult = await fileHandle.saveViewToFile(copyOfCurrentView, {
+            name: requestedViewName,
+            fileName: sanitizedViewName,
+            includePlotData
+        });
+
+        if (!saveResult.success) {
+            console.error('Failed to save view:', saveResult.error);
+            return;
+        }
+
+        if (saveResult.skipped) {
+            console.log(`Skipped saving view because overwrite is disabled: ${targetFileName}`);
+            return;
+        }
+
+        console.log(doesViewAlreadyExist
+            ? `Overwrote saved view: ${targetFileName}`
+            : `Saved new view: ${targetFileName}`);
+
+        DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"]);
+        } finally {
+            DOM.hideLoadingScreen();
+        }
+
     });
 
 </script>

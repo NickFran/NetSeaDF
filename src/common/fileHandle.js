@@ -4,6 +4,8 @@ const pathDep = require('./pathDep');
 const queue = require('./queue.js');
 const config = require('./config.js');
 
+const VIEW_FILE_EXTENSION = '.netseadfview';
+
 let allData = [];
 const fileContent = fs.readFileSync(pathDep.jsonPath, 'utf-8');
 if (isSimpleDataEmpty()) {
@@ -300,12 +302,13 @@ function deleteEntryInSimpleData(fileName) {
  * @param {*} attributes - attributes of entry
  */
 async function saveDatasetToJSON(dep, fileName, overview) {
-    const { DOM } = dep;
+    const { DOM, integrations, basicFunctions } = dep;
     let dimensions = overview.dimensions;
     let variables = overview.variables;
     let attributes = overview.attributes;
     let coords = overview.coordinates;
     let timestamps = overview.timestamps;
+    let lastPressureValue = overview.lastPressureValue || null;
     
     console.log([dimensions, variables, attributes, coords, timestamps]);
     
@@ -341,6 +344,7 @@ async function saveDatasetToJSON(dep, fileName, overview) {
                 "dims": dimensions,
                 "vars": variables,
                 "coords": coordPairs,
+                "lastPressureValue": lastPressureValue !== null ? Math.round(lastPressureValue * 100) / 100 : null, // Round to 2 decimal places
                 "timestamps":timestamps,
                 "attributes": attributes
             };
@@ -372,7 +376,7 @@ async function saveDatasetToJSON(dep, fileName, overview) {
  * @param {Object} ModuleDependencies - The module dependencies object.
  */
 async function processImportQeue(appState, ModuleDependencies) {
-    const {DOM, integrations} = ModuleDependencies["queue"];
+    const {DOM, integrations, basicFunctions} = ModuleDependencies["queue"];
     const queueEntries = queue.readImportQeue();
     console.log(`Processing ${queueEntries.length} items in import queue...`);
     for (let i = 0; i < queueEntries.length; i++) {
@@ -389,6 +393,14 @@ async function processImportQeue(appState, ModuleDependencies) {
             await integrations.callPyFunc('open', [entry.destPath], { timeoutMs: 120000 });
             console.log(`File loaded into memory: ${entry.fileName}`);
             const overview = await integrations.callPyFunc('getOverview');
+            const pressureVariableName = basicFunctions.getMatchingVariableName(overview.variables, 'pressure', ['PRES_ADJUSTED', 'PRES']);
+            if (pressureVariableName) {
+                const pressureResult = await integrations.callPyFunc('getLastNonNanValueInFirstProfile', [pressureVariableName]);
+                if (!(pressureResult && typeof pressureResult === 'object' && 'error' in pressureResult)) {
+                    overview.lastPressureValue = pressureResult;
+                }
+            }
+
             await saveDatasetToJSON(ModuleDependencies["FileHandle"], entry.fileName, overview);
             const datasetEntry = getEntryInSimpleData(entry.fileName);
             const coords = datasetEntry.coords;
@@ -439,9 +451,180 @@ async function processRemoveQeue(appState, dep) {
     }
 }
 
+function ensureDirectoryExists(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+}
+
+function sanitizeViewFileName(viewName) {
+    const safeName = String(viewName || 'Untitled View')
+        .trim()
+        .replace(/[<>:"/\\|?*]+/g, '_')
+        .replace(/\s+/g, ' ');
+
+    return safeName.length > 0 ? safeName : 'Untitled View';
+}
+
+function serializeAxis(axis = {}) {
+    return {
+        AxisSide: axis.AxisSide || 'X',
+        Data: axis.Data ?? null
+    };
+}
+
+function serializeChartInstance(chartInstance = {}, index = 0) {
+    return {
+        general: {
+            Name: chartInstance?.general?.Name || `Chart ${index + 1}`,
+            EnableZoom: chartInstance?.general?.EnableZoom ?? true,
+            EnableDataPoints: chartInstance?.general?.EnableDataPoints ?? true,
+            EnableAxisPointers: chartInstance?.general?.EnableAxisPointers ?? true
+        },
+        axis: Array.isArray(chartInstance?.axis)
+            ? chartInstance.axis.map(serializeAxis)
+            : []
+    };
+}
+
+function serializeView(currentView = {}, options = {}) {
+    const includePlotData = options.includePlotData ?? currentView.includePlotData ?? false;
+    const viewName = options.name || currentView.name || 'Untitled View';
+    const savedView = {
+        meta: {
+            schema: 'netseadf-view',
+            version: 1,
+            savedAt: new Date().toISOString()
+        },
+        view: {
+            name: viewName,
+            type: currentView.type || null,
+            dataSelection: currentView.dataSelection || null,
+            vars: Array.isArray(currentView.vars) ? [...currentView.vars] : [],
+            viewVars: Array.isArray(currentView.viewVars)
+                ? [...currentView.viewVars]
+                : Array.from(currentView.viewVars || []),
+            isViewGenerated: Boolean(currentView.isViewGenerated),
+            includePlotData: Boolean(includePlotData),
+            data: Array.isArray(currentView.data) ? [...currentView.data] : [],
+            targetDim: currentView.targetDim || null,
+            OnlyUseFirstTimestamps: Boolean(currentView.OnlyUseFirstTimestamps),
+            useOnlyFilesWithPPTInput: Boolean(currentView.useOnlyFilesWithPPTInput),
+            chartInstances: Array.isArray(currentView.chartInstances)
+                ? currentView.chartInstances.map(serializeChartInstance)
+                : []
+        }
+    };
+
+    if (includePlotData) {
+        savedView.cache = {
+            dataMap: currentView.dataMap || {}
+        };
+    }
+
+    return savedView;
+}
+
+function deserializeView(savedView = {}) {
+    const viewPayload = savedView.view || savedView;
+    const chartInstances = Array.isArray(viewPayload.chartInstances)
+        ? viewPayload.chartInstances.map((chartInstance, index) => ({
+            general: {
+                Name: chartInstance?.general?.Name || `Chart ${index + 1}`,
+                EnableZoom: chartInstance?.general?.EnableZoom ?? true,
+                EnableDataPoints: chartInstance?.general?.EnableDataPoints ?? true,
+                EnableAxisPointers: chartInstance?.general?.EnableAxisPointers ?? true
+            },
+            obj: null,
+            axis: Array.isArray(chartInstance?.axis)
+                ? chartInstance.axis.map(serializeAxis)
+                : []
+        }))
+        : [];
+
+    return {
+        name: viewPayload.name || 'Untitled View',
+        type: viewPayload.type || null,
+        dataSelection: viewPayload.dataSelection || null,
+        vars: Array.isArray(viewPayload.vars) ? [...viewPayload.vars] : [],
+        viewVars: new Set(Array.isArray(viewPayload.viewVars) ? viewPayload.viewVars : []),
+        isViewGenerated: Boolean(viewPayload.isViewGenerated),
+        includePlotData: Boolean(viewPayload.includePlotData),
+        data: Array.isArray(viewPayload.data) ? [...viewPayload.data] : [],
+        targetDim: viewPayload.targetDim || null,
+        OnlyUseFirstTimestamps: Boolean(viewPayload.OnlyUseFirstTimestamps),
+        useOnlyFilesWithPPTInput: Boolean(viewPayload.useOnlyFilesWithPPTInput),
+        chartInstances,
+        dataMap: savedView?.cache?.dataMap || {}
+    };
+}
+
+function listSavedViewFiles(extensionFilter = VIEW_FILE_EXTENSION) {
+    ensureDirectoryExists(pathDep.savedDataPath);
+    return listSavedDataFiles(pathDep.savedDataPath, extensionFilter);
+}
+
+async function saveViewToFile(currentView, options = {}) {
+    try {
+        ensureDirectoryExists(pathDep.savedDataPath);
+        const serializedView = serializeView(currentView, options);
+        const desiredName = sanitizeViewFileName(options.fileName || serializedView.view.name);
+        const fileName = desiredName.endsWith(VIEW_FILE_EXTENSION)
+            ? desiredName
+            : `${desiredName}${VIEW_FILE_EXTENSION}`;
+        const filePath = path.join(pathDep.savedDataPath, fileName);
+
+        if (doesFileAlreadyExist(filePath) && !config.get('IO', 'enableImportOverWritting_ForViews')) {
+            return {
+                success: true,
+                skipped: true,
+                fileName,
+                filePath,
+                reason: 'View file already exists and overwrite is disabled.'
+            };
+        }
+
+        await fs.promises.writeFile(filePath, JSON.stringify(serializedView, null, 2), 'utf-8');
+
+        return {
+            success: true,
+            fileName,
+            filePath,
+            data: serializedView
+        };
+    } catch (error) {
+        console.error('Error saving view file:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+function loadViewFromFile(fileName) {
+    try {
+        ensureDirectoryExists(pathDep.savedDataPath);
+        const targetPath = path.isAbsolute(fileName)
+            ? fileName
+            : path.join(pathDep.savedDataPath, fileName);
+
+        const rawContent = fs.readFileSync(targetPath, 'utf-8');
+        const parsed = JSON.parse(rawContent);
+
+        return {
+            success: true,
+            fileName: path.basename(targetPath),
+            filePath: targetPath,
+            data: parsed,
+            view: deserializeView(parsed)
+        };
+    } catch (error) {
+        console.error('Error loading view file:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 module.exports = {
     doesFileAlreadyExist,
     listSavedDataFiles,
+    listSavedViewFiles,
     copyFileToSavedData,
     processImportQeue,
     processRemoveQeue,
@@ -454,5 +637,11 @@ module.exports = {
     getAllSimpleData,
     deleteDataFile,
     deleteEntryInSimpleData,
-    saveDatasetToJSON
+    saveDatasetToJSON,
+    serializeView,
+    deserializeView,
+    saveViewToFile,
+    loadViewFromFile,
+    sanitizeViewFileName,
+    VIEW_FILE_EXTENSION
 };

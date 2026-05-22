@@ -96,6 +96,7 @@ function displayDatasetInfo(state, deps, fileName) {
             const li = document.createElement('li');
             li.textContent = key;
             li.style.wordWrap = 'break-word';
+            const safeTimestamps = Array.isArray(timestamps) ? timestamps : [];
             
             // If the value is an array, create a nested list for its items
             if (Array.isArray(value)) {
@@ -108,7 +109,8 @@ function displayDatasetInfo(state, deps, fileName) {
                         if (first && typeof first === 'object' && ('lat' in first || 'lon' in first)) {
                             value.forEach((coord, index) => {
                                 const indexLi = document.createElement('li');
-                                indexLi.textContent = `[${index}]: ${timestamps[index]}`;
+                                const label = safeTimestamps[index] !== undefined ? safeTimestamps[index] : 'N/A';
+                                indexLi.textContent = `[${index}]: ${label}`;
 
                                 const coordUl = document.createElement('ul');
                                 const coordLi_Lat = document.createElement('li');
@@ -183,8 +185,9 @@ function displayDatasetInfo(state, deps, fileName) {
         
         // Populate with dataset info, routing to appropriate wrapper
         Object.entries(dataset).forEach(([key, value]) => {
+            const formattedTimestamps = dataset?.timestamps?.formatted ?? [];
             if (key === 'dims' || key === 'coords') {
-                addToList(ulInfo, key, value, Object.entries(dataset)[6][1]["formatted"]);
+                addToList(ulInfo, key, value, formattedTimestamps);
             } else if (key === 'attributes') {
                 addToList(ulAttr, key, value);
             } else if (key === 'vars') {
@@ -231,6 +234,60 @@ function loadSideBar_Glider(state, deps, onFileSelect) {
     });
 }
 
+function applySidebarEntryFontSizeToElement(element, deps) {
+    if (!element || !deps?.config) {
+        return;
+    }
+
+    const configuredFontSize = Number(deps.config.get('basics', 'sidebarListFontSize'));
+    if (!Number.isNaN(configuredFontSize) && configuredFontSize > 0) {
+        element.style.fontSize = `${configuredFontSize}px`;
+    }
+}
+
+function applySidebarEntryFontSize(deps) {
+    if (!deps?.config) {
+        return;
+    }
+
+    document.querySelectorAll('.GliderList li, .ViewsList li').forEach((item) => {
+        applySidebarEntryFontSizeToElement(item, deps);
+    });
+}
+
+/**
+ * Loads the list of saved view files in the sidebar.
+ * @param {Object} state - App State Object
+ * @param {Object} deps - Module Dependencies
+ * @param {Function} onViewSelect - Optional callback when a view is selected
+ */
+function loadSideBar_Views(state, deps, onViewSelect = null) {
+    const { fileHandle } = deps;
+    const element_viewsList = document.getElementById('ViewsList');
+
+    if (!element_viewsList) {
+        console.warn('ViewsList element not found');
+        return;
+    }
+
+    const savedViews = fileHandle.listSavedViewFiles();
+
+    element_viewsList.innerHTML = '';
+
+    if (savedViews.length === 0) {
+        const emptyElm = document.createElement('li');
+        emptyElm.textContent = 'No saved views';
+        emptyElm.classList.add('emptyViewsListItem');
+        element_viewsList.appendChild(emptyElm);
+        return;
+    }
+
+    savedViews.forEach((fileName) => {
+        let newElm = dom_createElm_ViewListItem(state, deps, fileName, onViewSelect);
+        element_viewsList.appendChild(newElm);
+    });
+}
+
 /**
  * Creates a list item element for a glider file, with click handling for selection and opening.
  * @param {*} state App State Object  
@@ -244,6 +301,7 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
 
     const li = document.createElement('li'); // create a new element
         li.textContent = file; // set its name to the file name
+        applySidebarEntryFontSizeToElement(li, deps);
         li.addEventListener('click', (event) => {  // Use event parameter instead of global
             console.log(`Click Tunnel = `, JSON.stringify(fileHandle.getEntryKeyInSimpleData(file, "dims"), null, 2));
             
@@ -309,6 +367,40 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
         // append it as a child to the element
         return li;
         
+}
+
+/**
+ * Creates a list item element for a saved view file.
+ * @param {*} state App State Object
+ * @param {*} deps Module Dependencies
+ * @param {*} fileName Saved view file name
+ * @param {*} onViewSelect Optional callback that receives the file name
+ * @returns li element to be appended to the views sidebar list
+ */
+function dom_createElm_ViewListItem(state, deps, fileName, onViewSelect = null) {
+    const { fileHandle } = deps;
+    const li = document.createElement('li');
+    const displayName = fileName.endsWith(fileHandle.VIEW_FILE_EXTENSION)
+        ? fileName.slice(0, -fileHandle.VIEW_FILE_EXTENSION.length)
+        : fileName;
+
+    li.textContent = displayName;
+    li.dataset.viewFileName = fileName;
+    applySidebarEntryFontSizeToElement(li, deps);
+
+    li.addEventListener('click', function() {
+        document.querySelectorAll('#ViewsList li').forEach(item => {
+            item.style.backgroundColor = '';
+        });
+
+        li.style.backgroundColor = '#4a90e2';
+
+        if (onViewSelect) {
+            onViewSelect(state, deps, fileName);
+        }
+    });
+
+    return li;
 }
 
 /**
@@ -464,7 +556,8 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInp
         if (instance == false) {
                 popupContent = `<ul>
                     <li>File Name: ${entry.fileName}</li>
-                    <li>Timestamp: ${entry.timestamps["formatted"][0]}</li>
+                    <li>Date: ${entry.timestamps["formatted"][0]}</li>
+                    <li>Max Depth: ${entry.lastPressureValue !== null ? entry.lastPressureValue + "m" : "N/A"}</li>
                     <br>
                     <li>Latitude: ${entry.coords[0]["lat"]}</li>
                     <li>Longitude: ${entry.coords[0]["lon"]}</li>
@@ -484,9 +577,6 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInp
                 </ul>`;
             }
     }
-    
-
-    
     return popupContent;
 }
 
@@ -995,6 +1085,10 @@ function dom_constructSettingsMenu(state, deps){
         settingInputElm.addEventListener('change', function() {
             settingValueElm.textContent = sectionUIType === 'checkbox' ? settingInputElm.checked : settingInputElm.value;
             config.set(settingSection, settingTargetName, sectionUIType === 'checkbox' ? settingInputElm.checked : settingInputElm.value);
+
+            if (settingTargetName === 'sidebarListFontSize') {
+                applySidebarEntryFontSize(deps);
+            }
         });
 
         // find the correct section for this setting instance and append the setting DOM elements to that section (via Data and DOM)
@@ -1048,7 +1142,7 @@ function dom_constructSettingsMenu(state, deps){
     if (defaultButton) defaultButton.classList.add('sectionButtonActive');
 }
 
-function dom_toggleViewport(viewportName) {
+function dom_toggleViewport(appState, viewportName) {
     if (viewportName == 'map') {
         document.getElementById('viewModeButton').style.backgroundColor = '#ffffff00';
         document.getElementById('mapModeButton').style.backgroundColor = '#007bff';
@@ -1060,6 +1154,7 @@ function dom_toggleViewport(viewportName) {
 
         document.getElementById('bannerButton3').style.display = 'block';
         document.getElementById('NewViewButton').style.display = 'none';
+        document.getElementById('SaveViewButton').style.display = 'none';
     } else if (viewportName == 'view') {
         document.getElementById('mapModeButton').style.backgroundColor = '#ffffff00';
         document.getElementById('viewModeButton').style.backgroundColor = '#007bff';
@@ -1071,6 +1166,7 @@ function dom_toggleViewport(viewportName) {
 
         document.getElementById('bannerButton3').style.display = 'none';
         document.getElementById('NewViewButton').style.display = 'block';
+        if (appState.hasViewBeenCreated) {document.getElementById('SaveViewButton').style.display = 'block';}
     }
 }
 
@@ -1152,12 +1248,15 @@ function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
 
 function dom_initNewView(appState, params = {}){
     let defaultVars = ["SSP"];
-    params.vars.push(...defaultVars);
+    params.vars = Array.isArray(params.vars) ? [...params.vars, ...defaultVars] : [...defaultVars];
     let Defaults = {
                     name: params.name || 'New View',
                     type: params.type || 'XYZ',
                     dataSelection: params.dataSelection || 'XYZ',
-                    vars: null,
+                    vars: params.vars || [],
+                    viewVars: params.viewVars || new Set(),
+                    isViewGenerated: params.isViewGenerated || false,
+                    includePlotData: params.includePlotData || false,
                     chartInstances: params.chartInstances || [dom_createChartInstance({
                                                                     general: {
                                                                         Name: null,
@@ -1281,7 +1380,7 @@ function renderCharts (appState, deps) {
     viewConfigWrapper.appendChild(generateViewButton);
     generateViewButton.addEventListener('click', function() {
         console.log('GENERATE VIEW CLICKED');
-        appState.isViewGenerated = true;
+        appState.currentView.isViewGenerated = true;
         renderCharts(appState, deps);
         appState.currentView["targetDim"] = appState.currentView.chartInstances[0].axis[0].Data; // we should look to make this more dynamic in the future when we have more complex views with multiple chart instances and different axis data. For now we will just set the targetDim to be the data of the first axis of the first chart instance.
         console.log(appState.currentView);
@@ -1308,7 +1407,7 @@ function renderCharts (appState, deps) {
         onChartInstanceOptionClick(appState, deps, "output", -1);
     });
 
-    if (appState.isViewGenerated) {
+    if (appState.currentView?.isViewGenerated) {
         viewOutputWrapper.style.display = 'flex';
     } else {        
         viewOutputWrapper.style.display = 'none';
@@ -1622,7 +1721,7 @@ function collectSpecifiedViewVars(appState, deps) {
 }
 
 async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
-    let {integrations, pathDep, fileHandle} = deps;
+    let {integrations, pathDep, fileHandle, basicFunctions} = deps;
     let dataPath = pathDep.resolveToProperDataPath(__dirname, 'savedData');
     let dataMap = {};
 
@@ -1646,29 +1745,32 @@ async function fetchDataForSpecifiedVars(appState, deps, specifiedVars) {
             let utilizedPsal = null;
             let coords = fileHandle.getEntryKeyInSimpleData(fileName, "coords");
 
-            if ("PRES" in dataMap[fileName]) {
-                utilizedPres = dataMap[fileName]["PRES"];
-            } else if ("PRES_ADJUSTED" in dataMap[fileName]) {
-                utilizedPres = dataMap[fileName]["PRES_ADJUSTED"];
-            } else {
-                let result = await integrations.callPyFunc('getVariable', ["PRES"], fileName);
-                utilizedPres = result;
+            const availableDataVars = Object.keys(dataMap[fileName]);
+            const storedFileVars = fileHandle.getEntryKeyInSimpleData(fileName, 'vars') || [];
+
+            const utilizedPresName = basicFunctions.getMatchingVariableName(availableDataVars, 'pressure', ['PRES', 'PRES_ADJUSTED'])
+                || basicFunctions.getMatchingVariableName(storedFileVars, 'pressure', ['PRES', 'PRES_ADJUSTED']);
+            const utilizedTempName = basicFunctions.getMatchingVariableName(availableDataVars, 'temperature', ['TEMP', 'TEMP_ADJUSTED'])
+                || basicFunctions.getMatchingVariableName(storedFileVars, 'temperature', ['TEMP', 'TEMP_ADJUSTED']);
+            const utilizedPsalName = basicFunctions.getMatchingVariableName(availableDataVars, 'salinity', ['PSAL', 'PSAL_ADJUSTED'])
+                || basicFunctions.getMatchingVariableName(storedFileVars, 'salinity', ['PSAL', 'PSAL_ADJUSTED']);
+
+            if (utilizedPresName && utilizedPresName in dataMap[fileName]) {
+                utilizedPres = dataMap[fileName][utilizedPresName];
+            } else if (utilizedPresName) {
+                utilizedPres = await integrations.callPyFunc('getVariable', [utilizedPresName], fileName);
             }
-            if ("TEMP" in dataMap[fileName]) {
-                utilizedTemp = dataMap[fileName]["TEMP"];
-            } else if ("TEMP_ADJUSTED" in dataMap[fileName]) {
-                utilizedTemp = dataMap[fileName]["TEMP_ADJUSTED"];
-            } else {
-                let result = await integrations.callPyFunc('getVariable', ["TEMP"], fileName);
-                utilizedTemp = result;
+
+            if (utilizedTempName && utilizedTempName in dataMap[fileName]) {
+                utilizedTemp = dataMap[fileName][utilizedTempName];
+            } else if (utilizedTempName) {
+                utilizedTemp = await integrations.callPyFunc('getVariable', [utilizedTempName], fileName);
             }
-            if ("PSAL" in dataMap[fileName]) {
-                utilizedPsal = dataMap[fileName]["PSAL"];
-            } else if ("PSAL_ADJUSTED" in dataMap[fileName]) {
-                utilizedPsal = dataMap[fileName]["PSAL_ADJUSTED"];
-            } else {
-                let result = await integrations.callPyFunc('getVariable', ["PSAL"], fileName);
-                utilizedPsal = result;
+
+            if (utilizedPsalName && utilizedPsalName in dataMap[fileName]) {
+                utilizedPsal = dataMap[fileName][utilizedPsalName];
+            } else if (utilizedPsalName) {
+                utilizedPsal = await integrations.callPyFunc('getVariable', [utilizedPsalName], fileName);
             }
 
             let presDict = {};
@@ -1855,10 +1957,11 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
             axisSideSelect.disabled = true;
             removeButton.disabled = true;
 
-            if (varsToUse.includes("PRES_ADJUSTED")) {
-                axisSelect.value = "PRES_ADJUSTED";
-                appState.currentView.chartInstances[chartInstanceIndex].axis[0].Data = "PRES_ADJUSTED";
-            };
+            const preferredPressureAxis = deps.basicFunctions.getMatchingVariableName(varsToUse, 'pressure', ['PRES_ADJUSTED', 'PRES']);
+            if (preferredPressureAxis) {
+                axisSelect.value = preferredPressureAxis;
+                appState.currentView.chartInstances[chartInstanceIndex].axis[0].Data = preferredPressureAxis;
+            }
         }
         
         axisRow.appendChild(arrow);
@@ -1879,7 +1982,7 @@ function setViewMenuTitle(title){
 function constructViewDataViaPreferences(appState, deps, viewPreferences){
     console.log("Constructing view data based on preferences:", viewPreferences);
     let isPresDataMissing = false;
-    let {fileHandle, pathDep} = deps;
+    let {fileHandle, pathDep, basicFunctions} = deps;
 
     let resultingData = [];
     const markerEntries = Object.entries(appState.markers || {});
@@ -1920,9 +2023,8 @@ function constructViewDataViaPreferences(appState, deps, viewPreferences){
     console.log("Resulting view data constructed from preferences:", resultingData);
     resultingData = resultingData.filter(fileName => {
         let fileData = fileHandle.getEntryKeyInSimpleData(fileName, 'vars');
-        let hasPres = fileData.includes('PRES'); // 117, this needs to be re-evaluated later to be dynamic for different names
-        let hasPresAdjusted = fileData.includes('PRES_ADJUSTED'); // 117, this needs to be re-evaluated later to be dynamic for different names
-        if (!hasPres && !hasPresAdjusted) {
+        const hasPres = basicFunctions.hasMatchingVariable(fileData, 'pressure', ['PRES', 'PRES_ADJUSTED']);
+        if (!hasPres) {
             isPresDataMissing = true;
             return false; // exclude files without a usable depth axis
         }
@@ -1939,7 +2041,10 @@ function constructViewDataViaPreferences(appState, deps, viewPreferences){
 
 module.exports = {
     loadSideBar_Glider,
+    loadSideBar_Views,
     dom_createElm_GliderListItem,
+    dom_createElm_ViewListItem,
+    applySidebarEntryFontSize,
     dom_clearElementInnerHTML_UsingString,
     dom_clearElementInnerHTML_UsingObject,
     showLoadingScreen,
