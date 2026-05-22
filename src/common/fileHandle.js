@@ -623,6 +623,7 @@ function loadViewFromFile(fileName) {
 
 module.exports = {
     doesFileAlreadyExist,
+    doesEntryExistInSimpleData,
     listSavedDataFiles,
     listSavedViewFiles,
     copyFileToSavedData,

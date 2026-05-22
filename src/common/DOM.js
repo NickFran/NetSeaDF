@@ -958,6 +958,7 @@ function updateVisibilityOfNotificationIndicator(state){
 function dom_constructSettingsMenu(state, deps){
     const settingsMenu = state.popups.settingsMenu;
     const { config } = deps;
+    settingsMenu.contentWrapper.classList.add('settingsMenuContentWrapper');
 
     let appSettingsPath = path.join(__dirname, 'appSettings.json');
     let appSettingsData = fs.readFileSync(appSettingsPath, 'utf-8');
@@ -980,6 +981,12 @@ function dom_constructSettingsMenu(state, deps){
     sectionContent.classList.add('sectionContent');
     let sectionFooter = document.createElement('div');
     sectionFooter.classList.add('sectionFooter');
+
+    // Footer Buttons
+    let fixUpDataButton = document.createElement('button');
+    fixUpDataButton.textContent = "Fix Up Data";
+    fixUpDataButton.classList.add('fixUpDataButton');
+    sectionFooter.appendChild(fixUpDataButton); 
 
     let saveSettingsButton = document.createElement('button');
     saveSettingsButton.textContent = "Apply";
@@ -1130,9 +1137,7 @@ function dom_constructSettingsMenu(state, deps){
             arrayOfDifferentSections[i].isActive = true;
         });
     }
-
-
-    mainContentArea.appendChild(sectionFooter);
+    settingsMenu.contentWrapper.appendChild(sectionFooter);
     //sectionFooter.appendChild(saveSettingsButton);
     console.log("App settings loaded for settings menu:", appSettings);
 
@@ -1249,6 +1254,9 @@ function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
 function dom_initNewView(appState, params = {}){
     let defaultVars = ["SSP"];
     params.vars = Array.isArray(params.vars) ? [...params.vars, ...defaultVars] : [...defaultVars];
+    const sanitizedParams = Object.fromEntries(
+        Object.entries(params).filter(([, value]) => value !== undefined)
+    );
     let Defaults = {
                     name: params.name || 'New View',
                     type: params.type || 'XYZ',
@@ -1282,7 +1290,7 @@ function dom_initNewView(appState, params = {}){
     if (Object.keys(params).length === 0) {
         appState.currentView = Defaults;
     } else {        
-        appState.currentView = Object.assign(Defaults, params);
+        appState.currentView = Object.assign(Defaults, sanitizedParams);
     }
 
     let plotOutputWrapper = document.createElement('div');
@@ -1333,10 +1341,46 @@ function createAxisInstance(params = {}){
 }
 
 function renderView(appState, deps) {
+    const shouldAutoBuildPlots = hasRenderableViewData(appState.currentView);
+
+    if (shouldAutoBuildPlots) {
+        appState.currentView.isViewGenerated = true;
+    }
+
     renderCharts(appState, deps);
+
+    if (shouldAutoBuildPlots) {
+        buildPlots(appState, deps);
+        schedulePlotResize(appState);
+    }
+
     const viewNameElement = document.getElementById('viewName');
     if (!viewNameElement) return;
     viewNameElement.textContent = `View - ${appState.currentView?.name || 'New View'}`;
+}
+
+function hasRenderableViewData(view = {}) {
+    if (!view || typeof view !== 'object' || !view.dataMap || typeof view.dataMap !== 'object') {
+        return false;
+    }
+
+    return Object.values(view.dataMap).some(fileEntry => {
+        if (!fileEntry || typeof fileEntry !== 'object') {
+            return false;
+        }
+
+        return Object.values(fileEntry).some(value => {
+            if (Array.isArray(value)) {
+                return value.length > 0;
+            }
+
+            if (value && typeof value === 'object') {
+                return Object.keys(value).length > 0;
+            }
+
+            return value != null;
+        });
+    });
 }
 
 function renderCharts (appState, deps) {
@@ -1407,7 +1451,7 @@ function renderCharts (appState, deps) {
         onChartInstanceOptionClick(appState, deps, "output", -1);
     });
 
-    if (appState.currentView?.isViewGenerated) {
+    if (appState.currentView?.isViewGenerated && hasRenderableViewData(appState.currentView)) {
         viewOutputWrapper.style.display = 'flex';
     } else {        
         viewOutputWrapper.style.display = 'none';
@@ -1706,6 +1750,7 @@ function collectSpecifiedViewVars(appState, deps) {
 
         console.log('Updated appState with dataMap:', appState);
         buildPlots(appState, deps);
+        renderCharts(appState, deps);
         schedulePlotResize(appState);
 
         await Promise.all(

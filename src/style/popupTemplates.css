@@ -53,6 +53,8 @@
     display: flex;
     justify-content: right;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: row;
 }
 
 .saveSettingsButton {
@@ -126,4 +128,118 @@
     padding: 5px;
     border: 1px solid #ccc;
     
+}
+
+
+.fixUpDataButton{
+    background-color: #ff9800;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.transferDataWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    max-width: 520px;
+    padding: 18px;
+    margin: 0 auto;
+    background: linear-gradient(180deg, rgba(230, 241, 255, 0.9) 0%, rgba(210, 228, 250, 0.82) 100%);
+    border: 1px solid rgba(86, 132, 184, 0.25);
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 10px 24px rgba(16, 42, 67, 0.08);
+    box-sizing: border-box;
+}
+
+.transferDataWrapper ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.transferDataWrapper ul li:first-child {
+    margin: 0;
+}
+
+.transferDataWrapper ul li:first-child label {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #17324d;
+    letter-spacing: 0.02em;
+}
+
+.transferDataItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(86, 132, 184, 0.2);
+    border-radius: 12px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    box-sizing: border-box;
+}
+
+.transferDataItem:hover {
+    transform: translateY(-1px);
+    border-color: rgba(47, 121, 209, 0.4);
+    box-shadow: 0 8px 18px rgba(24, 58, 91, 0.1);
+}
+
+.transferDataItem label {
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: #1f3d5b;
+    cursor: pointer;
+}
+
+.transferDataInput {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #2f79d1;
+    flex-shrink: 0;
+}
+
+.confirmTransferDataButton {
+    align-self: flex-end;
+    width: 100%;
+    min-width: 140px;
+    max-width: 180px;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #2f79d1 0%, #1b5fae 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(27, 95, 174, 0.28);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.confirmTransferDataButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(27, 95, 174, 0.35);
+    filter: brightness(1.05);
+}
+
+.confirmTransferDataButton:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(27, 95, 174, 0.25);
 }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     
+    
     <link rel="stylesheet" href="./style/minibanner.css">
     <link rel="stylesheet" href="./style/sidebar.css">
     <link rel="stylesheet" href="./style/style.css">
@@ -611,6 +612,57 @@
          }
     )
     appState.popups.saveViewMessagePopup = saveViewMessagePopup;
+
+    const transferDataPopup = new popup.SimplePopup(
+        {},
+        {
+            title: "Transfer Data",
+            content: `
+            <div class="transferDataWrapper">
+                <ul>
+                    <li>
+                        <label>Included Files</label>
+                    </li>
+                    <li class="transferDataItem">
+                        <label for="transferPlatformsInput">Platforms:</label>
+                        <input type="checkbox" id="transferPlatformsInput" class="transferDataInput" checked>
+                    </li>
+                    <li class="transferDataItem">
+                        <label for="transferViewsInput">Views:</label>
+                        <input type="checkbox" id="transferViewsInput" class="transferDataInput" checked>
+                    </li>
+                    <li class="transferDataItem">
+                        <label for="transferSettingsInput">Settings:</label>
+                        <input type="checkbox" id="transferSettingsInput" class="transferDataInput" checked>
+                    </li>
+                </ul>
+                <button id="confirmTransferDataButton" class="confirmTransferDataButton">Transfer</button>
+            </div>
+            `
+        },
+        {
+            onOpen: function() {
+                console.log('Transfer Data popup opened');
+            }
+        },
+        {
+            isFullscreen: false,
+            width: "500px",
+            height: "450px"
+        }
+    );
+    appState.popups.transferDataPopup = transferDataPopup;
+
+    function handleTransferDataMenuClick() {
+        appState.popups.transferDataPopup.open();
+    }
+
+    window.handleTransferDataMenuClick = handleTransferDataMenuClick;
+
+    if (window.__pendingTransferDataMenuClick) {
+        window.__pendingTransferDataMenuClick = false;
+        handleTransferDataMenuClick();
+    }
      </script>
 
 <script>
@@ -626,9 +678,147 @@
 </script>
 
 <script>
+    function syncViewFormControls(viewState) {
+        const newViewNameInput = document.getElementById('newViewName');
+        const newViewGraphTypeInput = document.getElementById('newViewGraphType');
+        const newViewGraphDataInput = document.getElementById('newViewGraphData');
+        const useOnlyFirstTimestampInput = document.getElementById('useOnlyFirstTimestampInput');
+        const useOnlyFilesWithPPTInput = document.getElementById('useOnlyFilesWithPPTInput');
+        const cacheDataInput = document.getElementById('cacheDataInput');
+        const saveViewNameInput = document.getElementById('saveViewNameInput');
+
+        if (newViewNameInput) {
+            newViewNameInput.value = viewState.name || 'New View';
+        }
+
+        if (newViewGraphTypeInput && Array.from(newViewGraphTypeInput.options).some(option => option.value === viewState.type)) {
+            newViewGraphTypeInput.value = viewState.type;
+        }
+
+        if (newViewGraphDataInput && Array.from(newViewGraphDataInput.options).some(option => option.value === viewState.dataSelection)) {
+            newViewGraphDataInput.value = viewState.dataSelection;
+        }
+
+        if (useOnlyFirstTimestampInput) {
+            useOnlyFirstTimestampInput.checked = Boolean(viewState.OnlyUseFirstTimestamps);
+        }
+
+        if (useOnlyFilesWithPPTInput) {
+            useOnlyFilesWithPPTInput.checked = Boolean(viewState.useOnlyFilesWithPPTInput);
+        }
+
+        if (cacheDataInput) {
+            cacheDataInput.checked = Boolean(viewState.includePlotData);
+        }
+
+        if (saveViewNameInput) {
+            saveViewNameInput.value = viewState.name || 'New View';
+        }
+    }
+
+    function validateLoadedViewReferences(viewState) {
+        const dataFiles = Array.isArray(viewState.data) ? viewState.data : [];
+        const missingSavedDataFiles = [];
+        const missingSimpleDataEntries = [];
+
+        dataFiles.forEach((fileName) => {
+            const filePath = path.join(pathDep.savedDataPath, fileName);
+            if (!fileHandle.doesFileAlreadyExist(filePath)) {
+                missingSavedDataFiles.push(fileName);
+            }
+
+            if (!fileHandle.doesEntryExistInSimpleData(fileName, false)) {
+                missingSimpleDataEntries.push(fileName);
+            }
+        });
+
+        return {
+            isValid: missingSavedDataFiles.length === 0 && missingSimpleDataEntries.length === 0,
+            missingSavedDataFiles,
+            missingSimpleDataEntries
+        };
+    }
+
+    function applyViewToAppState(viewState) {
+        const existingPlotOutputWrapper = document.getElementById('plotOutputWrapper');
+        if (existingPlotOutputWrapper) {
+            existingPlotOutputWrapper.remove();
+        }
+
+        appState.hasViewBeenCreated = true;
+        document.getElementById('SaveViewButton').style.display = 'block';
+
+        DOM.dom_initNewView(appState, {
+            name: viewState.name,
+            type: viewState.type,
+            dataSelection: viewState.dataSelection,
+            vars: Array.isArray(viewState.vars) ? [...viewState.vars] : [],
+            viewVars: viewState.viewVars instanceof Set ? new Set(viewState.viewVars) : new Set(viewState.viewVars || []),
+            isViewGenerated: Boolean(viewState.isViewGenerated),
+            includePlotData: Boolean(viewState.includePlotData),
+            data: Array.isArray(viewState.data) ? [...viewState.data] : [],
+            targetDim: viewState.targetDim || null,
+            OnlyUseFirstTimestamps: Boolean(viewState.OnlyUseFirstTimestamps),
+            useOnlyFilesWithPPTInput: Boolean(viewState.useOnlyFilesWithPPTInput),
+            chartInstances: Array.isArray(viewState.chartInstances) ? viewState.chartInstances : undefined,
+            dataMap: viewState.dataMap || {}
+        });
+
+        syncViewFormControls(appState.currentView);
+        DOM.renderView(appState, ModuleDependencies["DOM"]);
+        DOM.dom_setVisibilityOfConfigColumn(appState, true);
+    }
+
+    async function handleSavedViewSelection(state, deps, fileName) {
+        DOM.showLoadingScreen();
+        DOM.setLoadingText('Loading view...');
+
+        try {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+
+            const loadResult = deps.fileHandle.loadViewFromFile(fileName);
+            if (!loadResult.success) {
+                console.error('Failed to load saved view:', loadResult.error);
+                return;
+            }
+
+            const validationResult = validateLoadedViewReferences(loadResult.view);
+            if (!validationResult.isValid) {
+                const missingFileMessage = validationResult.missingSavedDataFiles.length > 0
+                    ? `Missing savedData files:<br>${validationResult.missingSavedDataFiles.join('<br>')}`
+                    : '';
+                const missingMetadataMessage = validationResult.missingSimpleDataEntries.length > 0
+                    ? `Missing simpleData entries:<br>${validationResult.missingSimpleDataEntries.join('<br>')}`
+                    : '';
+                const combinedMessage = [missingFileMessage, missingMetadataMessage].filter(Boolean).join('<br><br>');
+
+                logging.log(params={
+                    callerInfo: basicFunctions.getCallerInfo(),
+                    state: appState,
+                    dep: ModuleDependencies["logging"],
+                    msgLabel: `Saved View Load Blocked`,
+                    msg: `The saved view <b>${fileName}</b> could not be loaded because some referenced files are no longer available.<br><br>${combinedMessage}`,
+                    seriousness: 'warning',
+                    code: '0001',
+                    class: 'FS',
+                    ignoreConsole: false,
+                    ignorePopup: false,
+                    ignoreNotification: false,
+                    ignoreLogging: false
+                });
+                return;
+            }
+
+            applyViewToAppState(loadResult.view);
+            console.log(`Loaded saved view: ${fileName}`);
+        } finally {
+            DOM.hideLoadingScreen();
+        }
+    }
+
     // Initial load
     DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
-    DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"]);
+    DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"], handleSavedViewSelection);
 
     DOM.updateVisibilityOfNotificationIndicator(appState);
     
@@ -1176,10 +1366,7 @@ userInteractions.userint_focusOnMarker(appState);
         
         
 
-        appState.hasViewBeenCreated = true;
-        document.getElementById('SaveViewButton').style.display = 'block'; 
-
-        DOM.dom_initNewView(appState, {
+        applyViewToAppState({
             name: document.getElementById('newViewName').value,
             type: document.getElementById('newViewGraphType').value,
             dataSelection: document.getElementById('newViewGraphData').value,
@@ -1194,10 +1381,6 @@ userInteractions.userint_focusOnMarker(appState);
 
         console.log("New View Created:", appState.currentView);
         console.log(appState);
-
-        DOM.renderView(appState, ModuleDependencies["DOM"]);
-
-        DOM.dom_setVisibilityOfConfigColumn(appState, true); 
         
     });
 
@@ -1277,7 +1460,7 @@ userInteractions.userint_focusOnMarker(appState);
             ? `Overwrote saved view: ${targetFileName}`
             : `Saved new view: ${targetFileName}`);
 
-        DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"]);
+        DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"], handleSavedViewSelection);
         } finally {
             DOM.hideLoadingScreen();
         }

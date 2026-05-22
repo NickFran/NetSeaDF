@@ -15,6 +15,22 @@ const url = require('url');
 
 let win;
 
+function sendRendererEvent(channel, payload = null) {
+    if (!win || win.isDestroyed()) {
+        console.warn(`Cannot send renderer event "${channel}" because the window is unavailable.`);
+        return;
+    }
+
+    if (win.webContents.isLoading()) {
+        win.webContents.once('did-finish-load', () => {
+            win.webContents.send(channel, payload);
+        });
+        return;
+    }
+
+    win.webContents.send(channel, payload);
+}
+
 function createWindow() {
     win = new BrowserWindow({ 
         width: 1920, height: 1080,
@@ -41,7 +57,7 @@ function createWindow() {
                     label: 'Transfer Data',
                     click: () => {
                         console.log('Transfer clicked');
-                        // Add your transfer logic here
+                        sendRendererEvent('menu-transfer-data');
                     }
                 },
                 {
