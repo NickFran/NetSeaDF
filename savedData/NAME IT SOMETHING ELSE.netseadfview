@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "schema": "netseadf-view",
+    "version": 1,
+    "savedAt": "2026-05-23T00:07:41.288Z"
+  },
+  "view": {
+    "name": "NAME IT SOMETHING ELSE",
+    "type": "line",
+    "dataSelection": "fromSelection",
+    "vars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE",
+      "SSP"
+    ],
+    "viewVars": [
+      "TIME_QC",
+      "POSITION_QC",
+      "DC_REFERENCE",
+      "DIRECTION",
+      "PRES_QC",
+      "PRES_ADJUSTED",
+      "PRES_ADJUSTED_QC",
+      "TEMP",
+      "TEMP_QC",
+      "TEMP_ADJUSTED",
+      "TEMP_ADJUSTED_QC",
+      "PSAL",
+      "PSAL_QC",
+      "PSAL_ADJUSTED",
+      "PSAL_ADJUSTED_QC",
+      "PRES_CORE"
+    ],
+    "isViewGenerated": true,
+    "includePlotData": false,
+    "data": [
+      "GL_PR_PF_1902579.nc"
+    ],
+    "targetDim": "PRES_ADJUSTED",
+    "OnlyUseFirstTimestamps": false,
+    "useOnlyFilesWithPPTInput": true,
+    "chartInstances": [
+      {
+        "general": {
+          "Name": "Chart 1",
+          "EnableZoom": true,
+          "EnableDataPoints": true,
+          "EnableAxisPointers": true
+        },
+        "axis": [
+          {
+            "AxisSide": "Y",
+            "Data": "PRES_ADJUSTED"
+          },
+          {
+            "AxisSide": "X",
+            "Data": "TEMP"
+          }
+        ]
+      }
+    ]
+  }
+}

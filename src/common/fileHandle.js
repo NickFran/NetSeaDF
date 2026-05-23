@@ -37,20 +37,31 @@ function doesFileAlreadyExist(pathToFile) {
  * @param {Object} destDir - The directory where we want to copy the file to.
  * @returns {Object} - Object with result status.
  */
-function copyFileToSavedData(sourceFilePath, destDir) {
+function copyFileToSavedData(sourceFilePath, destDir, options = {}) {
     try {
         const fileName = path.basename(sourceFilePath);
         const destPath = path.join(destDir, fileName);
+        const overwriteSettingKey = options.overwriteSettingKey || 'enableImportOverWritting_ForPlatforms';
+        const fileAlreadyExists = doesFileAlreadyExist(destPath);
+        const allowOverwrite = Boolean(config.get('IO', overwriteSettingKey));
 
-        if (doesFileAlreadyExist(destPath) && !config.get('IO', 'enableImportOverWritting')) {
+        if (fileAlreadyExists && !allowOverwrite) {
             return {
                 success: true,
                 skipped: true,
+                fileName,
+                destPath,
+                overwritten: false,
             };
         }
 
         fs.copyFileSync(sourceFilePath, destPath);
-        return { success: true, destPath, fileName };
+        return {
+            success: true,
+            destPath,
+            fileName,
+            overwritten: fileAlreadyExists && allowOverwrite
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }
@@ -63,19 +74,30 @@ function copyFileToSavedData(sourceFilePath, destDir) {
  * @param {string} destDir - The directory to save the file in.
  * @returns {Object} - Object with result status.
  */
-function copyFileToSavedDataViaBuffer(buffer, fileName, destDir) {
+function copyFileToSavedDataViaBuffer(buffer, fileName, destDir, options = {}) {
     try {
         const destPath = path.join(destDir, fileName);
+        const overwriteSettingKey = options.overwriteSettingKey || 'enableImportOverWritting_ForPlatforms';
+        const fileAlreadyExists = doesFileAlreadyExist(destPath);
+        const allowOverwrite = Boolean(config.get('IO', overwriteSettingKey));
 
-        if (doesFileAlreadyExist(destPath) && !config.get('IO', 'enableImportOverWritting')) {
+        if (fileAlreadyExists && !allowOverwrite) {
             return {
                 success: true,
                 skipped: true,
+                fileName,
+                destPath,
+                overwritten: false,
             };
         }
 
         fs.writeFileSync(destPath, buffer);
-        return { success: true, destPath, fileName };
+        return {
+            success: true,
+            destPath,
+            fileName,
+            overwritten: fileAlreadyExists && allowOverwrite
+        };
     } catch (error) {
         return { success: false, error: error.message };
     }
@@ -384,7 +406,7 @@ async function processImportQeue(appState, ModuleDependencies) {
         console.log(`Processing queue item ${i + 1}/${queueEntries.length}: ${entry.fileName}`);
         DOM.setLoadingText(`Importing file ${i + 1} of ${queueEntries.length}: ${entry.fileName}`);
         try {
-            if (doesEntryExistInSimpleData(entry.fileName, false) && !config.get('IO', 'enableImportOverWritting')) {
+            if (doesEntryExistInSimpleData(entry.fileName, false) && !entry.allowOverwriteExistingEntry) {
                 console.log(`Skipping import for ${entry.fileName} because overwrite is disabled and dataset already exists.`);
                 queue.markQeueEntryDone(entry.fileName);
                 continue;

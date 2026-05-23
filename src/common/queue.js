@@ -19,7 +19,12 @@ function writeImportQeue(queue) {
 function addToImportQeue(entries) {
     const queue = readImportQeue();
     entries.forEach(entry => {
-        queue.push({ fileName: entry.fileName, destPath: entry.destPath, status: 'pending' });
+        queue.push({
+            fileName: entry.fileName,
+            destPath: entry.destPath,
+            status: 'pending',
+            allowOverwriteExistingEntry: Boolean(entry.allowOverwriteExistingEntry)
+        });
     });
     writeImportQeue(queue);
 }

@@ -68,7 +68,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
 
                 let timestampInstancesDiff = basicFunctions.getTimestampDifference(a, b, importFormat="ms", returnType=objects.GraphType.d);
                 
-                if (timestampInstancesDiff > 10) { // default to 200 for debugging, 
+                if (timestampInstancesDiff > config.get("basics", "MaxTimeTillUnderIceFlag")) { // default to 200 for debugging, 
                     state.markers[file].TimestampFlags.TimestampFlagDifferences.push(timestampInstancesDiff);
                     polyLineInstance.setStyle({ color: 'red' });
                     
@@ -128,6 +128,7 @@ function userint_focusOnMarker(state) {
 async function userint_deleteFileButton(state, dep) {
     const dep_userint = dep["userInteractions"];
     const {DOM, fileHandle, pathDep, basicFunctions} = dep_userint;
+    const deletePlatformsButton = document.getElementById('deletePlatformsSummaryButton');
 
     const filesToDelete = Array.from(state.selectedFiles);
         if (filesToDelete.length === 0) return;
@@ -146,6 +147,11 @@ async function userint_deleteFileButton(state, dep) {
         DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
         DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
         document.getElementById('titleTargetFile').textContent = `Data`;
+        state.selectedFiles = new Set();
+        state.isMultiSelect = false;
+        if (deletePlatformsButton) {
+            deletePlatformsButton.style.backgroundColor = '';
+        }
         //DOM.dom_SetElementInnerHTML_UsingString("dataFileHeader", "(Click on a data file to view)");
         DOM.hideLoadingScreen();
 }

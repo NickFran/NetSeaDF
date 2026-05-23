@@ -250,7 +250,7 @@ body {
 */
 .sidebar .wrapper h2{
     user-select: none;
-}.bannerButton .svgIcon,
+}.bannerButton .svgIcon, .svgIconAlt,
 .bannerButton .imgIcon {
     display: block;
     margin-top: 0;
@@ -809,4 +809,8 @@ body {
     box-shadow: #ffffff2a 0px 4px 4px inset;
     border-radius: 50px;
     transition: var(--buttonAnimActive);
+}
+
+#DeleteFileButton{
+    display: none;
 }

@@ -67,6 +67,7 @@
             allFiles: fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc'),
             isMultiSelect: false,
             selectedFiles: new Set(),
+            selectedViewFile: null,
             currentFileIndexTarget: null,
             map: undefined,
             markers: {},
@@ -91,6 +92,7 @@
             popups: {},
             notificationsSeriousnessArray: [],
             currentLog: null,
+            currentViewport: 'map',
             viewColumnVisible: true,
             hasViewBeenCreated: false,
             currentView: {
@@ -118,7 +120,9 @@
                 integrations,
                 basicFunctions,
                 config,
-                charts
+                charts,
+                logging,
+                popup
                 },
             "FileHandle":
                 {
@@ -161,7 +165,7 @@
     <!-- Loading Screen Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
-            <img src="./media/logo.png" alt="Loading..." class="loading-logo" onerror="this.style.display='none'">
+            <img src="" alt="Loading..." class="loading-logo" onerror="this.style.display='none'">
             <div class="loading-spinner"></div>
             <p class="loading-text" id="loadingText">Loading...</p>
         </div>
@@ -180,7 +184,6 @@
             <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple accept=".nc"/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
-            <button href="#" class="bannerButton dis" id="bannerButton3"><img src="media/fileadd.svg" class="svgIcon"></button>
             <button href="#" class="bannerButton" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"><span class="sideBtnText">Create View</span></button>
             <button href="#" class="bannerButton" id="SaveViewButton"><img src="media/file.svg" class="svgIcon"><span class="sideBtnText">Save View</span></button>
             <button href="#" class="bannerButtonNotif" id="bannerButton4">
@@ -195,17 +198,27 @@
         <div class="wrapper">
             <h2>Platforms</h2>
             <details id="GliderDropDown">
-                <summary>Platforms</summary>
+                <summary>
+                    <span>Platforms</span>
+                    <button type="button" id="deletePlatformsSummaryButton" class="summaryDeleteButton" aria-label="Delete selected platforms">
+                        <img src="media/trashcan.svg" class="svgIconAlt" alt="Delete selected platforms">
+                    </button>
+                </summary>
                     <ul class="GliderList" id="GliderList">
                     </ul>
             </details>
             <details id="ViewsDropDown">
-                <summary>Views</summary>
+                <summary>
+                    <span>Views</span>
+                    <button type="button" id="deleteViewsSummaryButton" class="summaryDeleteButton" aria-label="Delete selected views">
+                        <img src="media/trashcan.svg" class="svgIconAlt" alt="Delete selected views">
+                    </button>
+                </summary>
                     <ul class="ViewsList" id="ViewsList">
                     </ul>
             </details>
             
-            <!--<button id="DeleteFileButton" class="DeleteFileButton">DELETE</button>    -->
+            
         </div>
     </div>
 
@@ -392,6 +405,7 @@
 
 <script>
     DOM.switchViewMenu('createNewView');
+    DOM.dom_toggleViewport(appState, 'map');
     DOM.dom_setVisibilityOfConfigColumn(appState, false); 
     document.getElementById('NewViewButton').style.display = 'none';
     document.getElementById('SaveViewButton').style.display = 'none';
@@ -718,7 +732,9 @@
             });
 
             extractionResult.fileManifest.views.forEach((entry) => {
-                const result = fileHandle.copyFileToSavedData(entry.sourcePath, pathDep.savedDataPath);
+                const result = fileHandle.copyFileToSavedData(entry.sourcePath, pathDep.savedDataPath, {
+                    overwriteSettingKey: 'EnableImportOverwrittingForTransferedViews'
+                });
                 if (result.success && !result.skipped) {
                     importSummary.viewsImported += 1;
                 } else if (result.skipped) {
@@ -727,12 +743,15 @@
             });
 
             extractionResult.fileManifest.platforms.forEach((entry) => {
-                const result = fileHandle.copyFileToSavedData(entry.sourcePath, pathDep.savedDataPath);
+                const result = fileHandle.copyFileToSavedData(entry.sourcePath, pathDep.savedDataPath, {
+                    overwriteSettingKey: 'EnableImportOverwrittingForTransferedPlatforms'
+                });
                 if (result.success && !result.skipped) {
                     importSummary.platformsImported += 1;
                     queueEntries.push({
                         fileName: entry.fileName,
-                        destPath: entry.destPath
+                        destPath: result.destPath,
+                        allowOverwriteExistingEntry: Boolean(result.overwritten)
                     });
                 } else if (result.skipped) {
                     importSummary.platformsSkipped += 1;
@@ -1007,29 +1026,6 @@
         }
     }
 
-    function validateLoadedViewReferences(viewState) {
-        const dataFiles = Array.isArray(viewState.data) ? viewState.data : [];
-        const missingSavedDataFiles = [];
-        const missingSimpleDataEntries = [];
-
-        dataFiles.forEach((fileName) => {
-            const filePath = path.join(pathDep.savedDataPath, fileName);
-            if (!fileHandle.doesFileAlreadyExist(filePath)) {
-                missingSavedDataFiles.push(fileName);
-            }
-
-            if (!fileHandle.doesEntryExistInSimpleData(fileName, false)) {
-                missingSimpleDataEntries.push(fileName);
-            }
-        });
-
-        return {
-            isValid: missingSavedDataFiles.length === 0 && missingSimpleDataEntries.length === 0,
-            missingSavedDataFiles,
-            missingSimpleDataEntries
-        };
-    }
-
     function applyViewToAppState(viewState) {
         const existingPlotOutputWrapper = document.getElementById('plotOutputWrapper');
         if (existingPlotOutputWrapper) {
@@ -1037,7 +1033,7 @@
         }
 
         appState.hasViewBeenCreated = true;
-        document.getElementById('SaveViewButton').style.display = 'block';
+        document.getElementById('SaveViewButton').style.display = appState.currentViewport === 'view' ? 'block' : 'none';
 
         DOM.dom_initNewView(appState, {
             name: viewState.name,
@@ -1070,33 +1066,6 @@
             const loadResult = deps.fileHandle.loadViewFromFile(fileName);
             if (!loadResult.success) {
                 console.error('Failed to load saved view:', loadResult.error);
-                return;
-            }
-
-            const validationResult = validateLoadedViewReferences(loadResult.view);
-            if (!validationResult.isValid) {
-                const missingFileMessage = validationResult.missingSavedDataFiles.length > 0
-                    ? `Missing savedData files:<br>${validationResult.missingSavedDataFiles.join('<br>')}`
-                    : '';
-                const missingMetadataMessage = validationResult.missingSimpleDataEntries.length > 0
-                    ? `Missing simpleData entries:<br>${validationResult.missingSimpleDataEntries.join('<br>')}`
-                    : '';
-                const combinedMessage = [missingFileMessage, missingMetadataMessage].filter(Boolean).join('<br><br>');
-
-                logging.log(params={
-                    callerInfo: basicFunctions.getCallerInfo(),
-                    state: appState,
-                    dep: ModuleDependencies["logging"],
-                    msgLabel: `Saved View Load Blocked`,
-                    msg: `The saved view <b>${fileName}</b> could not be loaded because some referenced files are no longer available.<br><br>${combinedMessage}`,
-                    seriousness: 'warning',
-                    code: '0001',
-                    class: 'FS',
-                    ignoreConsole: false,
-                    ignorePopup: false,
-                    ignoreNotification: false,
-                    ignoreLogging: false
-                });
                 return;
             }
 
@@ -1241,6 +1210,42 @@
 
     document.getElementById("DeleteFileButton").addEventListener("click", async function() {
         userInteractions.userint_deleteFileButton(appState, ModuleDependencies);
+    });
+    document.getElementById("deletePlatformsSummaryButton").addEventListener("click", async function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        await userInteractions.userint_deleteFileButton(appState, ModuleDependencies);
+    });
+    document.getElementById("deleteViewsSummaryButton").addEventListener("click", async function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        const deleteViewsButton = document.getElementById('deleteViewsSummaryButton');
+
+        DOM.showLoadingScreen();
+        DOM.setLoadingText('Deleting saved view...');
+
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
+        if (!appState.selectedViewFile) {
+            console.warn('No saved view selected for deletion.');
+            DOM.hideLoadingScreen();
+            return;
+        }
+
+        const result = fileHandle.deleteDataFile(appState.selectedViewFile);
+        if (!result.success) {
+            console.error(result.error || `Failed to delete saved view ${appState.selectedViewFile}.`);
+            DOM.hideLoadingScreen();
+            return;
+        }
+
+        appState.selectedViewFile = null;
+        DOM.loadSideBar_Views(appState, ModuleDependencies["DOM"], handleSavedViewSelection);
+        if (deleteViewsButton) {
+            deleteViewsButton.style.backgroundColor = '';
+        }
+
+        DOM.hideLoadingScreen();
     });
     document.getElementById("backArrow").addEventListener("click", function() {
         userInteractions.userint_pressBackArrow(appState, ModuleDependencies);
@@ -1698,11 +1703,11 @@ userInteractions.userint_focusOnMarker(appState);
         DOM.setViewMenuTitle('Create New View');
     });
 
-    document.getElementById('bannerButton3').addEventListener('click', function() {
-        alert("Test 1");
-        alert("→ Test 2 ←");
-        alert("<h2>Test 3</h2>");
-    });
+    // document.getElementById('bannerButton3').addEventListener('click', function() {
+    //     alert("Test 1");
+    //     alert("→ Test 2 ←");
+    //     alert("<h2>Test 3</h2>");
+    // });
 
     document.getElementById('SaveViewButton').addEventListener('click', function() {
         document.getElementById('saveViewNameInput').value = appState.currentView.name || 'choose a name...';

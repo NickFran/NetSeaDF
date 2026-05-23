@@ -330,10 +330,11 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
                 item.style.backgroundColor = '';
             });
 
-            // Show the temp class (DELETE button)
-            //document.querySelector('.DeleteFileButton').style.display = 'block';
-            document.getElementById('DeleteFileButton').style.display = 'block';
-            document.getElementById('DeleteFileButton').style.backgroundColor = '#de5d5d';
+            // Highlight the platform-specific delete button
+            const deletePlatformsButton = document.getElementById('deletePlatformsSummaryButton');
+            if (deletePlatformsButton) {
+                deletePlatformsButton.style.backgroundColor = '#de5d5d';
+            }
             
             // Set clicked li background
             li.style.backgroundColor = '#4a90e2';
@@ -393,6 +394,12 @@ function dom_createElm_ViewListItem(state, deps, fileName, onViewSelect = null) 
             item.style.backgroundColor = '';
         });
 
+        const deleteViewsButton = document.getElementById('deleteViewsSummaryButton');
+        if (deleteViewsButton) {
+            deleteViewsButton.style.backgroundColor = '#de5d5d';
+        }
+
+        state.selectedViewFile = fileName;
         li.style.backgroundColor = '#4a90e2';
 
         if (onViewSelect) {
@@ -554,10 +561,11 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInp
         popupContent = manualInput;
     } else {
         if (instance == false) {
+                                //<li>Max Depth: ${entry.lastPressureValue !== null ? entry.lastPressureValue + "m" : "N/A"}</li>
+
                 popupContent = `<ul>
                     <li>File Name: ${entry.fileName}</li>
                     <li>Date: ${entry.timestamps["formatted"][0]}</li>
-                    <li>Max Depth: ${entry.lastPressureValue !== null ? entry.lastPressureValue + "m" : "N/A"}</li>
                     <br>
                     <li>Latitude: ${entry.coords[0]["lat"]}</li>
                     <li>Longitude: ${entry.coords[0]["lon"]}</li>
@@ -982,11 +990,11 @@ function dom_constructSettingsMenu(state, deps){
     let sectionFooter = document.createElement('div');
     sectionFooter.classList.add('sectionFooter');
 
-    // Footer Buttons
-    let fixUpDataButton = document.createElement('button');
-    fixUpDataButton.textContent = "Fix Up Data";
-    fixUpDataButton.classList.add('fixUpDataButton');
-    sectionFooter.appendChild(fixUpDataButton); 
+    // // Footer Buttons
+    // let fixUpDataButton = document.createElement('button');
+    // fixUpDataButton.textContent = "Fix Up Data";
+    // fixUpDataButton.classList.add('fixUpDataButton');
+    // sectionFooter.appendChild(fixUpDataButton); 
 
     let saveSettingsButton = document.createElement('button');
     saveSettingsButton.textContent = "Apply";
@@ -1048,7 +1056,7 @@ function dom_constructSettingsMenu(state, deps){
             input: null
         };
 
-        console.log("Processing setting instance:", settingInstance);
+        //console.log("Processing setting instance:", settingInstance);
 
         // create DOM elements for the setting instance
         let settingWrapperElm = document.createElement('div');
@@ -1149,6 +1157,7 @@ function dom_constructSettingsMenu(state, deps){
 
 function dom_toggleViewport(appState, viewportName) {
     if (viewportName == 'map') {
+        appState.currentViewport = 'map';
         document.getElementById('viewModeButton').style.backgroundColor = '#ffffff00';
         document.getElementById('mapModeButton').style.backgroundColor = '#007bff';
         document.getElementById('mapModeButton').style.color = '#ffffff';
@@ -1157,10 +1166,11 @@ function dom_toggleViewport(appState, viewportName) {
         document.getElementById('mapPage').style.display = 'grid';
         document.getElementById('viewPage').style.display = 'none';
 
-        document.getElementById('bannerButton3').style.display = 'block';
+        
         document.getElementById('NewViewButton').style.display = 'none';
         document.getElementById('SaveViewButton').style.display = 'none';
     } else if (viewportName == 'view') {
+        appState.currentViewport = 'view';
         document.getElementById('mapModeButton').style.backgroundColor = '#ffffff00';
         document.getElementById('viewModeButton').style.backgroundColor = '#007bff';
         document.getElementById('mapModeButton').style.color = '#000000';
@@ -1169,7 +1179,7 @@ function dom_toggleViewport(appState, viewportName) {
         document.getElementById('mapPage').style.display = 'none';
         document.getElementById('viewPage').style.display = 'grid';
 
-        document.getElementById('bannerButton3').style.display = 'none';
+        
         document.getElementById('NewViewButton').style.display = 'block';
         if (appState.hasViewBeenCreated) {document.getElementById('SaveViewButton').style.display = 'block';}
     }
@@ -1383,6 +1393,65 @@ function hasRenderableViewData(view = {}) {
     });
 }
 
+function validateCurrentViewReferences(appState, deps) {
+    const { fileHandle, pathDep } = deps;
+    const dataFiles = Array.isArray(appState.currentView?.data) ? appState.currentView.data : [];
+    const missingSavedDataFiles = [];
+    const missingSimpleDataEntries = [];
+
+    dataFiles.forEach((fileName) => {
+        const filePath = path.join(pathDep.savedDataPath, fileName);
+        if (!fileHandle.doesFileAlreadyExist(filePath)) {
+            missingSavedDataFiles.push(fileName);
+        }
+
+        if (!fileHandle.doesEntryExistInSimpleData(fileName, false)) {
+            missingSimpleDataEntries.push(fileName);
+        }
+    });
+
+    return {
+        isValid: missingSavedDataFiles.length === 0 && missingSimpleDataEntries.length === 0,
+        missingSavedDataFiles,
+        missingSimpleDataEntries
+    };
+}
+
+function showViewGenerationBlockedWarning(appState, deps, validationResult) {
+    const { logging, popup, basicFunctions, config } = deps;
+    const targetViewName = appState.selectedViewFile || appState.currentView?.name || 'current view';
+    const missingFileMessage = validationResult.missingSavedDataFiles.length > 0
+        ? `Missing savedData files:<br>${validationResult.missingSavedDataFiles.join('<br>')}`
+        : '';
+    const missingMetadataMessage = validationResult.missingSimpleDataEntries.length > 0
+        ? `Missing simpleData entries:<br>${validationResult.missingSimpleDataEntries.join('<br>')}`
+        : '';
+    const combinedMessage = [missingFileMessage, missingMetadataMessage].filter(Boolean).join('<br><br>');
+
+    if (!logging || typeof logging.log !== 'function') {
+        console.error('View generation blocked, but logging is unavailable.', validationResult);
+        return;
+    }
+
+    logging.log(params={
+        callerInfo: basicFunctions.getCallerInfo(),
+        state: appState,
+        dep: {
+            popup,
+            DOM: module.exports
+        },
+        msgLabel: 'View Generation Blocked (Broken References)',
+        msg: `The saved view <b>${targetViewName}</b> cannot be generated because some files referenced by the view were not found in the app. Please import these files before generating the view.<br><br>${combinedMessage}`,
+        seriousness: 'warning',
+        code: '0001',
+        class: 'FS',
+        ignoreConsole: false,
+        ignorePopup: Boolean(config.get('basics', 'HideBlockingPopupForClickedViews')),
+        ignoreNotification: false,
+        ignoreLogging: false
+    });
+}
+
 function renderCharts (appState, deps) {
     document.getElementById('viewConfigWrapper').innerHTML = '';
     let viewConfigWrapper = document.getElementById('viewConfigWrapper');
@@ -1424,6 +1493,13 @@ function renderCharts (appState, deps) {
     viewConfigWrapper.appendChild(generateViewButton);
     generateViewButton.addEventListener('click', function() {
         console.log('GENERATE VIEW CLICKED');
+
+        const validationResult = validateCurrentViewReferences(appState, deps);
+        if (!validationResult.isValid) {
+            showViewGenerationBlockedWarning(appState, deps, validationResult);
+            return;
+        }
+
         appState.currentView.isViewGenerated = true;
         renderCharts(appState, deps);
         appState.currentView["targetDim"] = appState.currentView.chartInstances[0].axis[0].Data; // we should look to make this more dynamic in the future when we have more complex views with multiple chart instances and different axis data. For now we will just set the targetDim to be the data of the first axis of the first chart instance.
@@ -1923,7 +1999,7 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
             option.value = opt;
             option.textContent = opt;
             axisSelect.appendChild(option);
-            console.log(opt)
+            //console.log(opt)
         });
         let currentData = appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data;
         if (currentData) {
