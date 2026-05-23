@@ -1719,7 +1719,7 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
             let contentWrapper = document.createElement('div');
             contentWrapper.classList.add('chartInstanceContentWrapper');
             menuWrapper.appendChild(contentWrapper);
-            let stringifyedData = JSON.stringify(currentChart, null, 2);
+            let stringifyedData = JSON.stringify(currentChart, createSafeChartInstanceReplacer(), 2);
             let pre = document.createElement('pre');
             pre.textContent = stringifyedData;
             pre.style.background = "#f6f8fa";
@@ -1798,6 +1798,38 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
     }
 
 
+}
+
+function createSafeChartInstanceReplacer() {
+    const seen = new WeakSet();
+
+    return function(key, value) {
+        if (key === 'obj') {
+            return '[DOM Element]';
+        }
+
+        if (key === 'plotObject') {
+            return '[Plot Object]';
+        }
+
+        if (key === 'chartObject') {
+            return '[Chart Object]';
+        }
+
+        if (typeof Element !== 'undefined' && value instanceof Element) {
+            return `[Element: ${value.tagName}]`;
+        }
+
+        if (value && typeof value === 'object') {
+            if (seen.has(value)) {
+                return '[Circular]';
+            }
+
+            seen.add(value);
+        }
+
+        return value;
+    };
 }
 
 function collectSpecifiedViewVars(appState, deps) {

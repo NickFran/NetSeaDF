@@ -1,4 +1,4 @@
 mapDefaultZoomLevel: 3
-MaxTimeTillUnderIceFlag: 3
+MaxTimeTillUnderIceFlag: 10
 sidebarListFontSize: 14
 HideBlockingPopupForClickedViews: false
