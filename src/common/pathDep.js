@@ -17,6 +17,8 @@ const folderSublevelFromRootMap = {
 
 const savedDataPath = resolveToProperDataPath(__dirname, 'savedData');
 const jsonPath = path.join(savedDataPath, 'simpleData.json');
+const configPath = resolveToProperDataPath(__dirname, 'config');
+const filteredVarsPath = path.join(configPath, 'filteredVars.json');
 const qeuesPath = resolveToProperDataPath(__dirname, 'qeues');
 const importQeuePath = path.join(qeuesPath, 'importQeue.json');
 const removeQeuePath = path.join(qeuesPath, 'removeQeue.json');
@@ -94,4 +96,4 @@ function resolveToProperDataPath(dirname, folderName) {
 
 
 
-    module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath, qeuesPath, importQeuePath, removeQeuePath };
+    module.exports = { getCurrentFolderName, getCurrentFolderPath, fromHereToRoot, resolveToProperDataPath, jsonPath, savedDataPath, configPath, filteredVarsPath, qeuesPath, importQeuePath, removeQeuePath };

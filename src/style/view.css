@@ -161,6 +161,34 @@
 	box-shadow: none;
 }
 
+.filteredVarsMenuButton {
+	padding: 6px 12px;
+	border-radius: 10px;
+	background-color: #ffffff;
+	border: var(--BColor) 1px solid;
+	color: var(--BColor);
+	font-size: 0.65rem;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.1s ease-in-out;
+	width: 200px;
+	margin-left: 30px;
+	margin-right: auto;
+}
+
+.filteredVarsMenuButton:hover {
+	background-color: var(--BColorHover);
+	color: #ffffff;
+}
+
+.filteredVarsMenuButton:active {
+	background-color: var(--BColorActive);
+	color: #ffffff;
+}
+
 @media (max-width: 900px) {
 	.viewPage .Vcard:nth-child(4) {
 		padding: 20px;

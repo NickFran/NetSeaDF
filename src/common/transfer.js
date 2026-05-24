@@ -42,7 +42,8 @@ function normalizeTransferOptions(options = {}) {
     return {
         includePlatforms: Boolean(options.includePlatforms),
         includeViews: Boolean(options.includeViews),
-        includeSettings: Boolean(options.includeSettings)
+        includeSettings: Boolean(options.includeSettings),
+        includeFilteredVars: Boolean(options.includeFilteredVars)
     };
 }
 
@@ -87,6 +88,22 @@ function collectTransferFiles(options = {}) {
         });
     }
 
+    if (normalizedOptions.includeFilteredVars) {
+        const filteredVarsPath = pathDep.filteredVarsPath;
+
+        if (!fileHandle.doesFileAlreadyExist(filteredVarsPath)) {
+            fs.mkdirSync(path.dirname(filteredVarsPath), { recursive: true });
+            fs.writeFileSync(filteredVarsPath, JSON.stringify({ vars: [] }, null, 2), 'utf-8');
+        }
+
+        selectedEntries.push({
+            category: 'filteredVars',
+            fileName: 'filteredVars.json',
+            sourcePath: filteredVarsPath,
+            archivePath: path.posix.join('config', 'filteredVars.json')
+        });
+    }
+
     return selectedEntries.filter((entry) => fileHandle.doesFileAlreadyExist(entry.sourcePath));
 }
 
@@ -101,7 +118,8 @@ function createTransferMetadata(options = {}, selectedEntries = [], appVersion =
     }, {
         platforms: [],
         views: [],
-        settings: []
+        settings: [],
+        filteredVars: []
     });
 
     return {
@@ -116,7 +134,8 @@ function createTransferMetadata(options = {}, selectedEntries = [], appVersion =
             totalFiles: selectedEntries.length,
             platforms: groupedFiles.platforms.length,
             views: groupedFiles.views.length,
-            settings: groupedFiles.settings.length
+            settings: groupedFiles.settings.length,
+            filteredVars: groupedFiles.filteredVars.length
         },
         files: groupedFiles
     };
@@ -161,6 +180,13 @@ function buildImportedFileManifest(tempDir, metadata) {
             : [],
         settings: Array.isArray(metadata?.files?.settings)
             ? metadata.files.settings.map((fileName) => ({
+                fileName,
+                sourcePath: path.join(configTempDir, fileName),
+                destPath: path.join(pathDep.resolveToProperDataPath(__dirname, 'config'), fileName)
+            }))
+            : [],
+        filteredVars: Array.isArray(metadata?.files?.filteredVars)
+            ? metadata.files.filteredVars.map((fileName) => ({
                 fileName,
                 sourcePath: path.join(configTempDir, fileName),
                 destPath: path.join(pathDep.resolveToProperDataPath(__dirname, 'config'), fileName)
@@ -235,7 +261,7 @@ function cleanupTransferExtraction(tempDir) {
 
 async function createTransferArchive(options = {}, destinationDir, appVersion = 'unknown') {
     const normalizedOptions = normalizeTransferOptions(options);
-    if (!normalizedOptions.includePlatforms && !normalizedOptions.includeViews && !normalizedOptions.includeSettings) {
+    if (!normalizedOptions.includePlatforms && !normalizedOptions.includeViews && !normalizedOptions.includeSettings && !normalizedOptions.includeFilteredVars) {
         return {
             success: false,
             error: 'No transfer options were selected.'

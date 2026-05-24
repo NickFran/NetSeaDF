@@ -24,11 +24,6 @@
 
 * windows venv has newer versions for GSW (x.x.21) and cftime (x.x.5), these will need to be downgraded in requirements.txt because mac builds dont exist for them.
 
-* get rid of all config files and put everything into one config.yaml
-   * we have no chouice, the settings menu needs to parse the file to pull the defaults, not dealing with that between multiple yamls.
-
-* soon we will swap the order of the settings so it goes label | value | input
-
 * debug labels are good, but only needed for sliders.
 
 * onChartInstanceOptionClick in DOM, menu is shown, then menu populated, should prob be other way around.
@@ -51,8 +46,6 @@
 * plot output doesnt use view name
 
 * number measurements for both axis
-
-* red names for non pres files (add a setting, colorNONPresFilesRed)
 
 * move multi select advance buttons to bottom near on sides of teleport
 

@@ -1806,6 +1806,35 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
 
 }
 
+function getFilteredAxisDropdownVars(appState, deps) {
+    const allVars = Array.isArray(appState?.currentView?.vars) ? appState.currentView.vars : [];
+    const shouldHideQCVars = Boolean(deps?.config?.get('view', 'HideQCVarsForAxisDropdown'));
+    const blacklistedVars = Array.isArray(appState?.filteredAxisVarBlacklist)
+        ? new Set(
+            appState.filteredAxisVarBlacklist
+                .filter((varName) => typeof varName === 'string')
+                .map((varName) => varName.trim().toLowerCase())
+                .filter((varName) => varName.length > 0)
+        )
+        : new Set();
+
+    return allVars.filter((varName) => {
+        if (typeof varName !== 'string') {
+            return false;
+        }
+
+        if (shouldHideQCVars && varName.endsWith('QC')) {
+            return false;
+        }
+
+        if (blacklistedVars.has(varName.trim().toLowerCase())) {
+            return false;
+        }
+
+        return true;
+    });
+}
+
 function createSafeChartInstanceReplacer() {
     const seen = new WeakSet();
 
@@ -2031,7 +2060,7 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
         //axisSelect.style.flex = '1';
         axisSelect.style.width = '50%';
         axisSelect.style.marginLeft = '20px';
-        let varsToUse = appState.currentView.vars;
+        let varsToUse = getFilteredAxisDropdownVars(appState, deps);
         varsToUse.forEach(opt => {
             let option = document.createElement('option');
             option.value = opt;
@@ -2040,7 +2069,7 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
             //console.log(opt)
         });
         let currentData = appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data;
-        if (currentData) {
+        if (currentData && varsToUse.includes(currentData)) {
             axisSelect.value = currentData;
             appState.currentView.chartInstances[chartInstanceIndex].axis[index].Data = currentData;
         } else if (axisSelect.options.length > 0) {

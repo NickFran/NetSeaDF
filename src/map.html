@@ -62,6 +62,55 @@
 
     <!-- VARIABLES -->
     <script>
+        const filteredAxisVarsPath = pathDep.filteredVarsPath;
+
+        function normalizeFilteredAxisVarBlacklist(varList) {
+            if (!Array.isArray(varList)) {
+                return [];
+            }
+
+            return varList
+                .map((varName) => typeof varName === 'string' ? varName.trim() : '')
+                .filter((varName) => varName.length > 0);
+        }
+
+        function loadFilteredAxisVarBlacklist() {
+            try {
+                if (!fs.existsSync(filteredAxisVarsPath)) {
+                    fs.mkdirSync(path.dirname(filteredAxisVarsPath), { recursive: true });
+                    fs.writeFileSync(filteredAxisVarsPath, JSON.stringify({ vars: [] }, null, 2), 'utf-8');
+                    return [];
+                }
+
+                const rawContent = fs.readFileSync(filteredAxisVarsPath, 'utf-8');
+                if (!rawContent.trim()) {
+                    return [];
+                }
+
+                const parsedContent = JSON.parse(rawContent);
+                const storedVars = Array.isArray(parsedContent)
+                    ? parsedContent
+                    : parsedContent?.vars;
+
+                return normalizeFilteredAxisVarBlacklist(storedVars);
+            } catch (error) {
+                console.error('Failed to load filtered axis vars:', error);
+                return [];
+            }
+        }
+
+        function persistFilteredAxisVarBlacklist() {
+            try {
+                const normalizedVars = normalizeFilteredAxisVarBlacklist(appState.filteredAxisVarBlacklist);
+                appState.filteredAxisVarBlacklist = normalizedVars;
+
+                fs.mkdirSync(path.dirname(filteredAxisVarsPath), { recursive: true });
+                fs.writeFileSync(filteredAxisVarsPath, JSON.stringify({ vars: normalizedVars }, null, 2), 'utf-8');
+            } catch (error) {
+                console.error('Failed to save filtered axis vars:', error);
+            }
+        }
+
         // State object for DOM functions
         const appState = {
             allFiles: fileHandle.listSavedDataFiles(pathDep.resolveToProperDataPath(__dirname, 'savedData'), '.nc'),
@@ -93,6 +142,7 @@
             notificationsSeriousnessArray: [],
             currentLog: null,
             currentViewport: 'map',
+            filteredAxisVarBlacklist: [],
             viewColumnVisible: true,
             hasViewBeenCreated: false,
             currentView: {
@@ -110,6 +160,8 @@
         if(config.get('debug', 'enableDebug')){
             appState.currentLog = logging.createLogFile(`${basicFunctions.getTimestamp()}.netseadflog`, pathDep.resolveToProperDataPath(__dirname, 'logs'));
         }
+
+        appState.filteredAxisVarBlacklist = loadFilteredAxisVarBlacklist();
         
         // Dependencies object for DOM functions
         const ModuleDependencies={
@@ -366,19 +418,19 @@
                     <div class="inputFormWrapper">
                         <h5>Type: </h5>
                         <select name="newViewGraphType" id="newViewGraphType" required>
-                        <option value="line">Line</option>
-                        <option value="bar" disabled>Bar</option>
+                            <option value="line">Line</option>
+                            <option value="bar" disabled>Bar</option>
                         </select>
                     </div>
                     <div class="inputFormWrapper">
                         <h5>Data: </h5>
                         <select name="newViewGraphData" id="newViewGraphData" required>
-                        <option value="fromSelection">Currently Selected</option>
-                        <option value="allVisible">All Visible On Map</option>
-                        <option value="allHidden">All Hidden On Map</option>
-                        <option value="allWithNotes" disabled>All With Notes</option>
-                        <option value="all" disabled>All (!)</option>
-                        <option value="custom" disabled>Custom Selection</option>
+                            <option value="fromSelection">Currently Selected</option>
+                            <option value="allVisible">All Visible On Map</option>
+                            <option value="allHidden">All Hidden On Map</option>
+                            <option value="allWithNotes" disabled>All With Notes</option>
+                            <option value="all" disabled>All (!)</option>
+                            <option value="custom" disabled>Custom Selection</option>
                         </select>
                     </div>
                     <div class="inputFormWrapper checkboxInputFormWrapper">
@@ -388,7 +440,9 @@
                     <div class="inputFormWrapper checkboxInputFormWrapper">
                         <h5 class="inputLabelWPadding">Ignore Files Without PRES/PSAL/TEMP: </h5>
                         <input type="checkbox" id="useOnlyFilesWithPPTInput" name="useOnlyFilesWithPPTInput" class="useOnlyFilesWithPPTInput">
+                        <button type="button" class="filteredVarsMenuButton" id="filteredVarsMenuButton">Edit Filtered Variables</button>
                     </div>
+                    
                     <button type="button" class="createViewButton" id="createViewButton">Create View</button>
                     
                 </form>
@@ -629,6 +683,115 @@
     )
     appState.popups.saveViewMessagePopup = saveViewMessagePopup;
 
+    function renderFilteredAxisVarList() {
+        const filteredVarsList = document.getElementById('filteredVarsList');
+        if (!filteredVarsList) {
+            return;
+        }
+
+        if (!Array.isArray(appState.filteredAxisVarBlacklist)) {
+            appState.filteredAxisVarBlacklist = [];
+        }
+
+        filteredVarsList.innerHTML = '';
+
+        if (appState.filteredAxisVarBlacklist.length === 0) {
+            const emptyState = document.createElement('p');
+            emptyState.classList.add('filteredVarsEmptyState');
+            emptyState.textContent = 'No filtered variables have been added yet.';
+            filteredVarsList.appendChild(emptyState);
+            return;
+        }
+
+        appState.filteredAxisVarBlacklist.forEach((varName, index) => {
+            const row = document.createElement('div');
+            row.classList.add('filteredVarRow');
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.classList.add('filteredVarInput');
+            input.placeholder = 'Enter variable name...';
+            input.value = varName || '';
+            input.addEventListener('input', function() {
+                appState.filteredAxisVarBlacklist[index] = input.value;
+                persistFilteredAxisVarBlacklist();
+            });
+
+            const removeButton = document.createElement('button');
+            removeButton.type = 'button';
+            removeButton.classList.add('removeFilteredVarButton');
+            removeButton.textContent = 'Remove';
+            removeButton.addEventListener('click', function() {
+                appState.filteredAxisVarBlacklist.splice(index, 1);
+                persistFilteredAxisVarBlacklist();
+                renderFilteredAxisVarList();
+            });
+
+            row.appendChild(input);
+            row.appendChild(removeButton);
+            filteredVarsList.appendChild(row);
+        });
+    }
+
+    const filteredVarsPopup = new popup.SimplePopup(
+        {},
+        {
+            title: 'Filtered Axis Variables',
+            content: `
+            <div class="filteredVarsPopupWrapper">
+                <div class="filteredVarsPopupBody">
+                    <p>Add variable names here to hide them from the axis dropdown menu.</p>
+                    <div id="filteredVarsList" class="filteredVarsList"></div>
+                </div>
+                <div class="filteredVarsPopupFooter">
+                    <div class="filteredVarsPopupActions">
+                    <button type="button" id="addFilteredVarButton" class="addFilteredVarButton">Add Var</button>
+                    </div>
+                </div>
+            </div>
+            `
+         },
+         {
+             onOpen: function() {
+                 renderFilteredAxisVarList();
+             },
+             onClose: function() {
+                 persistFilteredAxisVarBlacklist();
+             },
+             onOpen_FirstTime: function() {
+                 filteredVarsPopup.contentWrapper.classList.add('filteredVarsPopupContentWrapper');
+                 const filteredVarsPopupContent = filteredVarsPopup.contentWrapper.querySelector('.popup-content');
+                 if (filteredVarsPopupContent) {
+                     filteredVarsPopupContent.classList.add('filteredVarsPopupContent');
+                 }
+
+                 const addFilteredVarButton = document.getElementById('addFilteredVarButton');
+                 if (addFilteredVarButton) {
+                     addFilteredVarButton.addEventListener('click', function() {
+                         if (!Array.isArray(appState.filteredAxisVarBlacklist)) {
+                             appState.filteredAxisVarBlacklist = [];
+                         }
+
+                         appState.filteredAxisVarBlacklist.push('');
+                         renderFilteredAxisVarList();
+
+                         const filteredVarInputs = document.querySelectorAll('.filteredVarInput');
+                         const lastInput = filteredVarInputs[filteredVarInputs.length - 1];
+                         if (lastInput) {
+                             lastInput.focus();
+                         }
+                     });
+                 }
+             }
+         },
+         {
+            isFullscreen: false,
+            width: '560px',
+            height: '550px'
+         }
+    );
+    appState.popups.filteredVarsPopup = filteredVarsPopup;
+
     const transferDataPopup = new popup.SimplePopup(
         {},
         {
@@ -650,6 +813,10 @@
                     <li class="transferDataItem">
                         <label for="transferSettingsInput">Settings:</label>
                         <input type="checkbox" id="transferSettingsInput" class="transferDataInput" checked>
+                    </li>
+                    <li class="transferDataItem">
+                        <label for="transferFilteredVarsInput">Filtered Vars:</label>
+                        <input type="checkbox" id="transferFilteredVarsInput" class="transferDataInput" checked>
                     </li>
                 </ul>
                 <button id="confirmTransferDataButton" class="confirmTransferDataButton">Transfer</button>
@@ -713,7 +880,9 @@
             viewsImported: 0,
             viewsSkipped: 0,
             settingsImported: 0,
-            settingsSkipped: 0
+            settingsSkipped: 0,
+            filteredVarsImported: 0,
+            filteredVarsSkipped: 0
         };
 
         try {
@@ -753,6 +922,16 @@
                     importSummary.settingsImported += 1;
                 } else if (result.skipped) {
                     importSummary.settingsSkipped += 1;
+                }
+            });
+
+            extractionResult.fileManifest.filteredVars.forEach((entry) => {
+                try {
+                    fs.copyFileSync(entry.sourcePath, entry.destPath);
+                    importSummary.filteredVarsImported += 1;
+                    appState.filteredAxisVarBlacklist = loadFilteredAxisVarBlacklist();
+                } catch (error) {
+                    importSummary.filteredVarsSkipped += 1;
                 }
             });
 
@@ -803,7 +982,8 @@
                 msgLabel: `Transfer Import Complete`,
                 msg: `Platforms imported: ${importSummary.platformsImported} (skipped: ${importSummary.platformsSkipped})<br>
                 Views imported: ${importSummary.viewsImported} (skipped: ${importSummary.viewsSkipped})<br>
-                Settings imported: ${importSummary.settingsImported} (skipped: ${importSummary.settingsSkipped})${settingsRestartMessage}`,
+                Settings imported: ${importSummary.settingsImported} (skipped: ${importSummary.settingsSkipped})<br>
+                Filtered vars imported: ${importSummary.filteredVarsImported} (skipped: ${importSummary.filteredVarsSkipped})${settingsRestartMessage}`,
                 seriousness: 'info',
                 code: '0000',
                 class: 'FS',
@@ -1006,10 +1186,11 @@
         const transferOptions = {
             includePlatforms: document.getElementById('transferPlatformsInput').checked,
             includeViews: document.getElementById('transferViewsInput').checked,
-            includeSettings: document.getElementById('transferSettingsInput').checked
+            includeSettings: document.getElementById('transferSettingsInput').checked,
+            includeFilteredVars: document.getElementById('transferFilteredVarsInput').checked
         };
 
-        if (!transferOptions.includePlatforms && !transferOptions.includeViews && !transferOptions.includeSettings) {
+        if (!transferOptions.includePlatforms && !transferOptions.includeViews && !transferOptions.includeSettings && !transferOptions.includeFilteredVars) {
             logging.log(params={
                 callerInfo: basicFunctions.getCallerInfo(),
                 state: appState,
@@ -1863,6 +2044,10 @@ userInteractions.userint_focusOnMarker(appState);
         DOM.dom_setVisibilityOfConfigColumn(appState, false); // Start with config column hidden
         DOM.switchViewMenu('createNewView');
         DOM.setViewMenuTitle('Create New View');
+    });
+
+    document.getElementById('filteredVarsMenuButton').addEventListener('click', function() {
+        appState.popups.filteredVarsPopup.open();
     });
 
     // document.getElementById('bannerButton3').addEventListener('click', function() {
