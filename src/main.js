@@ -174,6 +174,14 @@ function createWindow() {
             ]
         },
         {
+            label: 'Tools',
+            submenu: [
+                { label: 'Clean Up References' },
+                { label: 'Log Application PATH' },
+                { label: 'Log AppState' }
+            ]
+        },
+        {
             label: 'View',
             submenu: [
                 { role: 'reload' },

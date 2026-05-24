@@ -18,8 +18,8 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
         // If already expanded, collapse and remove all instance markers
         if (state.markers[file].isExpanded) {
             let currentFileToRetract = fileHandle.getEntryInSimpleData(file);
-            newPopupContent = DOM.leaf_buildPopupContent(currentFileToRetract, instance=false, buttonText="Show Timeline"); // rebuild main marker popup content to reflect collapsed state (e.g. remove instance-specific timestamp info)            
-            document.getElementById("mapPopupButton").innerText = "Show Timeline";
+            newPopupContent = DOM.leaf_buildPopupContent(currentFileToRetract, instance=false, buttonText="Show Profile Timeline"); // rebuild main marker popup content to reflect collapsed state (e.g. remove instance-specific timestamp info)            
+            document.getElementById("mapPopupButton").innerText = "Show Profile Timeline";
             state.markers[file].marker.setPopupContent(newPopupContent);            
             
             DOM.leaf_removeMapMarker(state, file, instance=true);
@@ -33,8 +33,8 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
         // in not, expand and add instance markers for each additional coordinate pair
         } else {
             let currentFileToExpand = fileHandle.getEntryInSimpleData(file);
-            newPopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=false, buttonText="Hide Timeline"); // rebuild main marker popup content to reflect expanded state (e.g. remove instance-specific timestamp info)            
-            document.getElementById("mapPopupButton").innerText = "Hide Timeline";
+            newPopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=false, buttonText="Hide Profile Timeline"); // rebuild main marker popup content to reflect expanded state (e.g. remove instance-specific timestamp info)            
+            document.getElementById("mapPopupButton").innerText = "Hide Profile Timeline";
             state.markers[file].marker.setPopupContent(newPopupContent);
             
             // Add first coordinate pair to polyline vertices

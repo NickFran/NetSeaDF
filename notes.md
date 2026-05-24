@@ -59,3 +59,7 @@
 * eval highlight over all elements that shouldnt highlight.
 
 * timeline filter still gets compressed.
+
+* need setting for hiding vars unbalanced.
+
+* ingore logs if the class is disabled.

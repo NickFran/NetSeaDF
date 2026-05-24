@@ -184,7 +184,7 @@
             <input class="AddFileButton" type="file" id="avatar" name="avatar" multiple accept=".nc"/></input>
             <button href="#" class="bannerButton" id="bannerButton1">+ Add File</button>
             <button href="#" class="bannerButton" id="DeleteFileButton"><img src="media/trashcan.svg" class="svgIcon"></button>
-            <button href="#" class="bannerButton" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"><span class="sideBtnText">Create View</span></button>
+            <button href="#" class="bannerButton" id="NewViewButton"><img src="media/addchart.webp" class="imgIcon"><span class="sideBtnText">New View</span></button>
             <button href="#" class="bannerButton" id="SaveViewButton"><img src="media/file.svg" class="svgIcon"><span class="sideBtnText">Save View</span></button>
             <button href="#" class="bannerButtonNotif" id="bannerButton4">
                 <img src="media/boxmsg.svg" class="svgIcon">
@@ -386,7 +386,7 @@
                         <input type="checkbox" id="useOnlyFirstTimestampInput" name="useOnlyFirstTimestampInput" class="useOnlyFirstTimestampInput">
                     </div>
                     <div class="inputFormWrapper checkboxInputFormWrapper">
-                        <h5 class="inputLabelWPadding">Only Use Files With PRES/PSAL/TEMP: </h5>
+                        <h5 class="inputLabelWPadding">Ignore Files Without PRES/PSAL/TEMP: </h5>
                         <input type="checkbox" id="useOnlyFilesWithPPTInput" name="useOnlyFilesWithPPTInput" class="useOnlyFilesWithPPTInput">
                     </div>
                     <button type="button" class="createViewButton" id="createViewButton">Create View</button>
@@ -533,7 +533,7 @@
                         dep:ModuleDependencies["logging"],
                         msgLabel: `Timeline chart not found on popup open`,
                         msg: `Contact Developer if this error occurs more than once or interferes with app usage.`,
-                        seriousness: 'warning',
+                        seriousness: 'error',
                         code: '0003',
                         class:'CALC',
                         ignoreConsole: false,
@@ -794,7 +794,7 @@
                 dep: ModuleDependencies["logging"],
                 msgLabel: `Transfer Import Failed`,
                 msg: error.message,
-                seriousness: 'warning',
+                seriousness: 'error',
                 code: '0003',
                 class: 'FS',
                 ignoreConsole: false,
@@ -822,7 +822,7 @@
             dep: ModuleDependencies["logging"],
             msgLabel: `Transfer Import Failed`,
             msg: errorMessage,
-            seriousness: 'warning',
+            seriousness: 'error',
             code: '0003',
             class: 'FS',
             ignoreConsole: false,
@@ -867,7 +867,7 @@
                 dep: ModuleDependencies["logging"],
                 msgLabel: `No Transfer Options Selected`,
                 msg: `Please select at least one data type before starting a transfer export.`,
-                seriousness: 'warning',
+                seriousness: 'info',
                 code: '0001',
                 class: 'INPUT',
                 ignoreConsole: false,
@@ -1135,7 +1135,7 @@
                             callerInfo:basicFunctions.getCallerInfo(),
                             msgLabel: `Error copying file to savedData:`,
                             msg: result.error,
-                            seriousness: 'warning',
+                            seriousness: 'error',
                             code: '0000',
                             class:'FS',
                             ignoreConsole: false,
@@ -1151,7 +1151,7 @@
                             callerInfo:basicFunctions.getCallerInfo(),
                             msgLabel: `Error saving file:`,
                             msg: err.message,
-                            seriousness: 'warning',
+                            seriousness: 'error',
                             code: '0000',
                             class:'FS',
                             ignoreConsole: false,
@@ -1190,7 +1190,7 @@
                             callerInfo:basicFunctions.getCallerInfo(),
                             msgLabel: `Error processing import queue:`,
                             msg: error.message,
-                            seriousness: 'warning',
+                            seriousness: 'error',
                             code: '0000',
                             class:'FS',
                             ignoreConsole: false,

@@ -519,7 +519,7 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
         });
     } else {
         gliderIcon = L.icon({
-                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "ArgoFloatIcon.png"),
+                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "FloatSplashIconRedoScaledDone.png"),
                 iconSize: [60, 60],
                 // iconAnchor: [16, 32],
                 // popupAnchor: [0, -32]
@@ -572,7 +572,7 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInp
                     <br>
                     <li>Dimensions: ${JSON.stringify(entry.dims)}</li>
                     <br>
-                    <button class="mapPopupButton" id="mapPopupButton" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Timeline"}</button>
+                    <button class="mapPopupButton" id="mapPopupButton" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Profile Timeline"}</button>
                 </ul>`;
             } else {
                 popupContent = `<ul>
@@ -757,7 +757,6 @@ function leaf_filterPlatformsByTimeRange(state, dep, startTime, endTime) {
         let startDate = new Date(startTime);
         let endDate = new Date(endTime);
         if (evalDate > startDate && evalDate < endDate) {
-            console.log(`Timestamp within range [${0}]:`, currentEvalTimestamp);
             state.markers[entry.fileName].isFiltered = false;
         } else {
             state.markers[entry.fileName].isFiltered = true;
@@ -803,7 +802,7 @@ function handleMarkerFiltering(state){
     const totalFiltered = Object.values(state.markers).filter(marker => marker.isLocFiltered || marker.isFiltered).length;
     state.filteredMarkers = totalFiltered;
     //console.log(`Total markers filtered out: ${Object.keys(state.markers).length - totalFiltered}`);
-    console.log(state.markers);
+    //console.log(state.markers);
     document.getElementById('leafletMapHeader').innerHTML = `Visible: ${Object.keys(state.markers).length - totalFiltered} out of ${Object.keys(state.markers).length} platforms`;
 }
 
@@ -2063,7 +2062,7 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
         axisContent.style.padding = '6px 8px';
 
         let placeholder = document.createElement('p');
-        placeholder.textContent = `Axis ${index + 1} — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.`;
+        placeholder.textContent = `Axis ${index + 1} — select variable and axis side.`;
         placeholder.style.margin = '0';
         placeholder.style.fontSize = '0.9em';
         placeholder.style.color = '#666';
