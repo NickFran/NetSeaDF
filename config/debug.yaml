@@ -1,4 +1,4 @@
-enableDebug: false
+enableDebug: true
 DebugFS: true
 DebugEvents: true
 DebugInput: true

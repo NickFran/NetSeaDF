@@ -43,3 +43,4 @@ ipcRenderer.on('menu-import-transfer-data-error', (_, payload) => {
 
 	window.__pendingImportTransferredDataError = payload?.error || 'Unknown import error.';
 });
+

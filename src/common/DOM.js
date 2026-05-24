@@ -365,6 +365,11 @@ function dom_createElm_GliderListItem(state, deps, file, onFileSelect) {
 
             
         })
+
+        if (!fileHandle.doesEntryExistInSimpleData(file, false)) {
+            li.style.color = '#de5d5d';
+        }
+
         // append it as a child to the element
         return li;
         
@@ -1262,7 +1267,9 @@ function dom_setVisibilityOfConfigColumn(appState, preferedVisibility = null){
 
 function dom_initNewView(appState, params = {}){
     let defaultVars = ["SSP"];
-    params.vars = Array.isArray(params.vars) ? [...params.vars, ...defaultVars] : [...defaultVars];
+    params.vars = Array.isArray(params.vars)
+        ? Array.from(new Set([...params.vars, ...defaultVars]))
+        : [...defaultVars];
     const sanitizedParams = Object.fromEntries(
         Object.entries(params).filter(([, value]) => value !== undefined)
     );

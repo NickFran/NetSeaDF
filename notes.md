@@ -63,3 +63,7 @@
 * need setting for hiding vars unbalanced.
 
 * ingore logs if the class is disabled.
+
+* I CANT CHANGE TEXT NAME FEILDS.
+
+* get rid of bottom left and bottom right text in view mode.

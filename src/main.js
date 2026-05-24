@@ -176,9 +176,24 @@ function createWindow() {
         {
             label: 'Tools',
             submenu: [
-                { label: 'Clean Up References' },
-                { label: 'Log Application PATH' },
-                { label: 'Log AppState' }
+                {
+                    label: 'Clean Up References',
+                    click: () => {
+                        sendRendererEvent('menu-tools-clean-up-references');
+                    }
+                },
+                {
+                    label: 'Log Application PATH',
+                    click: () => {
+                        sendRendererEvent('menu-tools-log-application-path');
+                    }
+                },
+                {
+                    label: 'Log AppState',
+                    click: () => {
+                        sendRendererEvent('menu-tools-log-app-state');
+                    }
+                }
             ]
         },
         {

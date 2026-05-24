@@ -596,7 +596,7 @@ async function saveViewToFile(currentView, options = {}) {
             : `${desiredName}${VIEW_FILE_EXTENSION}`;
         const filePath = path.join(pathDep.savedDataPath, fileName);
 
-        if (doesFileAlreadyExist(filePath) && !config.get('IO', 'enableImportOverWritting_ForViews')) {
+        if (doesFileAlreadyExist(filePath) && !config.get('IO', 'enableSaveOverWritting_ForViews')) {
             return {
                 success: true,
                 skipped: true,

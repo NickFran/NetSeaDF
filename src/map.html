@@ -669,6 +669,31 @@
     );
     appState.popups.transferDataPopup = transferDataPopup;
 
+    const cleanUpReferencesPopup = new popup.SimplePopup(
+        {},
+        {
+            title: "Clean Up SavedData References",
+            content: `
+            <div class="cleanUpReferencesWrapper">
+                <p>This will remove desynced .nc files from savedData when they do not have a matching entry in the database.</p>
+                <button id="confirmCleanUpReferencesButton" class="confirmCleanUpReferencesButton">Clean Up References</button>
+            </div>
+            `
+        },
+        {
+            onOpen: function() {
+                console.log('Clean Up References popup opened');
+            }
+        },
+        {
+            isFullscreen: false,
+            width: "500px",
+            height: "350px"
+        }
+    );
+
+    appState.popups.cleanUpReferencesPopup = cleanUpReferencesPopup;
+
     function handleTransferDataMenuClick() {
         appState.popups.transferDataPopup.open();
     }
@@ -836,6 +861,125 @@
     window.handleImportTransferredPackageSelected = importTransferredPackage;
     window.handleImportTransferredDataError = handleImportTransferredDataError;
 
+    function handleToolsCleanUpReferencesMenuClick() {
+        appState.popups.cleanUpReferencesPopup.open();
+    }
+
+    async function runCleanUpReferences() {
+        const savedDataFiles = fileHandle.listSavedDataFiles(pathDep.savedDataPath, '.nc');
+        const desyncedFiles = savedDataFiles.filter((fileName) => !fileHandle.doesEntryExistInSimpleData(fileName, false));
+
+        DOM.showLoadingScreen();
+        DOM.setLoadingText('Cleaning up desynced savedData references...');
+
+        try {
+            if (desyncedFiles.length === 0) {
+                logging.log(params={
+                    callerInfo: basicFunctions.getCallerInfo(),
+                    state: appState,
+                    dep: ModuleDependencies["logging"],
+                    msgLabel: 'Reference Cleanup Complete',
+                    msg: 'No desynced platform files were found in savedData.',
+                    seriousness: 'info',
+                    code: '0000',
+                    class: 'FS',
+                    ignoreConsole: false,
+                    ignorePopup: false,
+                    ignoreNotification: false,
+                    ignoreLogging: false
+                });
+                return;
+            }
+
+            const removedFiles = [];
+            const failedFiles = [];
+
+            desyncedFiles.forEach((fileName) => {
+                const deleteResult = fileHandle.deleteDataFile(fileName);
+                if (deleteResult.success) {
+                    removedFiles.push(fileName);
+                } else {
+                    failedFiles.push(`${fileName}: ${deleteResult.error || 'Unknown error'}`);
+                }
+            });
+
+            appState.selectedFiles = new Set(
+                Array.from(appState.selectedFiles).filter((fileName) => !removedFiles.includes(fileName))
+            );
+            appState.isMultiSelect = appState.selectedFiles.size > 1;
+
+            DOM.loadSideBar_Glider(appState, ModuleDependencies["DOM"], DOM.displayDatasetInfo);
+
+            if (appState.selectedFiles.size === 0) {
+                document.getElementById('titleTargetFile').textContent = 'Data';
+                DOM.dom_clearElementInnerHTML_UsingString('datasetInfoCardWrapper');
+                DOM.dom_clearElementInnerHTML_UsingString('datasetAttrCardWrapper');
+                DOM.dom_clearElementInnerHTML_UsingString('datasetVarsCardWrapper');
+            }
+
+            const removedMessage = removedFiles.length > 0
+                ? `Removed desynced platform files:<br>${removedFiles.join('<br>')}`
+                : 'No desynced platform files were removed.';
+            const failedMessage = failedFiles.length > 0
+                ? `<br><br>Failed removals:<br>${failedFiles.join('<br>')}`
+                : '';
+
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: 'Reference Cleanup Complete',
+                msg: `${removedMessage}${failedMessage}`,
+                seriousness: failedFiles.length > 0 ? 'warning' : 'info',
+                code: failedFiles.length > 0 ? '0002' : '0000',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: false,
+                ignoreNotification: false,
+                ignoreLogging: false
+            });
+        } finally {
+            DOM.hideLoadingScreen();
+        }
+    }
+
+    function handleToolsLogApplicationPathMenuClick() {
+        logging.log(params={
+            callerInfo: basicFunctions.getCallerInfo(),
+            state: appState,
+            dep: ModuleDependencies["logging"],
+            msgLabel: 'Application Path',
+            msg: pathDep.fromHereToRoot(__dirname),
+            seriousness: 'info',
+            code: '0000',
+            class: 'FS',
+            ignoreConsole: false,
+            ignorePopup: false,
+            ignoreNotification: false,
+            ignoreLogging: false
+        });
+    }
+
+    function handleToolsLogAppStateMenuClick() {
+        console.log('AppState:', appState);
+    }
+
+    window.handleToolsCleanUpReferencesMenuClick = handleToolsCleanUpReferencesMenuClick;
+    window.handleToolsLogApplicationPathMenuClick = handleToolsLogApplicationPathMenuClick;
+    window.handleToolsLogAppStateMenuClick = handleToolsLogAppStateMenuClick;
+
+    ipcRenderer.on('menu-tools-clean-up-references', () => {
+        handleToolsCleanUpReferencesMenuClick();
+    });
+
+    ipcRenderer.on('menu-tools-log-application-path', () => {
+        handleToolsLogApplicationPathMenuClick();
+    });
+
+    ipcRenderer.on('menu-tools-log-app-state', () => {
+        handleToolsLogAppStateMenuClick();
+    });
+
     if (window.__pendingImportTransferredDataMenuClick) {
         window.__pendingImportTransferredDataMenuClick = false;
         handleImportTransferredDataMenuClick();
@@ -852,6 +996,11 @@
         window.__pendingImportTransferredDataError = null;
         handleImportTransferredDataError(pendingImportTransferredDataError);
     }
+
+    document.getElementById('confirmCleanUpReferencesButton').addEventListener('click', async function() {
+        appState.popups.cleanUpReferencesPopup.close();
+        await runCleanUpReferences();
+    });
 
     document.getElementById('confirmTransferDataButton').addEventListener('click', async function() {
         const transferOptions = {
@@ -900,7 +1049,20 @@
         DOM.setLoadingText('Creating transfer package...');
 
         try {
-            console.log('Starting transfer export with options:', transferOptions);
+            logging.log(params={
+                callerInfo: basicFunctions.getCallerInfo(),
+                state: appState,
+                dep: ModuleDependencies["logging"],
+                msgLabel: 'Starting Transfer Export',
+                msg: JSON.stringify(transferOptions),
+                seriousness: 'info',
+                code: '0000',
+                class: 'FS',
+                ignoreConsole: false,
+                ignorePopup: true,
+                ignoreNotification: true,
+                ignoreLogging: false
+            });
             const result = await ipcRenderer.invoke('transfer-export-data', transferOptions);
 
             if (result?.canceled) {
