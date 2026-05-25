@@ -60,3 +60,7 @@
 * I CANT CHANGE TEXT NAME FEILDS.
 
 * get rid of bottom left and bottom right text in view mode.
+
+* add setting for white view background.
+
+* maybe talk about current view object for doc

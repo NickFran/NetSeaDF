@@ -1,1 +1,3 @@
 HideQCVarsForAxisDropdown: true
+HideDMVarsForAxisDropdown: true
+HideERRORVarsForAxisDropdown: true

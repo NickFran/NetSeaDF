@@ -1809,6 +1809,8 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
 function getFilteredAxisDropdownVars(appState, deps) {
     const allVars = Array.isArray(appState?.currentView?.vars) ? appState.currentView.vars : [];
     const shouldHideQCVars = Boolean(deps?.config?.get('view', 'HideQCVarsForAxisDropdown'));
+    const shouldHideDMVars = Boolean(deps?.config?.get('view', 'HideDMVarsForAxisDropdown'));
+    const shouldHideERRORVars = Boolean(deps?.config?.get('view', 'HideERRORVarsForAxisDropdown'));
     const blacklistedVars = Array.isArray(appState?.filteredAxisVarBlacklist)
         ? new Set(
             appState.filteredAxisVarBlacklist
@@ -1824,6 +1826,14 @@ function getFilteredAxisDropdownVars(appState, deps) {
         }
 
         if (shouldHideQCVars && varName.endsWith('QC')) {
+            return false;
+        }
+
+        if (shouldHideDMVars && varName.endsWith('DM')) {
+            return false;
+        }
+
+        if (shouldHideERRORVars && varName.endsWith('ERROR')) {
             return false;
         }
 
