@@ -64,3 +64,7 @@
 * add setting for white view background.
 
 * maybe talk about current view object for doc
+
+* change Y axis to depth
+
+* default SSP 3 vars in view creation to be CHECKED.
