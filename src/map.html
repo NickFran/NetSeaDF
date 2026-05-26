@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="./style/view.css">
     <link rel="stylesheet" href="./style/popup.css">
     <link rel="stylesheet" href="./style/popupTemplates.css">
+    <link rel="stylesheet" href="./style/marker-popup-button.css">
 
     <script src="./lib/leaflet/leaflet.js"></script>
     <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
@@ -381,8 +382,8 @@
             </div>
         </div>
         <div class="viewPage" id='viewPage'>        
-            <div class="Vcard">bottomLeft</div>
-            <div class="Vcard">bottomRight</div>
+            <div class="Vcard"></div>
+            <div class="Vcard"></div>
             <div class="Vcard" id="viewSidebar">
                 <div class="viewConfigWrapper" id="viewConfigWrapper">
                     <div class="viewTitleWrapper">
@@ -439,7 +440,7 @@
                     </div>
                     <div class="inputFormWrapper checkboxInputFormWrapper">
                         <h5 class="inputLabelWPadding">Ignore Files Without PRES/PSAL/TEMP: </h5>
-                        <input type="checkbox" id="useOnlyFilesWithPPTInput" name="useOnlyFilesWithPPTInput" class="useOnlyFilesWithPPTInput">
+                        <input type="checkbox" id="useOnlyFilesWithPPTInput" name="useOnlyFilesWithPPTInput" class="useOnlyFilesWithPPTInput" checked>
                         <button type="button" class="filteredVarsMenuButton" id="filteredVarsMenuButton">Edit Filtered Variables</button>
                     </div>
                     
@@ -579,7 +580,10 @@
         {   onOpen: function() {
             if (appState.popups.mapFilterPopup.hasOpened) {
                 if (appState.charts.timeline) {
-                    appState.charts.timeline.resize();
+                    // Delay resize until after popup is visible
+                    requestAnimationFrame(() => {
+                        appState.charts.timeline.resize();
+                    });
                 } else {
                     logging.log(params={
                         callerInfo:basicFunctions.getCallerInfo(),
@@ -1626,15 +1630,15 @@
     if (!fileHandle.isSimpleDataEmpty()) {
         data.forEach(entry => {
             console.log("(Map Marker) for:"+ entry.fileName);
-            let x = DOM.leaf_buildPopupContent(entry, instance=false);
+            let x = DOM.leaf_buildPopupContent(entry, instance=false, null, false, ModuleDependencies["DOM"].config);
             DOM.leaf_insertDataMarker(appState, ModuleDependencies["DOM"], entry.coords[0]["lat"], entry.coords[0]["lon"], x, {}, entry.fileName);
         });
     } 
 
     document.addEventListener('click', function(event) {
-    if (event.target && event.target.id === 'mapPopupButton') {
-        userInteractions.userint_ToggleMarkerTimeline(appState, ModuleDependencies["userInteractions"], event);
-    }
+        if (event.target && event.target.classList.contains('mapPopupButton')) {
+            userInteractions.userint_ToggleMarkerTimeline(appState, ModuleDependencies["userInteractions"], event);
+        }
     });
 </script>
 
@@ -1698,6 +1702,12 @@ document.getElementById('timelineDropdown').addEventListener('change', function(
         if (rangeTable) rangeTable.style.display = 'none';
         if (filterButton) filterButton.style.display = 'none';
         if (timeline) timeline.style.display = '';
+        // Resize timeline chart after it becomes visible
+        if (appState.charts && appState.charts.timeline) {
+            requestAnimationFrame(() => {
+                appState.charts.timeline.resize();
+            });
+        }
     }
     if(selectedValue === "option2"){
         // Hide rangeTable and filterButton, show timeline

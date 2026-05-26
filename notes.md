@@ -1,15 +1,5 @@
-* work on the logging file, it probably should be rewritten.
-
-* ini module is installed via npm, next figure out how to work with this.
-  * (ini is needed for DebugMode = False)
-
-* create a mini-popup framework that shows 1 big wrapper window. Then add each popup as a child to the wrapper.
-  * create a postPopupToPopupBoard() or something that will allow popups to be pushed to a single area, allowing 1 click close on the wrapper to close all popups during a spam.
-
 * Echarts is not utilized locally and is referencing a network resource
     * THIS LOOKS LIKE ITS BEEN RESLVED BUT DOUBLE CHECK
-
-* Change display info backt to JSON so that objects can be used instead of just simple text
 
 * leaflet maps place names are not all in english?
 
@@ -20,19 +10,10 @@
 
 * input timeline range has slightly different formatting than slider output (inputs are including a T)
 
-* add trace stack line numbers for warning notification posts
 
 * windows venv has newer versions for GSW (x.x.21) and cftime (x.x.5), these will need to be downgraded in requirements.txt because mac builds dont exist for them.
 
-* debug labels are good, but only needed for sliders.
-
-* onChartInstanceOptionClick in DOM, menu is shown, then menu populated, should prob be other way around.
-
 * delete view file while view is being used?
-
-* manual time range, close, reopen, change to slider...
-
-* check map.html for path.join, instead look into using fromHereToRoot()
 
 * add indicator when view changes but has yet to be regenerated.
 
@@ -43,28 +24,24 @@
 
 * POPUP FOR FILTERS HAS OFFSET TITLE
 
-* plot output doesnt use view name
-
-* number measurements for both axis
-
 * move multi select advance buttons to bottom near on sides of teleport
 
-* eval highlight over all elements that shouldnt highlight.
 
-* timeline filter still gets compressed.
-
-* need setting for hiding vars unbalanced.
 
 * ingore logs if the class is disabled.
 
-* I CANT CHANGE TEXT NAME FEILDS.
-
-* get rid of bottom left and bottom right text in view mode.
-
 * add setting for white view background.
+* remove top vars in info pannel.
 
-* maybe talk about current view object for doc
 
-* change Y axis to depth
 
-* default SSP 3 vars in view creation to be CHECKED.
+
+
+* add trace stack line numbers for warning notification posts
+* need setting for hiding vars unbalanced.
+* slider setting for different floats.
+* make general settings for views update right away.
+* make it so that the debug classes actually work with the logging system.
+* leaflet legal page.
+* eval highlight over all elements that shouldnt highlight.
+* I CANT CHANGE TEXT NAME FEILDS.

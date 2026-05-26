@@ -18,8 +18,10 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
         // If already expanded, collapse and remove all instance markers
         if (state.markers[file].isExpanded) {
             let currentFileToRetract = fileHandle.getEntryInSimpleData(file);
-            newPopupContent = DOM.leaf_buildPopupContent(currentFileToRetract, instance=false, buttonText="Show Profile Timeline"); // rebuild main marker popup content to reflect collapsed state (e.g. remove instance-specific timestamp info)            
-            document.getElementById("mapPopupButton").innerText = "Show Profile Timeline";
+            newPopupContent = DOM.leaf_buildPopupContent(currentFileToRetract, false, "Show Profile Timeline", false, ModuleDependencies["DOM"].config); // pass config
+            if (event.target && event.target.classList.contains('mapPopupButton')) {
+                event.target.innerText = "Show Profile Timeline";
+            }
             state.markers[file].marker.setPopupContent(newPopupContent);            
             
             DOM.leaf_removeMapMarker(state, file, instance=true);
@@ -33,8 +35,10 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
         // in not, expand and add instance markers for each additional coordinate pair
         } else {
             let currentFileToExpand = fileHandle.getEntryInSimpleData(file);
-            newPopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=false, buttonText="Hide Profile Timeline"); // rebuild main marker popup content to reflect expanded state (e.g. remove instance-specific timestamp info)            
-            document.getElementById("mapPopupButton").innerText = "Hide Profile Timeline";
+            newPopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, false, "Hide Profile Timeline", false, ModuleDependencies["DOM"].config); // pass config
+            if (event.target && event.target.classList.contains('mapPopupButton')) {
+                event.target.innerText = "Hide Profile Timeline";
+            }
             state.markers[file].marker.setPopupContent(newPopupContent);
             
             // Add first coordinate pair to polyline vertices
@@ -51,7 +55,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                 let polyLineInstance = DOM.leaf_addPolyLineToMap(state, currentFileToExpand.fileName, previousCoordPair, currentCoordPair);
                 
                 // marker instance
-                let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=coordPair);
+                let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, coordPair, null, false, ModuleDependencies["DOM"].config);
                 DOM.leaf_insertDataMarker(state, ModuleDependencies["DOM"], latNlon[0], latNlon[1], instancePopupContent, {}, currentFileToExpand.fileName, instance=true);
                 state.markers[file].isExpanded = true; // set marker state to expanded
                 
@@ -72,7 +76,7 @@ function userint_ToggleMarkerTimeline(state, dep, event) {
                     state.markers[file].TimestampFlags.TimestampFlagDifferences.push(timestampInstancesDiff);
                     polyLineInstance.setStyle({ color: 'red' });
                     
-                    let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, instance=true, buttonText=null, manual=`
+                    let instancePopupContent = DOM.leaf_buildPopupContent(currentFileToExpand, true, null, `
                         <h4>Under Ice Flag</h4>
                         <p><span class="cRed bold">This platforms deployment might have gone under ice</span></p>
                         <br>

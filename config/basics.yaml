@@ -2,3 +2,6 @@ mapDefaultZoomLevel: 3
 MaxTimeTillUnderIceFlag: 10
 sidebarListFontSize: 14
 HideBlockingPopupForClickedViews: false
+useDMSFormatForTimestamps: true
+DisplayCoordsOnOneLine: true
+MaxCoordDecimals: 4

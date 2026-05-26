@@ -75,26 +75,54 @@ function displayDatasetInfo(state, deps, fileName) {
         const ulAttr = document.createElement('ul');
         const ulVars = document.createElement('ul');
         
-        // Helper function to format coordinate values (truncate to 10 decimals with ellipsis)
-        function formatCoord(value) {
-            if (value === 'N/A') return value;
-            const str = value.toString();
-            const decimalIndex = str.indexOf('.');
-            if (decimalIndex === -1) return str;
-            
-            const wholePart = str.substring(0, decimalIndex);
-            const decimalPart = str.substring(decimalIndex + 1);
-            
-            if (decimalPart.length > 10) {
-                return wholePart + '.' + decimalPart.substring(0, 10) + '...';
+        // Helper function to format coordinate values (DMS or decimal)
+        function toDMS(val, isLat) {
+            if (val === 'N/A' || val === undefined || val === null || isNaN(val)) return val;
+            const abs = Math.abs(val);
+            const deg = Math.floor(abs);
+            const minFloat = (abs - deg) * 60;
+            const min = Math.floor(minFloat);
+            const sec = ((minFloat - min) * 60).toFixed(2);
+            const dir = isLat
+                ? (val >= 0 ? 'N' : 'S')
+                : (val >= 0 ? 'E' : 'W');
+            return `${deg}°${min}'${sec}" ${dir}`;
+        }
+        function formatCoord(value, isLat) {
+            // Check for DMS setting
+            let useDMS = false;
+            try {
+                useDMS = deps && deps.config && typeof deps.config.get === 'function' && deps.config.get('basics', 'useDMSFormatForTimestamps');
+            } catch (e) { useDMS = false; }
+            if (useDMS) {
+                return toDMS(Number(value), isLat);
             }
-            return str;
+            if (value === 'N/A') return value;
+            let maxDecimals = 4;
+            try {
+                if (deps && deps.config && typeof deps.config.get === 'function') {
+                    const setting = deps.config.get('basics', 'MaxCoordDecimals');
+                    if (typeof setting === 'number' && setting >= 1 && setting <= 10) {
+                        maxDecimals = setting;
+                    }
+                }
+            } catch (e) { maxDecimals = 4; }
+            return Number(value).toFixed(maxDecimals);
+        }
+
+        // Helper to check if DisplayCoordsOnOneLine is enabled
+        function isDisplayCoordsOnOneLine() {
+            try {
+                return deps && deps.config && typeof deps.config.get === 'function' && deps.config.get('basics', 'DisplayCoordsOnOneLine');
+            } catch (e) { return false; }
         }
         
         // Helper function to create nested list items
         function addToList(parent, key, value, timestamps = null) {
             const li = document.createElement('li');
-            li.textContent = key;
+            // Change 'dims' to 'Dimensions' for display
+            let displayKey = key === 'dims' ? 'Dimensions' : key;
+            li.textContent = displayKey;
             li.style.wordWrap = 'break-word';
             const safeTimestamps = Array.isArray(timestamps) ? timestamps : [];
             
@@ -105,6 +133,7 @@ function displayDatasetInfo(state, deps, fileName) {
                 if (value.length > 0) {
                     // Special handling for coords
                     if (key === 'coords' && value.length > 0) {
+                        const displayOneLine = isDisplayCoordsOnOneLine();
                         const first = value[0];
                         if (first && typeof first === 'object' && ('lat' in first || 'lon' in first)) {
                             value.forEach((coord, index) => {
@@ -112,37 +141,45 @@ function displayDatasetInfo(state, deps, fileName) {
                                 const label = safeTimestamps[index] !== undefined ? safeTimestamps[index] : 'N/A';
                                 indexLi.textContent = `[${index}]: ${label}`;
 
-                                const coordUl = document.createElement('ul');
-                                const coordLi_Lat = document.createElement('li');
-                                const coordLi_Lon = document.createElement('li');
                                 const lat = coord?.lat !== undefined ? coord.lat : 'N/A';
                                 const lon = coord?.lon !== undefined ? coord.lon : 'N/A';
-                                coordLi_Lat.textContent = `Lat: ${formatCoord(lat)}`;
-                                coordLi_Lon.textContent = `Lon: ${formatCoord(lon)}`;
-                                coordUl.appendChild(coordLi_Lat);
-                                coordUl.appendChild(coordLi_Lon);
-
-                                indexLi.appendChild(coordUl);
+                                if (displayOneLine) {
+                                    const coordLi = document.createElement('li');
+                                    coordLi.textContent = `${formatCoord(lat, true)}, ${formatCoord(lon, false)}`;
+                                    const coordUl = document.createElement('ul');
+                                    coordUl.appendChild(coordLi);
+                                    indexLi.appendChild(coordUl);
+                                } else {
+                                    const coordUl = document.createElement('ul');
+                                    const coordLi_Lat = document.createElement('li');
+                                    const coordLi_Lon = document.createElement('li');
+                                    coordLi_Lat.textContent = `Lat: ${formatCoord(lat, true)}`;
+                                    coordLi_Lon.textContent = `Lon: ${formatCoord(lon, false)}`;
+                                    coordUl.appendChild(coordLi_Lat);
+                                    coordUl.appendChild(coordLi_Lon);
+                                    indexLi.appendChild(coordUl);
+                                }
                                 subUl.appendChild(indexLi);
                             });
                         } else {
                             const midpoint = Math.ceil(value.length / 2);
                             const lats = value.slice(0, midpoint);
                             const lons = value.slice(midpoint);
-                            
                             // Handle case where lats and lons have different lengths
                             const maxLen = Math.max(lats.length, lons.length);
                             for (let i = 0; i < maxLen; i++) {
                                 const indexLi = document.createElement('li');
                                 indexLi.textContent = `[${i}]`;
-
-                                const coordUl = document.createElement('ul');
-                                const coordLi = document.createElement('li');
                                 const lat = lats[i] !== undefined ? lats[i] : 'N/A';
                                 const lon = lons[i] !== undefined ? lons[i] : 'N/A';
-                                coordLi.textContent = `Lat: ${formatCoord(lat)}, Lon: ${formatCoord(lon)}`;
+                                const coordUl = document.createElement('ul');
+                                const coordLi = document.createElement('li');
+                                if (displayOneLine) {
+                                    coordLi.textContent = `${formatCoord(lat, true)}, ${formatCoord(lon, false)}`;
+                                } else {
+                                    coordLi.textContent = `Lat: ${formatCoord(lat, true)}, Lon: ${formatCoord(lon, false)}`;
+                                }
                                 coordUl.appendChild(coordLi);
-
                                 indexLi.appendChild(coordUl);
                                 subUl.appendChild(indexLi);
                             }
@@ -187,7 +224,8 @@ function displayDatasetInfo(state, deps, fileName) {
         Object.entries(dataset).forEach(([key, value]) => {
             const formattedTimestamps = dataset?.timestamps?.formatted ?? [];
             if (key === 'dims' || key === 'coords') {
-                addToList(ulInfo, key, value, formattedTimestamps);
+                // Pass 'Dimensions' as key for dims, otherwise use key
+                addToList(ulInfo, key === 'dims' ? 'Dimensions' : key, value, formattedTimestamps);
             } else if (key === 'attributes') {
                 addToList(ulAttr, key, value);
             } else if (key === 'vars') {
@@ -271,17 +309,6 @@ function loadSideBar_Views(state, deps, onViewSelect = null) {
     }
 
     const savedViews = fileHandle.listSavedViewFiles();
-
-    element_viewsList.innerHTML = '';
-
-    if (savedViews.length === 0) {
-        const emptyElm = document.createElement('li');
-        emptyElm.textContent = 'No saved views';
-        emptyElm.classList.add('emptyViewsListItem');
-        element_viewsList.appendChild(emptyElm);
-        return;
-    }
-
     savedViews.forEach((fileName) => {
         let newElm = dom_createElm_ViewListItem(state, deps, fileName, onViewSelect);
         element_viewsList.appendChild(newElm);
@@ -560,35 +587,122 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
  * @param {*} dims - The dimensions of the dataset, to be displayed in the popup.
  * @returns popupContent - An HTML string containing the structured content for the Leaflet marker popup, including dataset information and a button for viewing the data.
  */
-function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInput=false){
+function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInput=false, config=null){
+        // Helper to format dims object for display, replacing 'TIME' with 'Profiles'
+        function formatDims(dims) {
+            if (!dims || typeof dims !== 'object') return '';
+            return '<ul class="marker-popup-dims-list" style="padding-left:0;list-style:none;margin:0;">' +
+                Object.entries(dims)
+                    .map(([key, value]) => `<li class="marker-popup-dims-item" style="text-align:center;">${key === 'TIME' ? 'Profiles' : key}: <span class='popup-value'>${value}</span></li>`)
+                    .join('') +
+                '</ul>';
+        }
     let popupContent = '';
     if (manualInput){
         popupContent = manualInput;
     } else {
-        if (instance == false) {
-                                //<li>Max Depth: ${entry.lastPressureValue !== null ? entry.lastPressureValue + "m" : "N/A"}</li>
-
-                popupContent = `<ul>
-                    <li>File Name: ${entry.fileName}</li>
-                    <li>Date: ${entry.timestamps["formatted"][0]}</li>
-                    <br>
-                    <li>Latitude: ${entry.coords[0]["lat"]}</li>
-                    <li>Longitude: ${entry.coords[0]["lon"]}</li>
-                    <br>
-                    <li>Dimensions: ${JSON.stringify(entry.dims)}</li>
-                    <br>
-                    <button class="mapPopupButton" id="mapPopupButton" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Profile Timeline"}</button>
-                </ul>`;
-            } else {
-                popupContent = `<ul>
-                    <li>File Name: ${entry.fileName}</li>
-                    <li>Timestamp: ${entry.timestamps["formatted"][instance]}</li>
-                    <br>
-                    <li>Latitude: ${entry.coords[instance]["lat"]}</li>
-                    <li>Longitude: ${entry.coords[instance]["lon"]}</li>
-                    <br>
-                </ul>`;
+        // Use the same coordinate formatting as the info card
+        // We need to access config for settings, so assume window.ModuleDependencies?.config is available
+        if (!config && typeof window !== 'undefined' && window.ModuleDependencies && window.ModuleDependencies.config) {
+            config = window.ModuleDependencies.config;
+        }
+        function toDMS(val, isLat) {
+            if (val === 'N/A' || val === undefined || val === null || isNaN(val)) return val;
+            const abs = Math.abs(val);
+            const deg = Math.floor(abs);
+            const minFloat = (abs - deg) * 60;
+            const min = Math.floor(minFloat);
+            const sec = ((minFloat - min) * 60).toFixed(2);
+            const dir = isLat
+                ? (val >= 0 ? 'N' : 'S')
+                : (val >= 0 ? 'E' : 'W');
+            return `${deg}°${min}'${sec}" ${dir}`;
+        }
+        function formatCoord(value, isLat) {
+            let useDMS = false;
+            let configVal = null;
+            try {
+                configVal = config && typeof config.get === 'function' && config.get('basics', 'useDMSFormatForTimestamps');
+                useDMS = configVal;
+            } catch (e) { useDMS = false; }
+            if (useDMS) {
+                return toDMS(Number(value), isLat);
             }
+            if (value === 'N/A') return value;
+            let maxDecimals = 4;
+            try {
+                if (config && typeof config.get === 'function') {
+                    const setting = config.get('basics', 'MaxCoordDecimals');
+                    if (typeof setting === 'number' && setting >= 1 && setting <= 10) {
+                        maxDecimals = setting;
+                    }
+                }
+            } catch (e) { maxDecimals = 4; }
+            return Number(value).toFixed(maxDecimals);
+        }
+        function isDisplayCoordsOnOneLine() {
+            try {
+                return config && typeof config.get === 'function' && config.get('basics', 'DisplayCoordsOnOneLine');
+            } catch (e) { return false; }
+        }
+        const displayOneLine = isDisplayCoordsOnOneLine();
+        if (instance == false) {
+            const lat = entry.coords[0]["lat"];
+            const lon = entry.coords[0]["lon"];
+            let coordLine;
+            // Add Max Depth (lastPressureValue) if present
+            const maxDepth = (typeof entry.lastPressureValue !== 'undefined' && entry.lastPressureValue !== null) ? Math.round(entry.lastPressureValue) + ' m' : 'N/A';
+            if (displayOneLine) {
+                // One-line, no labels, no parentheses
+                coordLine = `${formatCoord(lat, true)}, ${formatCoord(lon, false)}`;
+                popupContent = `
+                    <div class="marker-popup-filename-floating" style="text-align:center;font-weight:bold;font-size:1.1em;margin-bottom:-12px;position:relative;z-index:2;background:#f8fafc;border:2px solid #8f8f8f;border-radius:6px;padding:4px 14px;display:inline-block;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,0.10);">${entry.fileName}</div>
+                    <div class="popup-box marker-popup-box" style="margin-top:18px;">
+                        <div class="marker-popup-coords-centered" style="text-align:center;font-size:0.98em;margin-bottom:12px;">${coordLine}</div>
+                        <ul class="popup-list marker-popup-list" style="padding:0;list-style:none;">
+                            <li style="height:8px;"></li>
+                            <li class="popup-list-item marker-popup-date" style="margin-bottom:4px;text-align:center;"><span class="popup-label">Date:</span> <span class="popup-value">${entry.timestamps["formatted"][0]}</span></li>
+                            <li class="popup-list-item marker-popup-depth" style="margin-bottom:12px;text-align:center;"><span class="popup-label">Max Depth:</span> <span class="popup-value">${maxDepth}</span></li>
+                            <li style="height:8px;"></li>
+                            <li class="popup-list-item marker-popup-dims" style="margin-top:8px;text-align:center;">
+                                <span class="popup-label">Dimensions:</span>
+                                ${formatDims(entry.dims)}
+                            </li>
+                        </ul>
+                        <button class="mapPopupButton marker-popup-button" style="margin-top:10px;display:block;margin-left:auto;margin-right:auto;" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Profile Timeline"}</button>
+                    </div>`;
+            } else {
+                // Multi-line, with labels
+                                popupContent = `
+                                <div class="marker-popup-filename-floating" style="text-align:center;font-weight:bold;font-size:1.1em;margin-bottom:-12px;position:relative;z-index:2;background:#f8fafc;border:2px solid #8f8f8f;border-radius:6px;padding:4px 14px;display:inline-block;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,0.10);">${entry.fileName}</div>
+                                <div class="popup-box marker-popup-box" style="margin-top:18px;">
+                                    <div class="marker-popup-coords-centered" style="text-align:center;font-size:0.98em;margin-bottom:12px;">${formatCoord(lat, true)}, ${formatCoord(lon, false)}</div>
+                                    <ul class="popup-list marker-popup-list" style="padding:0;list-style:none;">
+                                        <li style="height:8px;"></li>
+                                        <li class="popup-list-item marker-popup-date" style="margin-bottom:4px;text-align:center;"><span class="popup-label">Date:</span> <span class="popup-value">${entry.timestamps["formatted"][0]}</span></li>
+                                        <li class="popup-list-item marker-popup-depth" style="margin-bottom:12px;text-align:center;"><span class="popup-label">Max Depth:</span> <span class="popup-value">${maxDepth}</span></li>
+                                        <li style="height:8px;"></li>
+                                        <li class="popup-list-item marker-popup-dims" style="margin-top:8px;text-align:center;"><span class="popup-label">Dimensions:</span> <span class="popup-value">${formatDims(entry.dims)}</span></li>
+                                    </ul>
+                                </div>`;
+            }
+        } else {
+            const lat = entry.coords[instance]["lat"];
+            const lon = entry.coords[instance]["lon"];
+            let coordLine = `${formatCoord(lat, true)}, ${formatCoord(lon, false)}`;
+            const timestamp = entry.timestamps && entry.timestamps["formatted"] && entry.timestamps["formatted"][instance] ? entry.timestamps["formatted"][instance] : "N/A";
+            // Use same styled layout as main marker popup
+                        popupContent = `
+                                <div class="marker-popup-filename-floating" style="text-align:center;font-weight:bold;font-size:1.1em;margin-bottom:-12px;position:relative;z-index:2;background:#f8fafc;border:2px solid #8f8f8f;border-radius:6px;padding:4px 14px;display:inline-block;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,0.10);">${entry.fileName}</div>
+                                <div class="popup-box marker-popup-box" style="margin-top:18px;">
+                                    <div class="marker-popup-coords-centered" style="text-align:center;font-size:0.98em;margin-bottom:12px;">${coordLine}</div>
+                                    <ul class="popup-list marker-popup-list" style="padding:0;list-style:none;">
+                                        <li style="height:8px;"></li>
+                                        <li class="popup-list-item marker-popup-date" style="margin-bottom:4px;text-align:center;"><span class="popup-label">Timestamp:</span> <span class="popup-value">${timestamp}</span></li>
+                                        <li style="height:8px;"></li>
+                                    </ul>
+                                </div>`;
+        }
     }
     return popupContent;
 }
@@ -1707,7 +1821,7 @@ function onChartInstanceOptionClick(appState, deps, optionType, chartInstanceInd
             break;
         case "output":
             DOM.switchViewMenu('viewOutput');
-            setViewMenuTitle(`Output`);
+            setViewMenuTitle(appState.currentView?.name || 'Output');
             buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstanceIndex);
             break;
     }
@@ -2308,5 +2422,4 @@ module.exports = {
     switchViewMenu,
     setViewMenuTitle,
     constructViewDataViaPreferences
-
 };

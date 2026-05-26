@@ -1,5 +1,7 @@
 const eCharts = require('../lib/echarts/echarts.js');
 
+const { varDefaultUnits } = require('./objects.js');
+
 function getPlotPalette() {
     return [
         '#5470c6',
@@ -29,6 +31,7 @@ function zipXYArrays(xValues, yValues) {
     if (!Array.isArray(xValues) || !Array.isArray(yValues)) {
         return [];
     }
+    const { varDefaultUnits } = require('./objects.js');
 
     let points = [];
     let pairCount = Math.min(xValues.length, yValues.length);
@@ -302,6 +305,9 @@ function initTimeline(state, deps, DOM_Deps) {
                     label: {
                         show: true,
                         formatter: function(params) {
+                            if (typeof params.value === 'number') {
+                                return params.value.toFixed(2);
+                            }
                             if (!params.value) return '';
                             const date = new Date(params.value);
                             if (state.mapTimeline12hrClock) {
@@ -506,7 +512,12 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
     let hasMultipleXAxes = xAxisInstances.length > 1;
     let axisPointerXAxisIndex = 0;
     let xAxisConfigs = xAxisInstances.map((xAxisInstance, index) => {
-        let axisUnitRaw = xAxisInstance.Unit || '';
+        let axisVar = xAxisInstance.Data;
+        let axisUnitRaw = (xAxisInstance.Unit && xAxisInstance.Unit.trim())
+            ? xAxisInstance.Unit.trim()
+            : (axisVar && varDefaultUnits[axisVar])
+                ? varDefaultUnits[axisVar]
+                : '';
         let axisConfig = {
             type: 'value',
             position: index === 0 ? 'bottom' : 'top',
@@ -534,7 +545,13 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
             axisPointer: {
                 show: includeAxisPointer,
                 label: {
-                    show: includeAxisPointer && index === axisPointerXAxisIndex
+                    show: includeAxisPointer && index === axisPointerXAxisIndex,
+                    formatter: function(params) {
+                        if (typeof params.value === 'number') {
+                            return params.value.toFixed(2);
+                        }
+                        return params.value;
+                    }
                 }
             }
         };
@@ -584,6 +601,27 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
     }));
 
     let yAxisInstance = thisChartsAxis.find(axisInstance => axisInstance.AxisSide === 'Y');
+    let yAxisVar = yAxisInstance && yAxisInstance.Data;
+    let config = deps && deps.config;
+    let forceDepthY = false;
+    if (config && typeof config.get === 'function') {
+        try {
+            forceDepthY = config.get('view', 'ensureYAxisIsAlwaysDisplaysDEPTH');
+        } catch (e) { forceDepthY = false; }
+    }
+    let yAxisLabel = forceDepthY ? 'DEPTH' : (Yaxis || '');
+    let yAxisUnitRaw = (function() {
+        if (forceDepthY) {
+            return varDefaultUnits['DEPTH'] || '';
+        }
+        if (yAxisInstance && yAxisInstance.Unit && yAxisInstance.Unit.trim()) {
+            return yAxisInstance.Unit.trim();
+        }
+        if (yAxisVar && varDefaultUnits[yAxisVar]) {
+            return varDefaultUnits[yAxisVar];
+        }
+        return '';
+    })();
     let dataZoomConfigs = [];
 
     if (thisChartInstance.general?.EnableZoom) {
@@ -699,7 +737,13 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
             axis: 'y',
             snap: false,
             label: {
-                show: includeAxisPointer
+                show: includeAxisPointer,
+                formatter: function(params) {
+                    if (typeof params.value === 'number') {
+                        return params.value.toFixed(2);
+                    }
+                    return params.value;
+                }
             }
         },
         tooltip: {
@@ -713,6 +757,9 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 }
             } : undefined,
             formatter: function(params) {
+                function truncate(val) {
+                    return (typeof val === 'number') ? val.toFixed(2) : val;
+                }
                 if (includeAxisPointer) {
                     let tooltipParams = Array.isArray(params) ? params : [params];
                     let firstParam = tooltipParams.find(seriesParam => {
@@ -725,13 +772,13 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                     }
 
                     let tooltipLines = [
-                        `${firstParam.axisDimension || 'X'}: ${firstParam.axisValue ?? '?'}`
+                        `${forceDepthY ? 'DEPTH' : (yAxisVar ? yAxisVar : 'Y')}: ${truncate(firstParam.axisValue ?? '?')}`
                     ];
 
                     tooltipParams.forEach((seriesParam) => {
                         let point = Array.isArray(seriesParam.data) ? seriesParam.data : [];
-                        let xValue = point[0] ?? '?';
-                        let yValue = point[1] ?? '?';
+                        let xValue = truncate(point[0] ?? '?');
+                        let yValue = truncate(point[1] ?? '?');
                         let meta = seriesParam.seriesIndex != null ? (series[seriesParam.seriesIndex]?.meta || {}) : (seriesParam.seriesModel?.option?.meta || {});
                         let seriesColor = typeof seriesParam.color === 'string' ? seriesParam.color : (seriesParam.color?.colorStops?.[0]?.color || '#333');
                         tooltipLines.push(`<div style="border-left: 8px solid ${seriesColor}; padding-left: 10px; margin-top: 4px; color: #000;"><div style="font-weight: 600; color: #000;">${meta.fileName || seriesParam.seriesName}</div><div style="color: #000;">${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}</div></div>`);
@@ -741,8 +788,8 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 }
 
                 let point = Array.isArray(params.data) ? params.data : [];
-                let xValue = point[0] ?? '?';
-                let yValue = point[1] ?? '?';
+                let xValue = truncate(point[0] ?? '?');
+                let yValue = truncate(point[1] ?? '?');
                 let meta = params.seriesIndex != null ? (series[params.seriesIndex]?.meta || {}) : (params.seriesModel?.option?.meta || {});
                 let seriesColor = typeof params.color === 'string' ? params.color : (params.color?.colorStops?.[0]?.color || '#333');
                 return `<div style="border-left: 8px solid ${seriesColor}; padding-left: 10px; color: #000;"><div style="font-weight: 600; color: #000;">${meta.fileName || params.seriesName}</div><div style="color: #000;">${meta.xAxisVarName || 'X'}: ${xValue}<br>${meta.yAxisVarName || 'Y'}: ${yValue}<br>Timestamp: ${meta.timestampIndex ?? '?'}</div></div>`;
@@ -763,9 +810,10 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
         xAxis: xAxisConfigs,
         yAxis: {
             type: 'value',
-            name: Yaxis || '',
+            name: yAxisLabel,
             nameLocation: 'middle',
-            nameGap: 64, // Increased gap for more space between label and numbers
+            // Dynamic gap: base 72 + 1.5px per character in label+unit (gentler scaling)
+            nameGap: Math.max(72, 64 + 1.5 * ((yAxisLabel ? yAxisLabel.length : 0) + (yAxisUnitRaw ? yAxisUnitRaw.length : 0))),
             min: function(axisExtent) {
                 return getPaddedAxisMin(axisExtent);
             },
@@ -775,13 +823,19 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
             axisLabel: {
                 show: true,
                 formatter: function(value) {
-                    return yAxisInstance && yAxisInstance.Unit ? `${value} ${yAxisInstance.Unit}` : value;
+                    return yAxisUnitRaw ? `${value} ${yAxisUnitRaw}` : value;
                 }
             },
             axisPointer: {
                 show: includeAxisPointer,
                 label: {
-                    show: includeAxisPointer
+                    show: includeAxisPointer,
+                    formatter: function(params) {
+                        if (typeof params.value === 'number') {
+                            return params.value.toFixed(2);
+                        }
+                        return params.value;
+                    }
                 }
             },
             inverse: true
