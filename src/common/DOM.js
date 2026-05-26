@@ -541,27 +541,54 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
     }
 
     // Create marker with optional custom options
-    let gliderIcon= null;
+
+    // Platform icon style dictionary (numbers 1-4)
+    const PlatformIconStyleDict = {
+        1: ["GliderIcon.png", 40],
+        2: ["ArgoFloatIcon.png", 60],
+        3: ["FloatSplashIconRedoScaledDone.png", 60],
+        4: ["altFloatIcon.png", 38]
+    };
+
+    // Get the current PlatformIconStyle setting (default to 1 if not set)
+    let platformIconStyle = 1;
+    let platformIconSize = 60;
+    try {
+        if (dep && dep.config && typeof dep.config.get === 'function') {
+            const val = dep.config.get('basics', 'PlatformIconStyle');
+            if (typeof val === 'number' && val >= 1 && val <= 4) {
+                platformIconStyle = val;
+                platformIconSize = PlatformIconStyleDict[platformIconStyle][1] || 60; // Get size from dict or default to 60
+            }
+        }
+    } catch (e) { platformIconStyle = 1; }
+
+    // Use the value from the dictionary (first element of the array for now)
+    let platformIconFile = PlatformIconStyleDict[platformIconStyle][0];
+    // Fallback if blank
+    if (!platformIconFile) platformIconFile = "FloatSplashIconRedoScaledDone.png";
+
+    let gliderIcon = null;
     if (instance) {
         gliderIcon = L.icon({
-                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "bullseye.png"),
-                iconSize: [35, 35],
-                // iconAnchor: [16, 32],
-                // popupAnchor: [0, -32]
+            iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "bullseye.png"),
+            iconSize: [35, 35],
+            // iconAnchor: [16, 32],
+            // popupAnchor: [0, -32]
         });
     } else {
         gliderIcon = L.icon({
-                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", "FloatSplashIconRedoScaledDone.png"),
-                iconSize: [60, 60],
-                // iconAnchor: [16, 32],
-                // popupAnchor: [0, -32]
+            iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", platformIconFile),
+            iconSize: [platformIconSize, platformIconSize],
+            // iconAnchor: [16, 32],
+            // popupAnchor: [0, -32]
         });
     }
-    if (customImage){
+    if (customImage) {
         gliderIcon = L.icon({
-                iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", customImage),
-                iconSize: [40, 40]
-                });
+            iconUrl: path.join(pathDep.fromHereToRoot(__dirname), "src", "media", customImage),
+            iconSize: [40, 40]
+        });
     }
     
     const marker = L.marker([lat, lon], { ...markerOptions, icon: gliderIcon }).addTo(state.map);
@@ -1222,6 +1249,21 @@ function dom_constructSettingsMenu(state, deps){
             if (settingTargetName === 'sidebarListFontSize') {
                 applySidebarEntryFontSize(deps);
             }
+
+            // If this is a general chart setting, update all chart instance plots
+            // (Assume general chart settings are in the 'General' section and match keys in chartInstance.general)
+            if (settingSection === 'General') {
+                if (state.currentView && Array.isArray(state.currentView.chartInstances)) {
+                    for (let i = 0; i < state.currentView.chartInstances.length; i++) {
+                        if (state.currentView.chartInstances[i].general.hasOwnProperty(settingTargetName)) {
+                            // Update the general setting for all chart instances
+                            state.currentView.chartInstances[i].general[settingTargetName] = sectionUIType === 'checkbox' ? settingInputElm.checked : settingInputElm.value;
+                            // Live update the plot
+                            updateChartInstancePlot(state, window.ModuleDependencies, i);
+                        }
+                    }
+                }
+            }
         });
 
         // find the correct section for this setting instance and append the setting DOM elements to that section (via Data and DOM)
@@ -1514,6 +1556,7 @@ function hasRenderableViewData(view = {}) {
 }
 
 function validateCurrentViewReferences(appState, deps) {
+    deps = deps || (typeof window !== 'undefined' && window.ModuleDependencies) || {};
     const { fileHandle, pathDep } = deps;
     const dataFiles = Array.isArray(appState.currentView?.data) ? appState.currentView.data : [];
     const missingSavedDataFiles = [];
@@ -1885,26 +1928,85 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
 
                 if (setting === "Name") {
                     settingInput.value = generalSettings[setting] || `Chart ${chartInstanceIndex + 1}`;
-
-                    
                     settingInput.addEventListener('input', function() {
                         appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.value;
                         appState.currentView.chartInstances[chartInstanceIndex].obj.getElementsByClassName('instanceOptionWrapper')[0].getElementsByClassName('viewConfigOption')[0].textContent = settingInput.value;
                         setViewMenuTitle(`${settingInput.value} General Settings`);
-                        // 117 appState.currentView.chartInstances[chartInstanceIndex].obj.getElementsByClassName('instanceOptionWrapper')[1].getElementsByClassName('viewConfigOption')[0].textContent = settingInput.value;
+                        // Live update plot on name change
+                        updateChartInstancePlot(appState, window.ModuleDependencies, chartInstanceIndex);
                         console.log(`Updated setting ${setting} to`, settingInput.value);
                     });
                     continue; // skip adding another event listener below since it's already added here for the Name setting
                 }
-                
+
                 settingInput.addEventListener('input', function() {
                     if (settingInput.type === 'checkbox') {
                         appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.checked;
                     } else {
                         appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.value;
                     }
+                    // Immediately refresh the chart UI and plot after any general setting change
+                    if (typeof window.DOM !== 'undefined' && typeof window.DOM.renderCharts === 'function') {
+                        window.DOM.renderCharts(appState, window.ModuleDependencies);
+                    } else if (typeof renderCharts === 'function') {
+                        renderCharts(appState, window.ModuleDependencies);
+                    }
                     console.log(`Updated setting ${setting} to`, settingInput.type === 'checkbox' ? settingInput.checked : settingInput.value);
                 });
+            // Update chart instance plot in-place when general settings change
+            function updateChartInstancePlot(appState, deps, chartInstanceIndex) {
+                try {
+                    const chartInstance = appState.currentView.chartInstances[chartInstanceIndex];
+                    if (!chartInstance || !chartInstance.plotObject || !chartInstance.plotObject.chartObject) return;
+                    // Rebuild the option using the latest settings, but keep the data
+                    // Use the same logic as in buildPlotInstance, but only update option
+                    // (We assume dataMap and axis are unchanged for general settings)
+                    let charts = (deps && deps.charts) || (typeof window !== 'undefined' && window.ModuleDependencies && window.ModuleDependencies.charts) || null;
+                    if (!charts) return;
+
+                    // Rebuild the option using buildPlotInstance logic, but do not recreate the chart
+                    // Instead, call buildPlotInstance to get the new option, then setOption
+                    // We'll call buildPlotInstance with a flag to only return the option
+                    if (typeof charts.buildPlotInstance === 'function') {
+                        // Patch: buildPlotInstance returns a chartElement, but we want the option
+                        // So, we temporarily patch eCharts.init to a dummy that captures the option
+                        let optionResult = null;
+                        const origEChartsInit = window.eCharts?.init;
+                        window.eCharts = window.eCharts || {};
+                        window.eCharts.init = function(dummyDiv) {
+                            return {
+                                setOption: function(option) { optionResult = option; },
+                                on: function() {},
+                                off: function() {},
+                                isDisposed: function() { return false; },
+                                dispose: function() {},
+                                resize: function() {},
+                            };
+                        };
+                        charts.buildPlotInstance(appState, deps, chartInstanceIndex);
+                        // Restore eCharts.init
+                        if (origEChartsInit) window.eCharts.init = origEChartsInit;
+                        // Now set the option on the real chart
+                        if (optionResult) {
+                            // Force a full UI and plot refresh for all chart instances
+                            if (typeof window.DOM !== 'undefined' && typeof window.DOM.renderCharts === 'function') {
+                                window.DOM.renderCharts(appState, deps);
+                            } else if (typeof renderCharts === 'function') {
+                                renderCharts(appState, deps);
+                            }
+                            if (typeof charts.buildPlots === 'function') {
+                                charts.buildPlots(appState, deps);
+                            } else if (typeof window.DOM !== 'undefined' && typeof window.DOM.buildPlots === 'function') {
+                                window.DOM.buildPlots(appState, deps);
+                            } else if (typeof buildPlots === 'function') {
+                                buildPlots(appState, deps);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to update chart instance plot:', e);
+                }
+            }
             }
 
             break;
@@ -2373,7 +2475,7 @@ function constructViewDataViaPreferences(appState, deps, viewPreferences){
         return true;
     });
     if (isPresDataMissing) {
-        alert("Some files were excluded from the view because they are missing a usable depth axis variable (PRES or PRES_ADJUSTED). Please check your files and try again.");
+        alert("Some files were excluded from the view because they are missing a usable depth axis variable (PRES or PRES_ADJUSTED). Re-evaluate your file selection if this was not intended.");
     }
 
     return resultingData;

@@ -1,10 +1,11 @@
 enableDebug: false
 DebugFS: true
-DebugEvents: true
+DebugCalc: true
 DebugInput: true
 DebugState: true
 DebugQueues: true
-DebugInteractions: true
+DebugView: true
 DebugMap: true
-DebugMapMarkers: true
+DebugPlot: true
 onlyLogSeriousNotifications: true
+DebugELECTRON: true

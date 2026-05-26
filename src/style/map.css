@@ -9,3 +9,42 @@
     margin-top: 10px;
     margin-bottom: 10px;
 }
+
+/* Style for the location filter reset button */
+.resetLocationFilterButton {
+    background-color: var(--buttonColorStatic);
+    color: #222;
+    border: 1.5px solid #00000031;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: 500;
+    padding: 5px 18px;
+    min-width: 40px;
+    height: 40px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    box-shadow: #0000002a 0px 2px 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: var(--buttonAnim);
+}
+.resetLocationFilterButton:hover {
+    background-color: var(--buttonColor);
+    color: #fff;
+    border-radius: 10px;
+    box-shadow: #0000002a 0px 4px 4px;
+    transition: var(--buttonAnimHover);
+}
+.resetLocationFilterButton:active {
+    background-color: var(--buttonColorActive);
+    color: #fff;
+    border-radius: 50px;
+    box-shadow: #ffffff2a 0px 4px 4px inset;
+    transition: var(--buttonAnimActive);
+}

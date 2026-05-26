@@ -38,10 +38,8 @@
 
 
 * add trace stack line numbers for warning notification posts
-* need setting for hiding vars unbalanced.
-* slider setting for different floats.
 * make general settings for views update right away.
-* make it so that the debug classes actually work with the logging system.
 * leaflet legal page.
 * eval highlight over all elements that shouldnt highlight.
 * I CANT CHANGE TEXT NAME FEILDS.
+* next zoom for offline map.

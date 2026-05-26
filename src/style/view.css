@@ -1,3 +1,18 @@
+/* Prevent text selection for the view menu title */
+#viewMenuTitle {
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+}
+/* Prevent text selection for createNewViewForm and its children */
+#createNewViewForm,
+#createNewViewForm * {
+	user-select: none;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+}
 @import url('objects.css');
 /* View page card and form styling */
 .viewPage {

@@ -83,7 +83,23 @@ function log(params = {}) {
     }
     if (!params.ignoreLogging){
         if(config.get('debug', 'enableDebug')){
-            writeToLogFile(contentArrangement1);
+            // Map log class to config debug key
+            const classKeyMap = {
+                'INPUT': 'DebugInput',
+                'FS': 'DebugFS',
+                'CALC': 'DebugCalc',
+                'MAP': 'DebugMap',
+                'VIEW': 'DebugView',
+                'PLOT': 'DebugPlot',
+                'STATE': 'DebugState',
+                'QUEUE': 'DebugQueues',
+                'ELECTRON': 'DebugELECTRON'
+            };
+            const logClass = (params.class || '').toUpperCase();
+            const debugKey = classKeyMap[logClass];
+            if(debugKey && config.get('debug', debugKey)){
+                writeToLogFile(contentArrangement1);
+            }
         }
     }
 }

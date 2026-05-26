@@ -555,25 +555,26 @@
                     </div>
 
                     <div class="LocationFilterWrapper" id="LocationFilterWrapper">
-                    <div class="locFiltMap"></div>
-                    <div class="filtInputsWrapper">
-                        <div class="filtInputInstanceWrapper">
-                            <h5>N</h5>
-                            <input type="number" class="locFiltInput" id="latMin" value="-90" step="0.000001" min="-90" max="90">
+                        <div class="locFiltMap"></div>
+                        <div class="filtInputsWrapper">
+                            <div class="filtInputInstanceWrapper">
+                                <h5>N</h5>
+                                <input type="number" class="locFiltInput" id="latMin" value="-90" step="0.000001" min="-90" max="90">
+                            </div>
+                            <div class="filtInputInstanceWrapper">
+                                <h5>S</h5>
+                                <input type="number" class="locFiltInput" id="latMax" value="90" step="0.000001" min="-90" max="90">
+                            </div>
+                            <div class="filtInputInstanceWrapper">
+                                <h5>W</h5>
+                                <input type="number" class="locFiltInput" id="lonMin" value="-180" step="0.000001" min="-180" max="180">
+                            </div>
+                            <div class="filtInputInstanceWrapper">
+                                <h5>E</h5>
+                                <input type="number" class="locFiltInput" id="lonMax" value="180" step="0.000001" min="-180" max="180">
+                            </div>
                         </div>
-                        <div class="filtInputInstanceWrapper">
-                            <h5>S</h5>
-                            <input type="number" class="locFiltInput" id="latMax" value="90" step="0.000001" min="-90" max="90">
-                        </div>
-                        <div class="filtInputInstanceWrapper">
-                            <h5>W</h5>
-                            <input type="number" class="locFiltInput" id="lonMin" value="-180" step="0.000001" min="-180" max="180">
-                        </div>
-                        <div class="filtInputInstanceWrapper">
-                            <h5>E</h5>
-                            <input type="number" class="locFiltInput" id="lonMax" value="180" step="0.000001" min="-180" max="180">
-                        </div>
-                    </div>
+                        <button id="resetLocationFilterButton" class="resetLocationFilterButton" style="margin-top:10px;">Reset</button>
                     </div>
             `
         },
@@ -2003,6 +2004,8 @@ userInteractions.userint_focusOnMarker(appState);
         }
 
         if (areFileVarsUnbalanced) {
+            // Check HideVarsUnbalancedPopup setting
+            const hideVarsUnbalanced = config.get('view', 'HideVarsUnbalancedPopup');
             logging.log(params={
                 callerInfo:basicFunctions.getCallerInfo(),
                 state:appState,
@@ -2016,8 +2019,8 @@ userInteractions.userint_focusOnMarker(appState);
                 code: '0001',
                 class:'INPUT',
                 ignoreConsole: false,
-                ignorePopup: false,
-                ignoreNotification: false,
+                ignorePopup: !!hideVarsUnbalanced,
+                ignoreNotification: !!hideVarsUnbalanced,
                 ignoreLogging: false
             });
         }
@@ -2134,5 +2137,48 @@ userInteractions.userint_focusOnMarker(appState);
 
     });
 
+    function setupLocationFilterResetButton() {
+        const resetBtn = document.getElementById('resetLocationFilterButton');
+        if (!resetBtn) return;
+        resetBtn.addEventListener('click', function() {
+            // Default values
+            const defaults = {
+                latMin: -90,
+                latMax: 90,
+                lonMin: -180,
+                lonMax: 180
+            };
+            // Reset input fields
+            document.getElementById('latMin').value = defaults.latMin;
+            document.getElementById('latMax').value = defaults.latMax;
+            document.getElementById('lonMin').value = defaults.lonMin;
+            document.getElementById('lonMax').value = defaults.lonMax;
+
+            // Update appState boundaries if used
+            if (window.appState && appState.mapLocationFiltering) {
+                appState.mapLocationFiltering.latMin = defaults.latMin;
+                appState.mapLocationFiltering.latMax = defaults.latMax;
+                appState.mapLocationFiltering.lonMin = defaults.lonMin;
+                appState.mapLocationFiltering.lonMax = defaults.lonMax;
+            }
+
+            // If the map boundary is visualized, reset it as well
+            if (appState.mapLocationFiltering.locationFilterBounds && typeof appState.mapLocationFiltering.locationFilterBounds.setBounds === 'function') {
+                // Assuming setBounds takes [[southWestLat, southWestLng], [northEastLat, northEastLng]]
+                appState.mapLocationFiltering.locationFilterBounds.setBounds([
+                    [defaults.latMin, defaults.lonMin],
+                    [defaults.latMax, defaults.lonMax]
+                ]);
+            }
+
+            // Also update the rectangle and fit map, and trigger filter update
+            if (typeof updateLocationFilterBounds === 'function') {
+                updateLocationFilterBounds();
+            }
+        });
+    }
+
+    // After popup content is rendered, call this:
+    setupLocationFilterResetButton();
 </script>
 </html>

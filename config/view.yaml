@@ -1,4 +1,5 @@
 HideQCVarsForAxisDropdown: true
 HideDMVarsForAxisDropdown: true
 HideERRORVarsForAxisDropdown: true
-ensureYAxisIsAlwaysDisplaysDEPTH: true
+HideVarsUnbalancedPopup: false
+ensureYAxisIsAlwaysDisplaysDEPTH: false
