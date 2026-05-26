@@ -506,6 +506,7 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
     let hasMultipleXAxes = xAxisInstances.length > 1;
     let axisPointerXAxisIndex = 0;
     let xAxisConfigs = xAxisInstances.map((xAxisInstance, index) => {
+        let axisUnitRaw = xAxisInstance.Unit || '';
         let axisConfig = {
             type: 'value',
             position: index === 0 ? 'bottom' : 'top',
@@ -522,8 +523,14 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
                 show: true
             },
             axisLabel: {
-                show: true
+                show: true,
+                formatter: function(value) {
+                    return axisUnitRaw ? `${value} ${axisUnitRaw}` : value;
+                }
             },
+            name: xAxisInstance.Data || '',
+            nameLocation: 'middle',
+            nameGap: index === 0 ? 34 : 28,
             axisPointer: {
                 show: includeAxisPointer,
                 label: {
@@ -539,47 +546,44 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
         return axisConfig;
     });
 
+    // Restore xAxisNameGraphics for X axis label overlay, and remove axis name property from xAxisConfigs
     let xAxisNameGraphics = [];
-
-    if (thisChartInstance.general?.EnableZoom) {
-        if (xAxisInstances[0]) {
-            xAxisNameGraphics.push({
-                type: 'text',
-                left: '50%',
-                bottom: 20,
-                silent: true,
-                style: {
-                    text: xAxisInstances[0].Data,
-                    fill: '#666',
-                    font: '12px sans-serif',
-                    textAlign: 'center'
-                }
-            });
-        }
-
-        if (hasMultipleXAxes && xAxisInstances[1]) {
-            xAxisNameGraphics.push({
-                type: 'text',
-                left: '50%',
-                top: 72,
-                silent: true,
-                style: {
-                    text: xAxisInstances[1].Data,
-                    fill: '#666',
-                    font: '12px sans-serif',
-                    textAlign: 'center'
-                }
-            });
-        }
-    } else {
-        xAxisConfigs = xAxisConfigs.map((axisConfig, index) => ({
-            ...axisConfig,
-            name: xAxisInstances[index]?.Data,
-            nameLocation: 'middle',
-            nameGap: index === 0 ? 34 : 28
-        }));
+    if (xAxisInstances[0]) {
+        xAxisNameGraphics.push({
+            type: 'text',
+            left: '50%',
+            bottom: 20,
+            silent: true,
+            style: {
+                text: xAxisInstances[0].Data,
+                fill: '#666',
+                font: '12px sans-serif',
+                textAlign: 'center'
+            }
+        });
     }
+    if (hasMultipleXAxes && xAxisInstances[1]) {
+        xAxisNameGraphics.push({
+            type: 'text',
+            left: '50%',
+            top: 72,
+            silent: true,
+            style: {
+                text: xAxisInstances[1].Data,
+                fill: '#666',
+                font: '12px sans-serif',
+                textAlign: 'center'
+            }
+        });
+    }
+    xAxisConfigs = xAxisConfigs.map((axisConfig) => ({
+        ...axisConfig,
+        name: '', // Remove axis name property to avoid duplicate X axis labels
+        nameLocation: 'middle',
+        nameGap: 34
+    }));
 
+    let yAxisInstance = thisChartsAxis.find(axisInstance => axisInstance.AxisSide === 'Y');
     let dataZoomConfigs = [];
 
     if (thisChartInstance.general?.EnableZoom) {
@@ -759,14 +763,20 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
         xAxis: xAxisConfigs,
         yAxis: {
             type: 'value',
-            name: Yaxis,
+            name: Yaxis || '',
             nameLocation: 'middle',
-            nameGap: 48,
+            nameGap: 64, // Increased gap for more space between label and numbers
             min: function(axisExtent) {
                 return getPaddedAxisMin(axisExtent);
             },
             max: function(axisExtent) {
                 return getPaddedAxisMax(axisExtent);
+            },
+            axisLabel: {
+                show: true,
+                formatter: function(value) {
+                    return yAxisInstance && yAxisInstance.Unit ? `${value} ${yAxisInstance.Unit}` : value;
+                }
             },
             axisPointer: {
                 show: includeAxisPointer,

@@ -2025,7 +2025,8 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
     addAxisButton.addEventListener('click', function() {
         let newAxis = {
             AxisSide: "X",
-            Data: null
+            Data: null,
+            Unit: ''
         };
         appState.currentView.chartInstances[chartInstanceIndex].axis.push(newAxis);
         menuWrapper.innerHTML = '';
@@ -2091,7 +2092,6 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
 
         // Axis Side Dropdown
         let axisSideSelect = document.createElement('select');
-        //axisSideSelect.style.flex = '1';
         axisSideSelect.style.width = '10%';
         axisSideSelect.style.marginLeft = '5px';
         ['X', 'Y'].forEach(opt => {
@@ -2101,6 +2101,7 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
         });
         let currentSide = appState.currentView.chartInstances[chartInstanceIndex].axis[index].AxisSide;
         if (currentSide) axisSideSelect.value = currentSide;
+
 
         // Var Dropdown Content
         let axisContent = document.createElement('div');
@@ -2167,6 +2168,35 @@ function renderAxisChartInstance(appState, deps, menuWrapper, chartInstanceIndex
         axisRow.appendChild(axisSideSelect);
         axisRow.appendChild(axisSelect);
         axisRow.appendChild(removeButton);
+
+        // Axis dropdown content (expanded panel)
+        // Add Axis Unit input as the first (and currently only) option
+        let axisUnitInput = document.createElement('input');
+        axisUnitInput.type = 'text';
+        axisUnitInput.placeholder = 'Axis Unit';
+        axisUnitInput.style.width = '120px';
+        axisUnitInput.style.margin = '8px 0 8px 0';
+        axisUnitInput.value = appState.currentView.chartInstances[chartInstanceIndex].axis[index].Unit || '';
+        axisUnitInput.addEventListener('input', function() {
+            appState.currentView.chartInstances[chartInstanceIndex].axis[index].Unit = axisUnitInput.value;
+        });
+        // Label and input for unit, side by side
+        let axisUnitWrapper = document.createElement('div');
+        axisUnitWrapper.style.display = 'flex';
+        axisUnitWrapper.style.alignItems = 'center';
+        axisUnitWrapper.style.gap = '8px';
+        axisUnitWrapper.style.margin = '8px 0 8px 0';
+
+        let axisUnitLabel = document.createElement('label');
+        axisUnitLabel.textContent = 'Axis Unit:';
+        axisUnitLabel.style.fontSize = '0.95em';
+        axisUnitLabel.style.margin = '0';
+
+        axisUnitInput.style.margin = '0';
+
+        axisUnitWrapper.appendChild(axisUnitLabel);
+        axisUnitWrapper.appendChild(axisUnitInput);
+        axisContent.appendChild(axisUnitWrapper);
 
         menuWrapper.appendChild(axisRow);
         menuWrapper.appendChild(axisContent);
