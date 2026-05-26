@@ -606,7 +606,7 @@ function buildPlotInstance(appState, deps, chartInstanceIndex) {
     let forceDepthY = false;
     if (config && typeof config.get === 'function') {
         try {
-            forceDepthY = config.get('view', 'ensureYAxisIsAlwaysDisplaysDEPTH');
+            forceDepthY = config.get('view', 'ensureYAxisAlwaysDisplaysDEPTH');
         } catch (e) { forceDepthY = false; }
     }
     let yAxisLabel = forceDepthY ? 'DEPTH' : (Yaxis || '');

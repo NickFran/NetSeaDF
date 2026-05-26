@@ -3,3 +3,5 @@ HideDMVarsForAxisDropdown: true
 HideERRORVarsForAxisDropdown: true
 HideVarsUnbalancedPopup: false
 ensureYAxisIsAlwaysDisplaysDEPTH: false
+IgnoreNoPresDataPopup: false
+ensureYAxisAlwaysDisplaysDEPTH: false

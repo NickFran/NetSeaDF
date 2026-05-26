@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" type="image/png" href="build/favicon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -414,7 +415,7 @@
                 <form id="createNewViewForm">
                     <div class="inputFormWrapper">
                         <h5>Name: </h5>
-                        <input type="string" id="newViewName" name="newViewName" value="Test Input">
+                        <input type="string" id="newViewName" name="newViewName" value="My View">
                     </div>
                     <div class="inputFormWrapper">
                         <h5>Type: </h5>
@@ -468,6 +469,14 @@
     // document.getElementById('chartInstanceSettingsMenu').style.display = 'none';
     // document.getElementById('chartInstanceGeneralSettingsMenu').style.display = 'none';
     // document.getElementById('chartInstanceAxisSettingsMenu').style.display = 'none';
+
+    // Set default value for newViewName when New View button is clicked
+    document.getElementById('NewViewButton').addEventListener('click', function() {
+        const newViewNameInput = document.getElementById('newViewName');
+        if (newViewNameInput) {
+            newViewNameInput.value = 'New View';
+        }
+    });
 </script>
 <script>    
         const mapFilterDropdownWrapper = document.createElement("div");

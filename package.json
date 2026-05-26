@@ -1,7 +1,7 @@
 {
   "name": "NetSeaDF",
   "version": "1.2.0",
-  "description": "NetSeaDF - Data Visualization Application",
+  "description": "NetSeaDF - NetCDF Visualization Application",
   "author": "Nick",
   "main": "./src/main.js",
   "scripts": {

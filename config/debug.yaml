@@ -7,5 +7,5 @@ DebugQueues: true
 DebugView: true
 DebugMap: true
 DebugPlot: true
-onlyLogSeriousNotifications: true
+onlyLogSeriousNotifications: false
 DebugELECTRON: true

@@ -7,6 +7,7 @@ afterPack: build/afterPack.js
 win:
   target: nsis
   signAndEditExecutable: false
+  icon: build/icon.ico
   extraResources:
     - from: PythonPortable/
       to: PythonPortable/
@@ -22,7 +23,7 @@ win:
 mac:
   target: dmg
   category: public.app-category.utilities
-  icon: null
+  icon: build/icon.icns
   extraResources:
     - from: PythonPortableMac_arm64/
       to: PythonPortableMac_arm64/

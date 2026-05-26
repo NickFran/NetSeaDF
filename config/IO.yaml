@@ -2,4 +2,4 @@ enableSaveOverwriting_ForViews: false
 enableImportOverWritting_ForPlatforms: false
 EnableImportOverwrittingForTransferedPlatforms: false
 EnableImportOverwrittingForTransferedViews: false
-enableSaveOverWritting_ForViews: true
+enableSaveOverWritting_ForViews: false

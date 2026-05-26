@@ -125,6 +125,9 @@ function createWindow() {
     win = new BrowserWindow({ 
         width: 1920, height: 1080,
         //autoHideMenuBar: true,  // Hide menu bar
+        icon: process.platform === 'darwin'
+            ? path.join(__dirname, 'build', 'icon.icns')
+            : path.join(__dirname, 'build', 'icon.ico'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
