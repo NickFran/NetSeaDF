@@ -22,8 +22,10 @@ win:
 
 mac:
   target:
-    - universal
-    - dmg
+    - target: "dmg"
+      arch: "universal"
+    - target: "zip"
+      arch: "universal"
   category: public.app-category.utilities
   icon: build/icon.icns
   extraResources:
