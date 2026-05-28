@@ -896,9 +896,20 @@ function getSidebarEntryObjectFromFileName(fileName) {
 }
 
 function leaf_filterPlatformsByTimeRange(state, dep, startTime, endTime) {
-    const {pathDep, fileHandle, integrations} = dep;
-
-    let data = fileHandle.getAllSimpleData();
+    const fileHandle = dep && dep.fileHandle;
+    if (!fileHandle || typeof fileHandle.getAllSimpleData !== 'function') {
+        console.error('leaf_filterPlatformsByTimeRange: fileHandle is undefined or invalid');
+        handleMarkerFiltering(state);
+        return;
+    }
+    let data;
+    try {
+        data = fileHandle.getAllSimpleData();
+    } catch (e) {
+        console.error('leaf_filterPlatformsByTimeRange: error getting data:', e);
+        handleMarkerFiltering(state);
+        return;
+    }
     for (const entry of JSON.parse(data)) {
         let currentEvalTimestamp = entry.timestamps["formatted"][0];
         // Convert all to Date objects for robust comparison
@@ -906,44 +917,56 @@ function leaf_filterPlatformsByTimeRange(state, dep, startTime, endTime) {
         let startDate = new Date(startTime);
         let endDate = new Date(endTime);
         if (evalDate > startDate && evalDate < endDate) {
-            state.markers[entry.fileName].isFiltered = false;
+            if (state.markers[entry.fileName]) state.markers[entry.fileName].isFiltered = false;
         } else {
-            state.markers[entry.fileName].isFiltered = true;
+            if (state.markers[entry.fileName]) state.markers[entry.fileName].isFiltered = true;
         }
 
-        if (state.markers[entry.fileName].isFiltered || state.markers[entry.fileName].isLocFiltered){
+        if (state.markers[entry.fileName]) {
+            if (state.markers[entry.fileName].isFiltered || state.markers[entry.fileName].isLocFiltered){
                 leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
             } else {
                 leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
             }
+        }
     }
-    
     handleMarkerFiltering(state);
 }
 
 function leaf_filterPlatformsByLocation(state, dep) {
-    const {pathDep, fileHandle, integrations} = dep;
-
-    let data = fileHandle.getAllSimpleData();
+    const fileHandle = dep && dep.fileHandle;
+    if (!fileHandle || typeof fileHandle.getAllSimpleData !== 'function') {
+        console.error('leaf_filterPlatformsByLocation: fileHandle is undefined or invalid');
+        handleMarkerFiltering(state);
+        return;
+    }
+    let data;
+    try {
+        data = fileHandle.getAllSimpleData();
+    } catch (e) {
+        console.error('leaf_filterPlatformsByLocation: error getting data:', e);
+        handleMarkerFiltering(state);
+        return;
+    }
     for (const entry of JSON.parse(data)) {
         let currentEvalLocation = entry.coords[0];
-        
         if (currentEvalLocation["lat"] > state.mapLocationFiltering.latMin && currentEvalLocation["lat"] < state.mapLocationFiltering.latMax
             && 
             currentEvalLocation["lon"] > state.mapLocationFiltering.lonMin && currentEvalLocation["lon"] < state.mapLocationFiltering.lonMax) 
-            {
-                state.markers[entry.fileName].isLocFiltered = false;
-            } else {
-                state.markers[entry.fileName].isLocFiltered = true;
-            }
+        {
+            if (state.markers[entry.fileName]) state.markers[entry.fileName].isLocFiltered = false;
+        } else {
+            if (state.markers[entry.fileName]) state.markers[entry.fileName].isLocFiltered = true;
+        }
 
-        if (state.markers[entry.fileName].isFiltered || state.markers[entry.fileName].isLocFiltered){
+        if (state.markers[entry.fileName]) {
+            if (state.markers[entry.fileName].isFiltered || state.markers[entry.fileName].isLocFiltered){
                 leaf_OpaqueMapMarker(state, entry.fileName, .2, 0, false);
             } else {
                 leaf_OpaqueMapMarker(state, entry.fileName, 1, 0, false);
             }
+        }
     }
-    
     handleMarkerFiltering(state);
 }
 

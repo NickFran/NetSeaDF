@@ -46,3 +46,4 @@
 * hidden out of total doesnt update when removing platform.
 * .ico
 * max under ice.
+* timeline getting squished when going from loc filter back to slider.

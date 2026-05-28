@@ -445,6 +445,33 @@ async function processImportQeue(appState, ModuleDependencies) {
             queue.markQeueEntryDone(entry.fileName);
         }
     }
+    // After import, recalculate filter and update visible count
+    const DOMDeps = ModuleDependencies["DOM"];
+    const sliderRange = appState.mapTimelineRange && Array.isArray(appState.mapTimelineRange.slider) ? appState.mapTimelineRange.slider : null;
+    const inputRange = appState.mapTimelineRange && Array.isArray(appState.mapTimelineRange.input) ? appState.mapTimelineRange.input : null;
+    const loc = appState.mapLocationFiltering;
+    const locSet = loc && (
+        (typeof loc.latMin === 'number' && loc.latMin !== -90) ||
+        (typeof loc.latMax === 'number' && loc.latMax !== 90) ||
+        (typeof loc.lonMin === 'number' && loc.lonMin !== -180) ||
+        (typeof loc.lonMax === 'number' && loc.lonMax !== 180)
+    );
+    if (sliderRange && sliderRange.length === 2 && sliderRange[0] && sliderRange[1]) {
+        DOM.leaf_filterPlatformsByTimeRange(appState, DOMDeps, sliderRange[0], sliderRange[1]);
+    } else if (inputRange && inputRange.length === 2 && inputRange[0] && inputRange[1]) {
+        DOM.leaf_filterPlatformsByTimeRange(appState, DOMDeps, inputRange[0], inputRange[1]);
+    } else if (locSet) {
+        DOM.leaf_filterPlatformsByLocation(appState, DOMDeps);
+    } else {
+        // Always call handleMarkerFiltering from the DOM module context
+        if (typeof DOM.handleMarkerFiltering === 'function') {
+            DOM.handleMarkerFiltering(appState);
+        } else if (typeof DOMDeps.handleMarkerFiltering === 'function') {
+            DOMDeps.handleMarkerFiltering(appState);
+        } else {
+            console.warn('handleMarkerFiltering is not a function in DOM or DOMDeps');
+        }
+    }
 }
 
 /**
@@ -452,7 +479,7 @@ async function processImportQeue(appState, ModuleDependencies) {
  * For each entry: closes dataset in Python, removes marker, sidebar entry, simpleData entry, and data file.
  */
 async function processRemoveQeue(appState, dep) {
-    const { DOM,integrations } = dep;
+    const { DOM, integrations, fileHandle } = dep;
     const queueEntries = queue.readRemoveQeue();
     for (let i = 0; i < queueEntries.length; i++) {
         const entry = queueEntries[i];
@@ -472,6 +499,34 @@ async function processRemoveQeue(appState, dep) {
         delete appState.markers[entry.fileName];
         queue.markRemoveQeueEntryDone(entry.fileName);
         console.log(`Remove queue entry done: ${entry.fileName}`);
+    }
+    // After removal, recalculate filter and update visible count
+    // Ensure DOMDeps always includes fileHandle for downstream filter functions
+    const DOMDeps = { ...dep.DOM, fileHandle };
+    const sliderRange = appState.mapTimelineRange && Array.isArray(appState.mapTimelineRange.slider) ? appState.mapTimelineRange.slider : null;
+    const inputRange = appState.mapTimelineRange && Array.isArray(appState.mapTimelineRange.input) ? appState.mapTimelineRange.input : null;
+    const loc = appState.mapLocationFiltering;
+    const locSet = loc && (
+        (typeof loc.latMin === 'number' && loc.latMin !== -90) ||
+        (typeof loc.latMax === 'number' && loc.latMax !== 90) ||
+        (typeof loc.lonMin === 'number' && loc.lonMin !== -180) ||
+        (typeof loc.lonMax === 'number' && loc.lonMax !== 180)
+    );
+    if (sliderRange && sliderRange.length === 2 && sliderRange[0] && sliderRange[1]) {
+        DOM.leaf_filterPlatformsByTimeRange(appState, DOMDeps, sliderRange[0], sliderRange[1]);
+    } else if (inputRange && inputRange.length === 2 && inputRange[0] && inputRange[1]) {
+        DOM.leaf_filterPlatformsByTimeRange(appState, DOMDeps, inputRange[0], inputRange[1]);
+    } else if (locSet) {
+        DOM.leaf_filterPlatformsByLocation(appState, DOMDeps);
+    } else {
+        // Always call handleMarkerFiltering from the DOM module context
+        if (typeof DOM.handleMarkerFiltering === 'function') {
+            DOM.handleMarkerFiltering(appState);
+        } else if (typeof DOMDeps.handleMarkerFiltering === 'function') {
+            DOMDeps.handleMarkerFiltering(appState);
+        } else {
+            console.warn('handleMarkerFiltering is not a function in DOM or DOMDeps');
+        }
     }
 }
 

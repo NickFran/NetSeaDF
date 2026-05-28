@@ -1864,6 +1864,12 @@ userInteractions.userint_focusOnMarker(appState);
             document.getElementById('timeline12hrOptionWrapper').style.display = 'flex';
             document.getElementById('timelineWrapper').style.display = 'flex';
             document.getElementById('SelectedTimelineRangeWrapper').style.display = 'flex';
+            // Ensure timeline chart is resized when switching back to time filter
+            if (appState.charts && appState.charts.timeline) {
+                requestAnimationFrame(() => {
+                    appState.charts.timeline.resize();
+                });
+            }
         }
         if (selectedValue === "option2"){
             document.getElementById('timelineOptionWrapper').style.display = 'none';
