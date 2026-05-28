@@ -1,0 +1,25 @@
+name: Build macOS x64 and arm64
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run build:mac
+      - name: Upload all macOS DMG and ZIP files
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-builds
+          path: |
+            output/*.dmg
+            output/*.zip
