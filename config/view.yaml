@@ -4,4 +4,4 @@ HideERRORVarsForAxisDropdown: true
 HideVarsUnbalancedPopup: false
 ensureYAxisIsAlwaysDisplaysDEPTH: false
 IgnoreNoPresDataPopup: false
-ensureYAxisAlwaysDisplaysDEPTH: false
+ensureYAxisAlwaysDisplaysDEPTH: true

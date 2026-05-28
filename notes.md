@@ -40,10 +40,10 @@
 * add trace stack line numbers for warning notification posts
 * make general settings for views update right away.
 * leaflet legal page.
-* eval highlight over all elements that shouldnt highlight.
 * I CANT CHANGE TEXT NAME FEILDS.
 * next zoom for offline map.
-* close save view popup after saving
-* imported file has no expand button ------------
-* local map for location filter
 * location filter, bad order?
+* hidden out of total doesnt update when removing platform.
+* .ico
+* max under ice.
+* timeline getting squished when going from loc filter back to slider.
