@@ -21,7 +21,9 @@ win:
       to: dist/qeues/
 
 mac:
-  target: dmg
+  target:
+    - universal
+    - dmg
   category: public.app-category.utilities
   icon: build/icon.icns
   extraResources:

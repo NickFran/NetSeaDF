@@ -1,6 +1,6 @@
 PlatformIconStyle: 3
 mapDefaultZoomLevel: 3
-MaxTimeTillUnderIceFlag: 10
+MaxTimeTillUnderIceFlag: 21
 sidebarListFontSize: 14
 HideBlockingPopupForClickedViews: false
 useDMSFormatForTimestamps: true
