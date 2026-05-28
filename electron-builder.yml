@@ -41,9 +41,7 @@ mac:
       to: dist/logs/
     - from: qeues/
       to: dist/qeues/
-  x64ArchFiles:
-    - "Contents/Resources/PythonPortableMac_arm64/python/bin/python3.10"
-    - "Contents/Resources/PythonPortableMac_x64/python/bin/python3.10"
+  x64ArchFiles: "Contents/Resources/PythonPortableMac_*/python/bin/python3.10"
 
 asarUnpack:
   - src/common/pythonProcess.py
