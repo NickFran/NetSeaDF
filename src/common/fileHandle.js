@@ -430,7 +430,9 @@ async function processImportQeue(appState, ModuleDependencies) {
                 const lat = coords[0].lat;
                 const lon = coords[0].lon;
                 console.log(`Creating marker for ${entry.fileName} at lat: ${lat}, lon: ${lon}`);
-                const popupContent = DOM.leaf_buildPopupContent(datasetEntry, false, null, false, ModuleDependencies["config"]);
+                // Use the global config if available, to ensure DMS setting is respected immediately
+                // Always use the DOM config (browser in-memory) for marker popups
+                const popupContent = DOM.leaf_buildPopupContent(datasetEntry, false, null, false, ModuleDependencies["DOM"].config);
                 DOM.leaf_insertDataMarker(appState, ModuleDependencies["DOM"], lat, lon, popupContent, {}, entry.fileName);
                 console.log(`Marker created for: ${entry.fileName}`);
             } else {

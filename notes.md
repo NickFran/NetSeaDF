@@ -42,4 +42,14 @@
 * leaflet legal page.
 * eval highlight over all elements that shouldnt highlight.
 * I CANT CHANGE TEXT NAME FEILDS.
+<<<<<<< Updated upstream
 * next zoom for offline map.
+=======
+* next zoom for offline map.
+* close save view popup after saving
+* imported file has no expand button ------------
+* local map for location filter
+* location filter, bad order?
+* hidden out of total doesnt update when removing platform.
+* .ico
+>>>>>>> Stashed changes
