@@ -4,21 +4,21 @@ directories:
   output: output
 afterPack: build/afterPack.js
 
-win:
-  target: nsis
-  signAndEditExecutable: false
-  icon: build/icon.ico
-  extraResources:
-    - from: PythonPortable/
-      to: PythonPortable/
-    - from: config/
-      to: dist/config/
-    - from: savedData/
-      to: dist/savedData/
-    - from: logs/
-      to: dist/logs/
-    - from: qeues/
-      to: dist/qeues/
+# win:
+#   target: nsis
+#   signAndEditExecutable: false
+#   icon: build/icon.ico
+#   extraResources:
+#     - from: PythonPortable/
+#       to: PythonPortable/
+#     - from: config/
+#       to: dist/config/
+#     - from: savedData/
+#       to: dist/savedData/
+#     - from: logs/
+#       to: dist/logs/
+#     - from: qeues/
+#       to: dist/qeues/
 
 mac:
   target:
@@ -41,7 +41,7 @@ mac:
       to: dist/logs/
     - from: qeues/
       to: dist/qeues/
-  x64ArchFiles: "Contents/Resources/PythonPortableMac_*/python/bin/python3.10"
+  x64ArchFiles: "Contents/Resources/PythonPortableMac_*/**"
 
 asarUnpack:
   - src/common/pythonProcess.py
