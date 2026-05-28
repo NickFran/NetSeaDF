@@ -43,3 +43,7 @@
 * eval highlight over all elements that shouldnt highlight.
 * I CANT CHANGE TEXT NAME FEILDS.
 * next zoom for offline map.
+* close save view popup after saving
+* imported file has no expand button ------------
+* local map for location filter
+* location filter, bad order?

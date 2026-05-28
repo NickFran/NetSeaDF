@@ -702,19 +702,20 @@ function leaf_buildPopupContent(entry, instance=null, buttonText=null, manualInp
                         <button class="mapPopupButton marker-popup-button" style="margin-top:10px;display:block;margin-left:auto;margin-right:auto;" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Profile Timeline"}</button>
                     </div>`;
             } else {
-                // Multi-line, with labels
-                                popupContent = `
-                                <div class="marker-popup-filename-floating" style="text-align:center;font-weight:bold;font-size:1.1em;margin-bottom:-12px;position:relative;z-index:2;background:#f8fafc;border:2px solid #8f8f8f;border-radius:6px;padding:4px 14px;display:inline-block;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,0.10);">${entry.fileName}</div>
-                                <div class="popup-box marker-popup-box" style="margin-top:18px;">
-                                    <div class="marker-popup-coords-centered" style="text-align:center;font-size:0.98em;margin-bottom:12px;">${formatCoord(lat, true)}, ${formatCoord(lon, false)}</div>
-                                    <ul class="popup-list marker-popup-list" style="padding:0;list-style:none;">
-                                        <li style="height:8px;"></li>
-                                        <li class="popup-list-item marker-popup-date" style="margin-bottom:4px;text-align:center;"><span class="popup-label">Date:</span> <span class="popup-value">${entry.timestamps["formatted"][0]}</span></li>
-                                        <li class="popup-list-item marker-popup-depth" style="margin-bottom:12px;text-align:center;"><span class="popup-label">Max Depth:</span> <span class="popup-value">${maxDepth}</span></li>
-                                        <li style="height:8px;"></li>
-                                        <li class="popup-list-item marker-popup-dims" style="margin-top:8px;text-align:center;"><span class="popup-label">Dimensions:</span> <span class="popup-value">${formatDims(entry.dims)}</span></li>
-                                    </ul>
-                                </div>`;
+                // Multi-line, with labels, now with button
+                popupContent = `
+                    <div class="marker-popup-filename-floating" style="text-align:center;font-weight:bold;font-size:1.1em;margin-bottom:-12px;position:relative;z-index:2;background:#f8fafc;border:2px solid #8f8f8f;border-radius:6px;padding:4px 14px;display:inline-block;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,0,0,0.10);">${entry.fileName}</div>
+                    <div class="popup-box marker-popup-box" style="margin-top:18px;">
+                        <div class="marker-popup-coords-centered" style="text-align:center;font-size:0.98em;margin-bottom:12px;">${formatCoord(lat, true)}, ${formatCoord(lon, false)}</div>
+                        <ul class="popup-list marker-popup-list" style="padding:0;list-style:none;">
+                            <li style="height:8px;"></li>
+                            <li class="popup-list-item marker-popup-date" style="margin-bottom:4px;text-align:center;"><span class="popup-label">Date:</span> <span class="popup-value">${entry.timestamps["formatted"][0]}</span></li>
+                            <li class="popup-list-item marker-popup-depth" style="margin-bottom:12px;text-align:center;"><span class="popup-label">Max Depth:</span> <span class="popup-value">${maxDepth}</span></li>
+                            <li style="height:8px;"></li>
+                            <li class="popup-list-item marker-popup-dims" style="margin-top:8px;text-align:center;"><span class="popup-label">Dimensions:</span> <span class="popup-value">${formatDims(entry.dims)}</span></li>
+                        </ul>
+                        <button class="mapPopupButton marker-popup-button" style="margin-top:10px;display:block;margin-left:auto;margin-right:auto;" data-marker-data-file="${entry.fileName}">${buttonText ? buttonText : "View Profile Timeline"}</button>
+                    </div>`;
             }
         } else {
             const lat = entry.coords[instance]["lat"];
