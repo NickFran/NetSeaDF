@@ -29,6 +29,8 @@ const pythonExe = (() => {
         : path.join(process.resourcesPath, macPythonFolder, 'python', 'bin', 'python3.10');
 })();
 
+console.log('[PYTHON LAUNCH] Using pythonExe:', pythonExe);
+
 function ensurePyProc() {
     if (pyProc) return;
     
@@ -143,6 +145,3 @@ function callPyFunc(funcName, args = [], options = {}) {
 console.log(__dirname);
 
 module.exports = { callPyFunc };
-
-// const x = await callPyFunc('add', [5, 10]);
-// console.log(x); // Outputs: 15
