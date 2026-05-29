@@ -40,4 +40,3 @@
 * add trace stack line numbers for warning notification posts
 * make general settings for views update right away.
 * osm legal page.
-* I CANT CHANGE TEXT NAME FEILDS.
