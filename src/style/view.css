@@ -16,7 +16,7 @@
 @import url('objects.css');
 /* View page card and form styling */
 .viewPage {
-	--viewSidebarTrack: 2.7fr;
+	--viewSidebarTrack: 2.1fr;
 	grid-template-columns: minmax(0, var(--viewSidebarTrack)) repeat(6, minmax(0, 1fr));
 	transition: grid-template-columns 0.32s ease;
 }
