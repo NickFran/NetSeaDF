@@ -1,25 +1,60 @@
-name: Build macOS x64 and arm64
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-  build-mac:
+ build-macos:
     runs-on: macos-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - run: npm ci
-      - run: npm run build:mac
-      - name: Upload all macOS DMG and ZIP files
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Cache Electron
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/electron
+            ~/.cache/electron
+          key: ${{ runner.os }}-electron-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-electron-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Set Python executable permissions
+        run: |
+          chmod +x PythonPortableMac_arm64/python/bin/python3.10
+          chmod +x PythonPortableMac_x64/python/bin/python3.10
+
+      - name: Clean old .so files (arm64)
+        run: |
+          find PythonPortableMac_arm64/python/lib/python3.10/site-packages -name '*.so' -delete || true
+
+      - name: Clean old .so files (x64)
+        run: |
+          find PythonPortableMac_x64/python/lib/python3.10/site-packages -name '*.so' -delete || true
+
+      - name: Install Python packages (arm64)
+        run: |
+          PythonPortableMac_arm64/python/bin/python3.10 -m pip install --upgrade pip
+          PythonPortableMac_arm64/python/bin/python3.10 -m pip install -r requirements.txt
+
+      - name: Install Python packages (x64)
+        run: |
+          PythonPortableMac_x64/python/bin/python3.10 -m pip install --upgrade pip
+          PythonPortableMac_x64/python/bin/python3.10 -m pip install -r requirements.txt
+
+      - name: Build macOS
+        run: npm run build:mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macOS-builds
-          path: |
-            output/*.dmg
-            output/*.zip
+          name: macos-build
+          path: output/*.dmg
+          retention-days: 30
