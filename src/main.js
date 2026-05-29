@@ -122,12 +122,21 @@ function sendRendererEvent(channel, payload = null) {
 }
 
 function createWindow() {
-    win = new BrowserWindow({ 
+    // Robust icon path resolution for both dev and packaged builds
+    let iconPath;
+    if (process.platform === 'darwin') {
+        iconPath = path.join(app.isPackaged ? process.resourcesPath : __dirname, 'build', 'icon.icns');
+    } else if (process.platform === 'win32') {
+        iconPath = path.join(app.isPackaged ? process.resourcesPath : __dirname, 'build', 'icon.ico');
+    }
+    const fs = require('fs');
+    if (!fs.existsSync(iconPath)) {
+        console.warn('WARNING: App icon not found at', iconPath, '- using default Electron icon.');
+    }
+    win = new BrowserWindow({
         width: 1920, height: 1080,
         //autoHideMenuBar: true,  // Hide menu bar
-        icon: process.platform === 'darwin'
-            ? path.join(__dirname, 'build', 'icon.icns')
-            : path.join(__dirname, 'build', 'icon.ico'),
+        icon: fs.existsSync(iconPath) ? iconPath : undefined,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,

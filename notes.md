@@ -39,11 +39,5 @@
 
 * add trace stack line numbers for warning notification posts
 * make general settings for views update right away.
-* leaflet legal page.
+* osm legal page.
 * I CANT CHANGE TEXT NAME FEILDS.
-* next zoom for offline map.
-* location filter, bad order?
-* hidden out of total doesnt update when removing platform.
-* .ico
-* max under ice.
-* timeline getting squished when going from loc filter back to slider.
