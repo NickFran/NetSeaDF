@@ -21,9 +21,6 @@
     <script src="./lib/leaflet/leaflet-src.js"></script>
     <link rel="stylesheet" href="./lib/leaflet/leaflet.css">
 
-    <script src="./lib/leafletmarkercluster/leaflet.markercluster-src.js"></script>
-    <link rel="stylesheet" href="./lib/leafletmarkercluster/MarkerCluster.Default.css">
-
     <script src="./lib/echarts/echarts.js"></script>
 
     <title>NetSeaDF</title>
@@ -912,6 +909,49 @@
 
     appState.popups.cleanUpReferencesPopup = cleanUpReferencesPopup;
 
+    const welcomePopup = new popup.SimplePopup(
+        {},
+        {
+            title: "Welcome to NetSeaDF!",
+            content: `
+            <div class="welcomePopupWrapper">
+                <p>Welcome to NetSeaDF! This application is designed to help you visualize and analyze ARGO float data.</p>
+                <br>
+                <h4>Known Issues:</h4>
+                <ul>
+                    <li>Sometimes name text box inputs cannot be edited, if this happens, click off the apps window, then click back onto it, this should fix the issue.</li>
+                </ul>
+                <br>
+                <object data="media/OfficialHandbook.pdf" type="application/pdf" width="100%" height="600px">
+                    <iframe src="" width="100%" height="100%" style="border: none;">
+                        <p>Your browser does not support viewing PDFs inline. 
+                        <a href="media/OfficialHandbook.pdf">Download the PDF</a> instead.
+                        </p>
+                    </iframe>
+                </object>
+            </div>
+            `
+        },
+        {
+            onOpen: function() {
+                console.log('Welcome popup opened');
+            },
+            onClose: function() {
+                config.set('basics', 'HideWelcomeMessage', true);
+            }
+        },
+        {
+            isFullscreen: false,
+            width: "1200px",
+            height: "950px"
+        }
+    );
+
+    appState.popups.welcomePopup = welcomePopup;
+    if (!config.get('basics', 'HideWelcomeMessage')){
+        welcomePopup.open();
+    }
+
     function handleTransferDataMenuClick() {
         appState.popups.transferDataPopup.open();
     }
@@ -1464,6 +1504,17 @@
             }
 
             applyViewToAppState(loadResult.view);
+            // If output menu is currently visible, update the viewMenuTitle
+            const viewOutputMenu = document.getElementById('viewOutputMenu');
+            if (viewOutputMenu && viewOutputMenu.style.display !== 'none') {
+                // Use the view name or fallback
+                const viewName = loadResult.view?.name || 'Output';
+                if (typeof DOM.setViewMenuTitle === 'function') {
+                    DOM.setViewMenuTitle(viewName);
+                } else if (typeof setViewMenuTitle === 'function') {
+                    setViewMenuTitle(viewName);
+                }
+            }
             console.log(`Loaded saved view: ${fileName}`);
         } finally {
             DOM.hideLoadingScreen();

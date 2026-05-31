@@ -530,11 +530,8 @@ function leaf_insertDataMarker(state, dep, lat, lon, popupText = null, markerOpt
     console.log(`
         Lat: ${lat},
         Lon: ${lon},
-        PopupText: ${popupText},
-        MarkerOptions: ${JSON.stringify(markerOptions)},
         FileName: ${fileName},
-        Instance: ${instance},
-        CustomImage: ${customImage}
+        Instance: ${instance}
         `);
     
     // Validate coordinates
@@ -1486,13 +1483,13 @@ function dom_initNewView(appState, params = {}){
 function dom_createChartInstance(params = {}) {
     let Defaults = {
         general: {
-            Name: null,
+            Name: undefined, // will be set below
             EnableZoom: true,
             EnableDataPoints: true,
             EnableAxisPointers: true
         },
-        obj:null,
-        axis:[
+        obj: null,
+        axis: [
             createAxisInstance({
                 AxisSide: "Y",
                 Data: null
@@ -1502,13 +1499,25 @@ function dom_createChartInstance(params = {}) {
                 Data: null
             })
         ]
+    };
+
+    // If params.general.Name is provided, use it, otherwise set a default name
+    let chartIndex = (typeof params.chartInstanceIndex === 'number') ? params.chartInstanceIndex : undefined;
+    let defaultName = (typeof chartIndex === 'number') ? `Chart ${chartIndex + 1}` : 'Chart 1';
+    if (params.general && typeof params.general.Name === 'string' && params.general.Name.trim() !== '') {
+        Defaults.general.Name = params.general.Name;
+    } else {
+        Defaults.general.Name = defaultName;
     }
 
-    if (Object.keys(params).length === 0) {
-        return Defaults;
-    } else {        
-        return Object.assign(Defaults, params);
+    // Merge other params
+    let merged = Object.assign({}, Defaults, params);
+    // Ensure merged.general.Name is set
+    if (!merged.general || typeof merged.general !== 'object') merged.general = {};
+    if (typeof merged.general.Name !== 'string' || merged.general.Name.trim() === '') {
+        merged.general.Name = defaultName;
     }
+    return merged;
 }
 
 function createAxisInstance(params = {}){
@@ -1939,8 +1948,13 @@ function buildChartInstanceOptionsMenu(appState, deps, optionType, chartInstance
 
                 if (setting === "Name") {
                     settingInput.value = generalSettings[setting] || `Chart ${chartInstanceIndex + 1}`;
+                    // Focus the input after it is added to the DOM
+                    setTimeout(() => {
+                        settingInput.focus();
+                        // Optionally, select the text for easier editing
+                        settingInput.select();
+                    }, 0);
 
-                    
                     settingInput.addEventListener('input', function() {
                         appState.currentView.chartInstances[chartInstanceIndex].general[setting] = settingInput.value;
                         appState.currentView.chartInstances[chartInstanceIndex].obj.getElementsByClassName('instanceOptionWrapper')[0].getElementsByClassName('viewConfigOption')[0].textContent = settingInput.value;
