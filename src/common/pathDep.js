@@ -1,7 +1,78 @@
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+
+const APP_DATA_FOLDER_NAME = 'NetSeaDF';
 
 function reportPathDepError(message) {
     console.error(message);
+}
+
+function ensureDirectoryExists(dirPath) {
+    if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+    }
+}
+
+function copyPathContentsIfMissing(sourcePath, targetPath) {
+    if (!fs.existsSync(sourcePath)) {
+        return;
+    }
+
+    const sourceStats = fs.statSync(sourcePath);
+
+    if (sourceStats.isDirectory()) {
+        ensureDirectoryExists(targetPath);
+
+        const childNames = fs.readdirSync(sourcePath);
+        childNames.forEach((childName) => {
+            copyPathContentsIfMissing(
+                path.join(sourcePath, childName),
+                path.join(targetPath, childName)
+            );
+        });
+
+        return;
+    }
+
+    if (!fs.existsSync(targetPath)) {
+        ensureDirectoryExists(path.dirname(targetPath));
+        fs.copyFileSync(sourcePath, targetPath);
+    }
+}
+
+function isDevelopmentMode() {
+    return !process.resourcesPath || process.resourcesPath.includes('node_modules');
+}
+
+function getWritableAppDataRoot() {
+    if (process.platform === 'darwin') {
+        return path.join(os.homedir(), 'Library', 'Application Support', APP_DATA_FOLDER_NAME);
+    }
+
+    if (process.platform === 'win32') {
+        return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), APP_DATA_FOLDER_NAME);
+    }
+
+    return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), APP_DATA_FOLDER_NAME);
+}
+
+function getBundledProductionDataPath(folderName) {
+    return path.join(process.resourcesPath, 'dist', folderName);
+}
+
+function getWritableProductionDataPath(folderName) {
+    return path.join(getWritableAppDataRoot(), 'dist', folderName);
+}
+
+function ensureProductionDataPath(folderName) {
+    const bundledPath = getBundledProductionDataPath(folderName);
+    const writablePath = getWritableProductionDataPath(folderName);
+
+    ensureDirectoryExists(writablePath);
+    copyPathContentsIfMissing(bundledPath, writablePath);
+
+    return writablePath;
 }
 
 // Takes folder names and converts to hardset ints of the number of sublevels from root.
@@ -76,18 +147,14 @@ function resolveToProperDataPath(dirname, folderName) {
      * @returns {string} - The resolved path to the specified folder (adjusted for dev/prod mode).
      */
 
-    // Electron Method to check dev/prod status of the app
-    // Check if app is packaged (production) by checking if resources path exists
-    const isDev = !process.resourcesPath || process.resourcesPath.includes('node_modules'); 
-
     let isSpecifiedFolderValid = ["logs", "savedData", "config", "qeues"].includes(folderName)
 
     if (isSpecifiedFolderValid) { 
-        return isDev 
+        return isDevelopmentMode()
         // If Development Mode
             ? path.join(path.join(fromHereToRoot(dirname) , `${folderName}`))
-        // If Production Mode - use process.resourcesPath to access extraResources
-            : path.join(process.resourcesPath, "dist", `${folderName}`);
+        // If Production Mode - use a writable user data directory and seed it from bundled defaults.
+            : ensureProductionDataPath(folderName);
     } else {
         reportPathDepError("InvalidFolderNameError, (folder name must be 'logs', 'savedData', 'config', or 'qeues')");
         return 'InvalidFolderNameError';

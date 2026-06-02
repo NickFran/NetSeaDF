@@ -6,4 +6,4 @@ HideBlockingPopupForClickedViews: false
 useDMSFormatForTimestamps: true
 DisplayCoordsOnOneLine: true
 MaxCoordDecimals: 4
-HideWelcomeMessage: false
+HideWelcomeMessage: true
