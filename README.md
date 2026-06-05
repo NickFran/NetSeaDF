@@ -1,10 +1,12 @@
-# NetSeaDF
-![Main Interface Map Mode](src/media/externalMedia/1.2.0MainInterface.png)
-<img width="1902" height="1069" alt="image" src="https://github.com/user-attachments/assets/d0a20e31-960c-4a7d-9f16-d46c888f1374" />
+
+<img width="1302" height="578" alt="NetSeaDFLogo_normal-Picsart-AiImageEnhancer" src="https://github.com/user-attachments/assets/4fa2887d-ea19-46f6-9559-fe5356ece896" />
+
+
+<img width="1904" height="1071" alt="NetSeaDF1" src="https://github.com/user-attachments/assets/40385650-ec46-420e-9bc4-5a34447f34c1" />
+<img width="1292" height="659" alt="Screenshot 2026-06-05 140034" src="https://github.com/user-attachments/assets/88f47d88-8515-4c8c-816c-91dd84edd92d" />
+
 
 NetSeaDF, a cross-platform desktop application for mapping and data visualization of ARGO float datasets.
-
-
 ## Additional information
 This application is made in accordance with research needs of the Opera Lab at University Of Rhode Island's Graduate School Of Oceanography.
 
@@ -12,25 +14,41 @@ Developed during URI GSO's OECI B2OE Program.
 
 ## Features
 * Importing multiple datasets
-* Displaying multiple datasets on a map
-* Viewing graphs of multiple datasets.
+* Displaying datasets on a map
+* Filtering platforms by time & location
+* Visualizing Float Profile Timelines
+* Viewing graphs of multiple datasets
+* SSP and TEMP contrasting plots
+* Simple SSP plotting across a time range
+
 
 
 ## User Installation / Setup
 ### Step 1, browse the releases page
-![Step 1](src/media/externalMedia/step1.png)
+<img width="1452" height="1011" alt="step1" src="https://github.com/user-attachments/assets/9d9aaef4-4b95-48c9-927b-e42900f53ee9" />
 
 ## Step 2, click on the desired version
-![Step 2](src/media/externalMedia/step2.png)
+<img width="1428" height="1072" alt="image" src="https://github.com/user-attachments/assets/4402b0a4-9871-431e-879d-7b1392b72198" />
 
 ## Step 3, click on the desired file
-![Step 3](src/media/externalMedia/step3.png)
-- .exe for Windows
-- .dmg for Mac
-- (Source Code is available as well if desired)
+<img width="1081" height="611" alt="step3" src="https://github.com/user-attachments/assets/a235522e-d7b6-4466-a78f-eb5682761fb3" />
+.exe for Windows, .dmg for Mac, (Source Code is available as well if desired)
 
 
+## Done!
+By this point, when you install the software, it should be good to go!
 
+## Potential issues
+NOTICE: Mac users might have issues running the software and might see an error called "Read-Only" upon using the software after installation.
+- This error means the software was not installed properly.
+- Here is what to do if you see that error,
+* Open the INTEL.dmg. (It should show a popup with the apps icon and an arrow instructing you to install the app to the Applications folder).
+* In the popup, drag the NetSeaDF app icon into the Applications folder icon.
+* Wait for the copy to finish.
+* Open Applications and launch NetSeaDF from there.
+* Do not launch NetSeaDF from the mounted .dmg.
+* After confirming it opens from Applications, eject the mounted .dmg.
+* (So to sum it all up: do not run the app from the mounted .dmg; copy it into Applications first.)
 
 
 ## Development Installation / Setup
