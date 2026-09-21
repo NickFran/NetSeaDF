@@ -4,6 +4,8 @@
 
 <img width="1904" height="1071" alt="NetSeaDF1" src="https://github.com/user-attachments/assets/40385650-ec46-420e-9bc4-5a34447f34c1" />
 <img width="1292" height="659" alt="Screenshot 2026-06-05 140034" src="https://github.com/user-attachments/assets/88f47d88-8515-4c8c-816c-91dd84edd92d" />
+<img width="1902" height="1068" alt="Screenshot 2026-05-30 003212" src="https://github.com/user-attachments/assets/cf712c04-e2f9-499b-ae99-685128146f45" />
+<img width="1902" height="1070" alt="Screenshot 2026-05-30 003249" src="https://github.com/user-attachments/assets/dddb2740-32a9-460d-86d1-604a1bfa8389" />
 
 
 NetSeaDF, a cross-platform desktop application for mapping and data visualization of ARGO float datasets.
